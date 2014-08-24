@@ -17,11 +17,10 @@ package org.bytesoft.bytetcc.supports.dubbo.internal;
 
 import java.io.Serializable;
 
-import org.bytesoft.bytetcc.common.TerminalKey;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationType;
-import org.bytesoft.bytetcc.supports.rmi.RemoteInvocationRequest;
+import org.bytesoft.bytetcc.supports.rmi.TransactionalRequest;
 
-public class RemoteInvocationRequestImpl implements RemoteInvocationRequest, Serializable {
+public class RemoteInvocationRequestImpl implements TransactionalRequest, Serializable {
 	private static final long serialVersionUID = 1L;
 	private RemoteInvocationType invocationType;
 	private String declaringClass;
@@ -30,7 +29,6 @@ public class RemoteInvocationRequestImpl implements RemoteInvocationRequest, Ser
 	private String[] parameterTypes;
 	private Object[] parameterValues;
 	private Object transactionContext;
-	private TerminalKey terminalKey;
 	private String beanId;
 
 	public String getDeclaringClass() {
@@ -89,14 +87,6 @@ public class RemoteInvocationRequestImpl implements RemoteInvocationRequest, Ser
 		this.interfaceClass = interfaceClass;
 	}
 
-	public TerminalKey getTerminalKey() {
-		return terminalKey;
-	}
-
-	public void setTerminalKey(TerminalKey terminalKey) {
-		this.terminalKey = terminalKey;
-	}
-
 	public String getBeanId() {
 		return beanId;
 	}
@@ -106,7 +96,7 @@ public class RemoteInvocationRequestImpl implements RemoteInvocationRequest, Ser
 	}
 
 	public String toString() {
-		return String.format("Rmi-Request [%s] bean: %s, method: %s", //
-				this.terminalKey, this.beanId, this.methodName);
+		return String.format("[Rmi-Request] bean: %s, method: %s", //
+				this.beanId, this.methodName);
 	}
 }

@@ -81,27 +81,27 @@ public class TransactionCleanupTask implements Runnable, CleanupProcesser {
 	}
 
 	private void handleTransactionBatch(Set<TransactionImpl> handles) {
-		Iterator<TransactionImpl> itr = handles.iterator();
-		while (itr.hasNext()) {
-			TransactionImpl transaction = itr.next();
-			itr.remove();
-			boolean failure = true;
-			TransactionManagerImpl transactionManager = transaction.getTransactionManager();
-			try {
-				transactionManager.associateTransaction(transaction);
-				transaction.cleanup();
-				failure = false;
-			} catch (RemoteException ex) {
-				// ex.printStackTrace();
-			} catch (RuntimeException ex) {
-				// ex.printStackTrace();
-			} finally {
-				transactionManager.unassociateTransaction();
-				if (failure) {
-					transactionManager.registerErrorTransaction(transaction);
-				}// end-if(failure)
-			}// end-finally
-		}// end-while
+//		Iterator<CompensableTransaction> itr = handles.iterator();
+//		while (itr.hasNext()) {
+//			CompensableTransaction transaction = itr.next();
+//			itr.remove();
+//			boolean failure = true;
+//			CompensableTransactionManager transactionManager = transaction.getTransactionManager();
+//			try {
+//				transactionManager.associateTransaction(transaction);
+//				transaction.cleanup();
+//				failure = false;
+//			} catch (RemoteException ex) {
+//				// ex.printStackTrace();
+//			} catch (RuntimeException ex) {
+//				// ex.printStackTrace();
+//			} finally {
+//				transactionManager.unassociateTransaction();
+//				if (failure) {
+//					transactionManager.registerErrorTransaction(transaction);
+//				}// end-if(failure)
+//			}// end-finally
+//		}// end-while
 	}
 
 	private void await(long millis) {

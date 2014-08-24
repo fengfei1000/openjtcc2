@@ -15,14 +15,8 @@
  */
 package org.bytesoft.bytetcc.supports.marshall;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
-
-import org.bytesoft.bytetcc.remote.RemoteTerminator;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationService;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationServiceMarshaller;
-import org.bytesoft.bytetcc.supports.dubbo.internal.RemoteTerminatorHandler;
 import org.bytesoft.bytetcc.supports.serialize.TerminatorInfo;
 import org.bytesoft.bytetcc.supports.serialize.TerminatorMarshaller;
 import org.springframework.beans.BeansException;
@@ -33,33 +27,33 @@ public class TerminatorMarshallerImpl implements TerminatorMarshaller, RemoteInv
 		ApplicationContextAware {
 	private ApplicationContext applicationContext;
 
-	@Override
-	public TerminatorInfo marshallTerminator(RemoteTerminator terminator) throws IOException {
-		if (Proxy.isProxyClass(terminator.getClass())) {
-			InvocationHandler obj = Proxy.getInvocationHandler(terminator);
-			if (RemoteTerminatorHandler.class.isInstance(obj)) {
-				RemoteTerminatorHandler handler = (RemoteTerminatorHandler) obj;
-				return handler.getRemoteTerminatorInfo();
-			}
-		}
-		return null;
-	}
+//	@Override
+//	public TerminatorInfo marshallTerminator(RemoteTerminator terminator) throws IOException {
+//		if (Proxy.isProxyClass(terminator.getClass())) {
+//			InvocationHandler obj = Proxy.getInvocationHandler(terminator);
+//			if (RemoteTerminatorHandler.class.isInstance(obj)) {
+//				RemoteTerminatorHandler handler = (RemoteTerminatorHandler) obj;
+//				return handler.getRemoteTerminatorInfo();
+//			}
+//		}
+//		return null;
+//	}
 
-	@Override
-	public RemoteTerminator unmarshallTerminator(TerminatorInfo info) throws IOException {
-		RemoteTerminatorHandler handler = new RemoteTerminatorHandler();
-		handler.setRemoteTerminatorInfo(info);
-		String beanName = this.getBeanName(info);
-		RemoteInvocationService remoteService = null;
-		try {
-			remoteService = (RemoteInvocationService) this.applicationContext.getBean(beanName);
-			handler.setRemoteInvocationService(remoteService);
-		} catch (BeansException ex) {
-			handler.setRemoteServiceFactory(this);
-		}
-		return (RemoteTerminator) Proxy.newProxyInstance(RemoteTerminator.class.getClassLoader(),
-				new Class[] { RemoteTerminator.class }, handler);
-	}
+//	@Override
+//	public RemoteTerminator unmarshallTerminator(TerminatorInfo info) throws IOException {
+//		RemoteTerminatorHandler handler = new RemoteTerminatorHandler();
+//		handler.setRemoteTerminatorInfo(info);
+//		String beanName = this.getBeanName(info);
+//		RemoteInvocationService remoteService = null;
+//		try {
+//			remoteService = (RemoteInvocationService) this.applicationContext.getBean(beanName);
+//			handler.setRemoteInvocationService(remoteService);
+//		} catch (BeansException ex) {
+//			handler.setRemoteServiceFactory(this);
+//		}
+//		return (RemoteTerminator) Proxy.newProxyInstance(RemoteTerminator.class.getClassLoader(),
+//				new Class[] { RemoteTerminator.class }, handler);
+//	}
 
 	public RemoteInvocationService unmarshallRemoteInvocationService(TerminatorInfo terminatorInfo) {
 		String beanName = this.getBeanName(terminatorInfo);

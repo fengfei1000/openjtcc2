@@ -24,24 +24,20 @@ import java.rmi.RemoteException;
 
 import javax.transaction.TransactionManager;
 
-import org.bytesoft.bytetcc.TransactionImpl;
 import org.bytesoft.bytetcc.TransactionManagerImpl;
-import org.bytesoft.bytetcc.common.TerminalKey;
-import org.bytesoft.bytetcc.common.TransactionContext;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationService;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationServiceFactory;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationType;
-import org.bytesoft.bytetcc.supports.rmi.RemoteInvocationInterceptor;
+import org.bytesoft.bytetcc.supports.rmi.TransactionalInterceptor;
 
 public class RemoteInvocationClientInvoker implements InvocationHandler {
 	private String beanId;
-	private TerminalKey terminalKey;
+	// private TerminalKey terminalKey;
 	private RemoteInvocationServiceFactory remoteInvocationServiceFactory;
-	private RemoteInvocationInterceptor remoteInvocationInterceptor;
+	private TransactionalInterceptor remoteInvocationInterceptor;
 	private TransactionManager transactionManager;
 	private Class<?> remoteInterfaceClass;
 
-	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		if (Object.class.equals(method.getDeclaringClass())) {
 			return method.invoke(this, args);
@@ -97,23 +93,23 @@ public class RemoteInvocationClientInvoker implements InvocationHandler {
 		RemoteInvocationResponseImpl response = null;
 		try {
 			TransactionManagerImpl txManager = (TransactionManagerImpl) this.transactionManager;
-			TransactionImpl transaction = txManager.getCurrentTransaction();
-			TerminalKey terminalKey = null;
-			if (transaction != null) {
-				terminalKey = transaction.getTerminalKey(this.terminalKey.getApplication());
-			}
-
-			if (terminalKey == null) {
-				terminalKey = this.terminalKey;
-				request.setTerminalKey(terminalKey);
-			} else {
-				request.setTerminalKey(terminalKey);
-			}
+			// TransactionImpl transaction = txManager.getCurrentTransaction();
+			// TerminalKey terminalKey = null;
+			// if (transaction != null) {
+			// terminalKey = transaction.getTerminalKey(this.terminalKey.getApplication());
+			// }
+			//
+			// if (terminalKey == null) {
+			// terminalKey = this.terminalKey;
+			// request.setTerminalKey(terminalKey);
+			// } else {
+			// request.setTerminalKey(terminalKey);
+			// }
 
 			this.beforeSendRequest(request);
 
-			RemoteInvocationService remoteService = this.remoteInvocationServiceFactory
-					.getRemoteInvocationService(terminalKey);
+			RemoteInvocationService remoteService = null;
+			// this.remoteInvocationServiceFactory.getRemoteInvocationService(terminalKey);
 			response = remoteService.invoke(request);
 			response.setRequest(request);
 		} catch (Throwable ex) {
@@ -185,35 +181,35 @@ public class RemoteInvocationClientInvoker implements InvocationHandler {
 	}
 
 	private void afterReceiveResponse(RemoteInvocationResponseImpl response) {
-		TransactionManagerImpl txManager = (TransactionManagerImpl) this.transactionManager;
-		TransactionImpl transaction = txManager.getCurrentTransaction();
-		if (transaction != null) {
-			TransactionContext context = transaction.getTransactionContext();
-			if (context.isCompensable() && this.remoteInvocationInterceptor != null) {
-				TerminalKey terminalKey = response.getTerminalKey();
-				TransactionContext propagationContext = (TransactionContext) response.getTransactionContext();
-				propagationContext.setTerminalKey(terminalKey);
-				this.remoteInvocationInterceptor.afterReceiveResponse(response);
-			}
-		}
+		// TransactionManagerImpl txManager = (TransactionManagerImpl) this.transactionManager;
+		// TransactionImpl transaction = txManager.getCurrentTransaction();
+		// if (transaction != null) {
+		// TransactionContext context = transaction.getTransactionContext();
+		// if (context.isCompensable() && this.remoteInvocationInterceptor != null) {
+		// // TerminalKey terminalKey = response.getTerminalKey();
+		// TransactionContext propagationContext = (TransactionContext) response.getTransactionContext();
+		// // propagationContext.setTerminalKey(terminalKey);
+		// this.remoteInvocationInterceptor.afterReceiveResponse(response);
+		// }
+		// }
 	}
 
 	private void beforeSendRequest(RemoteInvocationRequestImpl request) {
-		TransactionManagerImpl txManager = (TransactionManagerImpl) this.transactionManager;
-		TransactionImpl transaction = txManager.getCurrentTransaction();
-		if (transaction != null) {
-			TransactionContext context = transaction.getTransactionContext();
-			if (context.isCompensable() && this.remoteInvocationInterceptor != null) {
-				this.remoteInvocationInterceptor.beforeSendRequest(request);
-			}
-		}
+		// TransactionManagerImpl txManager = (TransactionManagerImpl) this.transactionManager;
+		// TransactionImpl transaction = txManager.getCurrentTransaction();
+		// if (transaction != null) {
+		// TransactionContext context = transaction.getTransactionContext();
+		// if (context.isCompensable() && this.remoteInvocationInterceptor != null) {
+		// this.remoteInvocationInterceptor.beforeSendRequest(request);
+		// }
+		// }
 	}
 
 	public void setRemoteInvocationServiceFactory(RemoteInvocationServiceFactory remoteInvocationServiceFactory) {
 		this.remoteInvocationServiceFactory = remoteInvocationServiceFactory;
 	}
 
-	public void setRemoteInvocationInterceptor(RemoteInvocationInterceptor remoteInvocationInterceptor) {
+	public void setRemoteInvocationInterceptor(TransactionalInterceptor remoteInvocationInterceptor) {
 		this.remoteInvocationInterceptor = remoteInvocationInterceptor;
 	}
 
@@ -231,10 +227,6 @@ public class RemoteInvocationClientInvoker implements InvocationHandler {
 
 	public void setRemoteInterfaceClass(Class<?> remoteInterfaceClass) {
 		this.remoteInterfaceClass = remoteInterfaceClass;
-	}
-
-	public void setTerminalKey(TerminalKey terminalKey) {
-		this.terminalKey = terminalKey;
 	}
 
 	public String getBeanId() {

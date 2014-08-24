@@ -17,35 +17,24 @@ package org.bytesoft.bytetcc.supports.dubbo.internal;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.rmi.RemoteException;
 
-import javax.transaction.HeuristicRollbackException;
 import javax.transaction.TransactionManager;
 
-import org.bytesoft.bytetcc.NoSuchTransactionException;
 import org.bytesoft.bytetcc.TransactionImpl;
 import org.bytesoft.bytetcc.TransactionManagerImpl;
-import org.bytesoft.bytetcc.common.TerminalKey;
 import org.bytesoft.bytetcc.common.TransactionContext;
-import org.bytesoft.bytetcc.remote.Cleanupable;
-import org.bytesoft.bytetcc.remote.Committable;
-import org.bytesoft.bytetcc.remote.Prepareable;
-import org.bytesoft.bytetcc.remote.RemoteTerminator;
-import org.bytesoft.bytetcc.remote.Rollbackable;
 import org.bytesoft.bytetcc.supports.NativeBeanFactory;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationService;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationType;
-import org.bytesoft.bytetcc.supports.rmi.RemoteInvocationInterceptor;
+import org.bytesoft.bytetcc.supports.rmi.TransactionalInterceptor;
 
 public class RemoteInvocationServerInvoker implements RemoteInvocationService {
 	private NativeBeanFactory beanFactory;
 	private TransactionManager transactionManager;
-	private RemoteInvocationInterceptor remoteInvocationInterceptor;
+	private TransactionalInterceptor remoteInvocationInterceptor;
 
 	public RemoteInvocationResponseImpl invoke(RemoteInvocationRequestImpl request) {
 		RemoteInvocationResponseImpl response = this.validateRequest(request);
-		TerminalKey instanceKey = this.getTerminalKey();
-		response.setTerminalKey(instanceKey);
 
 		try {
 			if (RemoteInvocationType.service.equals(request.getInvocationType())) {
@@ -99,17 +88,17 @@ public class RemoteInvocationServerInvoker implements RemoteInvocationService {
 		try {
 			TransactionContext context = (TransactionContext) request.getTransactionContext();
 			TransactionManagerImpl txm = (TransactionManagerImpl) this.transactionManager;
-			TransactionImpl transaction = txm.getTransaction(context.getGlobalXid());
+			TransactionImpl transaction = null;// TODO txm.getTransaction(context.getGlobalXid());
 			if (transaction == null) {
 				// ignore
 			} else {
-				RemoteTerminator terminator = transaction.getTerminatorSkeleton();
-				terminator.cleanup();
+				// TODO
+				// RemoteTerminator terminator = transaction.getTerminatorSkeleton();
+				// terminator.cleanup();
 			}
-		} catch (RemoteException ex) {
-			response.setThrowable(ex);
-			ex.printStackTrace();
-		} catch (RuntimeException ex) {
+		} /*
+		 * catch (RemoteException ex) { response.setThrowable(ex); ex.printStackTrace(); }
+		 */catch (RuntimeException ex) {
 			response.setThrowable(ex);
 			ex.printStackTrace();
 		}
@@ -140,28 +129,29 @@ public class RemoteInvocationServerInvoker implements RemoteInvocationService {
 		TransactionManagerImpl txManager = (TransactionManagerImpl) this.transactionManager;
 		try {
 			TransactionContext context = (TransactionContext) request.getTransactionContext();
-			TransactionImpl transaction = txManager.getTransaction(context.getGlobalXid());
+			TransactionImpl transaction = null;// TODO txManager.getTransaction(context.getGlobalXid());
 
 			if (transaction == null) {
-				if (Prepareable.class.equals(clazz)) {
-					response.setThrowable(new NoSuchTransactionException());
-					return response;
-				} else if (Committable.class.equals(clazz)) {
-					response.setThrowable(new HeuristicRollbackException());
-					return response;
-				} else if (Rollbackable.class.equals(clazz)) {
-					return response;
-				} else if (Cleanupable.class.equals(clazz)) {
-					return response;
-				} else {
-					throw new IllegalStateException();
-				}
+				// if (Prepareable.class.equals(clazz)) {
+				// response.setThrowable(new NoSuchTransactionException());
+				// return response;
+				// } else if (Committable.class.equals(clazz)) {
+				// response.setThrowable(new HeuristicRollbackException());
+				// return response;
+				// } else if (Rollbackable.class.equals(clazz)) {
+				// return response;
+				// } else if (Cleanupable.class.equals(clazz)) {
+				// return response;
+				// } else {
+				// throw new IllegalStateException();
+				// }
 			}
 
-			txManager.associateTransaction(transaction);
+			// txManager.associateTransaction(transaction);
 
 			Method method = clazz.getDeclaredMethod(methodName, parameterTypes);
-			Object result = method.invoke(transaction.getTerminatorSkeleton(), request.getParameterValues());
+			Object result = null;// TODO method.invoke(transaction.getTerminatorSkeleton(),
+									// request.getParameterValues());
 			response.setResult(result);
 
 		} catch (NoSuchMethodException ex) {
@@ -170,20 +160,19 @@ public class RemoteInvocationServerInvoker implements RemoteInvocationService {
 		} catch (SecurityException ex) {
 			response.setThrowable(ex);
 			ex.printStackTrace();
-		} catch (IllegalAccessException ex) {
+		} /*
+		 * catch (IllegalAccessException ex) { response.setThrowable(ex); ex.printStackTrace(); }
+		 */catch (IllegalArgumentException ex) {
 			response.setThrowable(ex);
 			ex.printStackTrace();
-		} catch (IllegalArgumentException ex) {
-			response.setThrowable(ex);
-			ex.printStackTrace();
-		} catch (InvocationTargetException ex) {
-			response.setThrowable(ex.getTargetException());
-			ex.printStackTrace();
-		} catch (Throwable ex) {
+		} /*
+		 * catch (InvocationTargetException ex) { response.setThrowable(ex.getTargetException()); ex.printStackTrace();
+		 * }
+		 */catch (Throwable ex) {
 			response.setThrowable(ex);
 			ex.printStackTrace();
 		} finally {
-			txManager.unassociateTransaction();
+			// txManager.unassociateTransaction();
 		}
 		return response;
 	}
@@ -272,12 +261,7 @@ public class RemoteInvocationServerInvoker implements RemoteInvocationService {
 		return Thread.currentThread().getContextClassLoader().loadClass(clsName);
 	}
 
-	public TerminalKey getTerminalKey() {
-		TransactionManagerImpl txm = (TransactionManagerImpl) this.transactionManager;
-		return txm.getTerminalKey();
-	}
-
-	public void setRemoteInvocationInterceptor(RemoteInvocationInterceptor remoteInvocationInterceptor) {
+	public void setRemoteInvocationInterceptor(TransactionalInterceptor remoteInvocationInterceptor) {
 		this.remoteInvocationInterceptor = remoteInvocationInterceptor;
 	}
 

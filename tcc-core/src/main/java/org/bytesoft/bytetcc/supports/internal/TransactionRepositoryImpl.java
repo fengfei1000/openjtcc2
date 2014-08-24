@@ -20,25 +20,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.bytesoft.bytetcc.TransactionImpl;
+import org.bytesoft.bytetcc.jta.JtaTransaction;
 import org.bytesoft.bytetcc.supports.TransactionLogger;
 import org.bytesoft.bytetcc.supports.TransactionRepository;
 import org.bytesoft.bytetcc.xa.XidImpl;
 
 public class TransactionRepositoryImpl implements TransactionRepository {
-	private final Map<XidImpl, TransactionImpl> xidToTxMap = new ConcurrentHashMap<XidImpl, TransactionImpl>();
-	private final Map<XidImpl, TransactionImpl> xidToErrTxMap = new ConcurrentHashMap<XidImpl, TransactionImpl>();
+	private final Map<XidImpl, JtaTransaction> xidToTxMap = new ConcurrentHashMap<XidImpl, JtaTransaction>();
+	private final Map<XidImpl, JtaTransaction> xidToErrTxMap = new ConcurrentHashMap<XidImpl, JtaTransaction>();
 	private final TransactionLoggerImpl transactionLoggerWrapper = new TransactionLoggerImpl();
 
-	public void putTransaction(XidImpl globalXid, TransactionImpl transaction) {
+	public void putTransaction(XidImpl globalXid, JtaTransaction transaction) {
 		this.xidToTxMap.put(globalXid, transaction);
 	}
 
-	public TransactionImpl getTransaction(XidImpl globalXid) {
+	public JtaTransaction getTransaction(XidImpl globalXid) {
 		return this.xidToTxMap.get(globalXid);
 	}
 
-	public TransactionImpl removeTransaction(XidImpl globalXid) {
+	public JtaTransaction removeTransaction(XidImpl globalXid) {
 		return this.xidToTxMap.remove(globalXid);
 	}
 
@@ -54,24 +54,24 @@ public class TransactionRepositoryImpl implements TransactionRepository {
 		}
 	}
 
-	public void putErrorTransaction(XidImpl globalXid, TransactionImpl transaction) {
+	public void putErrorTransaction(XidImpl globalXid, JtaTransaction transaction) {
 		this.xidToErrTxMap.put(globalXid, transaction);
 	}
 
-	public TransactionImpl getErrorTransaction(XidImpl globalXid) {
+	public JtaTransaction getErrorTransaction(XidImpl globalXid) {
 		return this.xidToErrTxMap.get(globalXid);
 	}
 
-	public TransactionImpl removeErrorTransaction(XidImpl globalXid) {
+	public JtaTransaction removeErrorTransaction(XidImpl globalXid) {
 		return this.xidToErrTxMap.remove(globalXid);
 	}
 
-	public Set<TransactionImpl> getErrorTransactionSet() {
-		return new HashSet<TransactionImpl>(this.xidToErrTxMap.values());
+	public Set<JtaTransaction> getErrorTransactionSet() {
+		return new HashSet<JtaTransaction>(this.xidToErrTxMap.values());
 	}
 
-	public Set<TransactionImpl> getActiveTransactionSet() {
-		return new HashSet<TransactionImpl>(this.xidToTxMap.values());
+	public Set<JtaTransaction> getActiveTransactionSet() {
+		return new HashSet<JtaTransaction>(this.xidToTxMap.values());
 	}
 
 }

@@ -16,14 +16,12 @@
 package org.bytesoft.bytetcc.supports.internal;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bytesoft.bytetcc.archive.CompensableArchive;
-import org.bytesoft.bytetcc.archive.TerminatorArchive;
 import org.bytesoft.bytetcc.archive.TransactionArchive;
 import org.bytesoft.bytetcc.common.TransactionContext;
 import org.bytesoft.bytetcc.supports.TransactionLogger;
@@ -124,20 +122,6 @@ public class TransactionLoggerImpl implements TransactionLogger {
 		delegate.rollbackService(transactionContext, holder);
 	}
 
-	public void registerTerminator(TransactionContext transactionContext, TerminatorArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
-		ArchiveObject object = this.xidToRecMap.get(globalXid);
-
-		if (object == null) {
-			delegate.registerTerminator(transactionContext, holder);
-		} else if (object.terminators.contains(holder)) {
-			// ignore
-		} else {
-			delegate.registerTerminator(transactionContext, holder);
-			object.terminators.add(holder);
-		}
-	}
-
 	// public void enlistTerminator(TransactionContext transactionContext, TerminatorArchive holder) {
 	// XidImpl globalXid = transactionContext.getGlobalXid();
 	// RecordObject object = this.xidToRecMap.get(globalXid);
@@ -163,58 +147,6 @@ public class TransactionLoggerImpl implements TransactionLogger {
 	// }
 	// delegate.delistTerminator(transactionContext, holder);
 	// }
-
-	public void prepareTerminator(TransactionContext transactionContext, TerminatorArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
-		ArchiveObject object = this.xidToRecMap.get(globalXid);
-		if (object == null) {
-			// ignore
-		} else if (object.terminators.contains(holder)) {
-			// ignore
-		} else {
-			this.registerTerminator(transactionContext, holder);
-		}
-		delegate.prepareTerminator(transactionContext, holder);
-	}
-
-	public void commitTerminator(TransactionContext transactionContext, TerminatorArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
-		ArchiveObject object = this.xidToRecMap.get(globalXid);
-		if (object == null) {
-			// ignore
-		} else if (object.terminators.contains(holder)) {
-			// ignore
-		} else {
-			this.registerTerminator(transactionContext, holder);
-		}
-		delegate.commitTerminator(transactionContext, holder);
-	}
-
-	public void rollbackTerminator(TransactionContext transactionContext, TerminatorArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
-		ArchiveObject object = this.xidToRecMap.get(globalXid);
-		if (object == null) {
-			// ignore
-		} else if (object.terminators.contains(holder)) {
-			// ignore
-		} else {
-			this.registerTerminator(transactionContext, holder);
-		}
-		delegate.rollbackTerminator(transactionContext, holder);
-	}
-
-	public void cleanupTerminator(TransactionContext transactionContext, TerminatorArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
-		ArchiveObject object = this.xidToRecMap.get(globalXid);
-		if (object == null) {
-			// ignore
-		} else if (object.terminators.contains(holder)) {
-			// ignore
-		} else {
-			this.registerTerminator(transactionContext, holder);
-		}
-		delegate.cleanupTerminator(transactionContext, holder);
-	}
 
 	public void beginTransaction(TransactionArchive transaction) {
 		TransactionContext transactionContext = transaction.getTransactionContext();
@@ -275,7 +207,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 			ArchiveObject object = new ArchiveObject();
 			this.xidToRecMap.put(globalXid, object);
 
-			Map<XidImpl, CompensableArchive> nativeSvrMap = meta.getXidToNativeSvrMap();
+			Map<XidImpl, CompensableArchive> nativeSvrMap = meta.getCompensableArchiveMap();
 			Iterator<Map.Entry<XidImpl, CompensableArchive>> nativeSvrItr = nativeSvrMap.entrySet().iterator();
 			while (nativeSvrItr.hasNext()) {
 				Map.Entry<XidImpl, CompensableArchive> entry = nativeSvrItr.next();
@@ -284,13 +216,15 @@ public class TransactionLoggerImpl implements TransactionLogger {
 				object.xidToNativeSvrMap.put(branchXid, holder);
 			}
 
-			Map<String, TerminatorArchive> terminatorMap = meta.getAppToTerminatorMap();
-			Iterator<Map.Entry<String, TerminatorArchive>> terminatorItr = terminatorMap.entrySet().iterator();
-			while (terminatorItr.hasNext()) {
-				Map.Entry<String, TerminatorArchive> entry = terminatorItr.next();
-				TerminatorArchive holder = entry.getValue();
-				object.terminators.add(holder);
-			}
+			// TODO
+			// Map<String, TerminatorArchive> terminatorMap = meta.getAppToTerminatorMap();
+			// Iterator<Map.Entry<String, TerminatorArchive>> terminatorItr = terminatorMap.entrySet().iterator();
+			// while (terminatorItr.hasNext()) {
+			// Map.Entry<String, TerminatorArchive> entry = terminatorItr.next();
+			// TerminatorArchive holder = entry.getValue();
+			// object.terminators.add(holder);
+			// }
+
 		}
 		return metas;
 	}
@@ -306,7 +240,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 	public static class ArchiveObject {
 
 		public Map<XidImpl, CompensableArchive> xidToNativeSvrMap = new HashMap<XidImpl, CompensableArchive>();
-		public Set<TerminatorArchive> terminators = new HashSet<TerminatorArchive>();
+		// public Set<TerminatorArchive> terminators = new HashSet<TerminatorArchive>();
 	}
 
 }

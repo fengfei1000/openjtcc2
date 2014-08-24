@@ -15,11 +15,11 @@
  */
 package org.bytesoft.bytetcc.internal;
 
-import org.bytesoft.bytetcc.TransactionImpl;
+import org.bytesoft.bytetcc.jta.JtaTransaction;
 
 public class AssociatedContext {
 	private Thread thread;
-	private TransactionImpl transaction;
+	private JtaTransaction transaction;
 	private boolean expired;
 
 	public Thread getThread() {
@@ -30,11 +30,11 @@ public class AssociatedContext {
 		this.thread = thread;
 	}
 
-	public TransactionImpl getTransaction() {
+	public JtaTransaction getTransaction() {
 		return transaction;
 	}
 
-	public void setTransaction(TransactionImpl transaction) {
+	public void setTransaction(JtaTransaction transaction) {
 		this.transaction = transaction;
 	}
 

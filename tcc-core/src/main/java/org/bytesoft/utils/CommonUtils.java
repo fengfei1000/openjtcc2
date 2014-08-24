@@ -28,14 +28,27 @@ public class CommonUtils {
 		}
 	}
 
-	public static boolean equals(Object o1, Object o2) {
+	private static int checkEquals(Object o1, Object o2) {
 		if (o1 == o2) {
-			return true;
+			return 1;
 		} else if (o1 == null || o2 == null) {
+			return -1;
+		} else {
+			return 0;
+		}
+	}
+
+	public static boolean equals(Object o1, Object o2) {
+		int flags = checkEquals(o1, o2);
+		if (flags > 0) {
+			return true;
+		} else if (flags < 0) {
 			return false;
 		} else if (o1.getClass().equals(o2.getClass()) == false) {
 			return false;
+		} else {
+			return o1.equals(o2);
 		}
-		return o1.equals(o2);
 	}
+
 }

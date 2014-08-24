@@ -16,41 +16,21 @@
 package org.bytesoft.bytetcc.archive;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.bytesoft.bytetcc.common.TransactionContext;
 import org.bytesoft.bytetcc.common.TransactionStatus;
 import org.bytesoft.bytetcc.xa.XidImpl;
 
-public class TransactionArchive {
-	protected TransactionStatus transactionStatus;
-	protected TransactionContext transactionContext;
+public interface TransactionArchive {
 
-	protected final Map<XidImpl, CompensableArchive> xidToNativeSvcMap = new ConcurrentHashMap<XidImpl, CompensableArchive>();
-	protected final Map<String, TerminatorArchive> appToTerminatorMap = new ConcurrentHashMap<String, TerminatorArchive>();
+	public TransactionStatus getTransactionStatus();
 
-	public TransactionContext getTransactionContext() {
-		return transactionContext;
-	}
+	public Map<XidImpl, CompensableArchive> getCompensableArchiveMap();
 
-	public void setTransactionContext(TransactionContext transactionContext) {
-		this.transactionContext = transactionContext;
-	}
+	public TransactionContext getTransactionContext();
 
-	public TransactionStatus getTransactionStatus() {
-		return transactionStatus;
-	}
+	public void setTransactionStatus(TransactionStatus status);
 
-	public void setTransactionStatus(TransactionStatus transactionStatus) {
-		this.transactionStatus = transactionStatus;
-	}
-
-	public Map<XidImpl, CompensableArchive> getXidToNativeSvrMap() {
-		return xidToNativeSvcMap;
-	}
-
-	public Map<String, TerminatorArchive> getAppToTerminatorMap() {
-		return appToTerminatorMap;
-	}
+	public void setTransactionContext(TransactionContext context);
 
 }

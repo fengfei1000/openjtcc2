@@ -15,12 +15,10 @@
  */
 package org.bytesoft.bytetcc.supports.dubbo;
 
-import org.bytesoft.bytetcc.common.TerminalKey;
-
 public interface RemoteInvocationServiceFactory {
 
-	public RemoteInvocationService getRemoteInvocationService(TerminalKey terminalKey);
+	// public RemoteInvocationService getRemoteInvocationService(TerminalKey terminalKey);
 
-	public RemoteInvocationService getRemoteInvocationService();
+	// public RemoteInvocationService getRemoteInvocationService();
 
 }

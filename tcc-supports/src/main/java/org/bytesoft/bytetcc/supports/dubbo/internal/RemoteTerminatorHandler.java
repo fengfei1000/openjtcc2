@@ -22,23 +22,18 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.net.SocketException;
 import java.rmi.RemoteException;
 
-import org.bytesoft.bytetcc.common.TerminalKey;
 import org.bytesoft.bytetcc.common.TransactionContext;
-import org.bytesoft.bytetcc.remote.Cleanupable;
-import org.bytesoft.bytetcc.remote.RemoteTerminator;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationService;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationServiceMarshaller;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationType;
 import org.bytesoft.bytetcc.supports.serialize.TerminatorInfo;
 import org.bytesoft.bytetcc.xa.XidImpl;
-import org.bytesoft.utils.CommonUtils;
 
 public class RemoteTerminatorHandler implements InvocationHandler {
 	private TerminatorInfo remoteTerminatorInfo;
 	private RemoteInvocationService remoteInvocationService;
 	private RemoteInvocationServiceMarshaller remoteServiceFactory;
 
-	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		String methodName = method.getName();
 
@@ -60,7 +55,7 @@ public class RemoteTerminatorHandler implements InvocationHandler {
 			RemoteInvocationType invocationType = this.getRemoteInvocationType(method);
 			request.setInvocationType(invocationType);
 			request.setDeclaringClass(method.getDeclaringClass().getName());
-			request.setInterfaceClass(RemoteTerminator.class.getSimpleName());
+			// request.setInterfaceClass(RemoteTerminator.class.getSimpleName());
 			request.setMethodName(methodName);
 			Class<?>[] types = method.getParameterTypes();
 			String[] parameterTypes = new String[types.length];
@@ -148,18 +143,11 @@ public class RemoteTerminatorHandler implements InvocationHandler {
 	}
 
 	private RemoteInvocationType getRemoteInvocationType(Method method) {
-		if (Cleanupable.class.equals(method.getDeclaringClass())) {
-			return RemoteInvocationType.cleanup;
-		} else {
-			return RemoteInvocationType.transaction;
-		}
-	}
-
-	public TerminalKey getTerminalKey() {
-		TerminalKey terminalKey = new TerminalKey();
-		terminalKey.setApplication(this.remoteTerminatorInfo.getApplication());
-		terminalKey.setEndpoint(this.remoteTerminatorInfo.getEndpoint());
-		return terminalKey;
+		// if (Cleanupable.class.equals(method.getDeclaringClass())) {
+		// return RemoteInvocationType.cleanup;
+		// } else {
+		return RemoteInvocationType.transaction;
+		// }
 	}
 
 	public TerminatorInfo getRemoteTerminatorInfo() {
@@ -186,43 +174,40 @@ public class RemoteTerminatorHandler implements InvocationHandler {
 		this.remoteServiceFactory = remoteServiceFactory;
 	}
 
-	@Override
-	public int hashCode() {
-		int hash = 13;
-		if (this.remoteTerminatorInfo == null) {
-			return hash;
-		}
-		String app = this.remoteTerminatorInfo.getApplication();
-		String end = this.remoteTerminatorInfo.getEndpoint();
-		hash += 17 * (app == null ? 0 : app.hashCode());
-		hash += 19 * (end == null ? 0 : end.hashCode());
-		return hash;
-	}
+	// public int hashCode() {
+	// int hash = 13;
+	// if (this.remoteTerminatorInfo == null) {
+	// return hash;
+	// }
+	// String app = this.remoteTerminatorInfo.getApplication();
+	// String end = this.remoteTerminatorInfo.getEndpoint();
+	// hash += 17 * (app == null ? 0 : app.hashCode());
+	// hash += 19 * (end == null ? 0 : end.hashCode());
+	// return hash;
+	// }
+	//
+	// public boolean equals(Object obj) {
+	// if (obj == null) {
+	// return false;
+	// } else if (RemoteTerminator.class.isInstance(obj) == false) {
+	// return false;
+	// } else if (this.remoteTerminatorInfo == null) {
+	// return false;
+	// }
+	//
+	// String thisApp = this.remoteTerminatorInfo.getApplication();
+	// String thisEnd = this.remoteTerminatorInfo.getEndpoint();
+	//
+	// RemoteTerminator terminator = (RemoteTerminator) obj;
+	// TerminalKey that = terminator.getTerminalKey();
+	// String thatApp = that.getApplication();
+	// String thatEnd = that.getEndpoint();
+	//
+	// boolean appEquals = CommonUtils.equals(thisApp, thatApp);
+	// boolean endEquals = CommonUtils.equals(thisEnd, thatEnd);
+	// return appEquals && endEquals;
+	// }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == null) {
-			return false;
-		} else if (RemoteTerminator.class.isInstance(obj) == false) {
-			return false;
-		} else if (this.remoteTerminatorInfo == null) {
-			return false;
-		}
-
-		String thisApp = this.remoteTerminatorInfo.getApplication();
-		String thisEnd = this.remoteTerminatorInfo.getEndpoint();
-
-		RemoteTerminator terminator = (RemoteTerminator) obj;
-		TerminalKey that = terminator.getTerminalKey();
-		String thatApp = that.getApplication();
-		String thatEnd = that.getEndpoint();
-
-		boolean appEquals = CommonUtils.equals(thisApp, thatApp);
-		boolean endEquals = CommonUtils.equals(thisEnd, thatEnd);
-		return appEquals && endEquals;
-	}
-
-	@Override
 	public String toString() {
 		String app = this.remoteTerminatorInfo == null ? null : this.remoteTerminatorInfo.getApplication();
 		String end = this.remoteTerminatorInfo == null ? null : this.remoteTerminatorInfo.getEndpoint();

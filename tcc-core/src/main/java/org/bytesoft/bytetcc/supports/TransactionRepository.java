@@ -17,27 +17,27 @@ package org.bytesoft.bytetcc.supports;
 
 import java.util.Set;
 
-import org.bytesoft.bytetcc.TransactionImpl;
+import org.bytesoft.bytetcc.jta.JtaTransaction;
 import org.bytesoft.bytetcc.xa.XidImpl;
 
 public interface TransactionRepository {
 
-	public void putTransaction(XidImpl globalXid, TransactionImpl transaction);
+	public void putTransaction(XidImpl globalXid, JtaTransaction transaction);
 
-	public TransactionImpl getTransaction(XidImpl globalXid);
+	public JtaTransaction getTransaction(XidImpl globalXid);
 
-	public TransactionImpl removeTransaction(XidImpl globalXid);
+	public JtaTransaction removeTransaction(XidImpl globalXid);
 
-	public void putErrorTransaction(XidImpl globalXid, TransactionImpl transaction);
+	public void putErrorTransaction(XidImpl globalXid, JtaTransaction transaction);
 
-	public TransactionImpl getErrorTransaction(XidImpl globalXid);
+	public JtaTransaction getErrorTransaction(XidImpl globalXid);
 
-	public TransactionImpl removeErrorTransaction(XidImpl globalXid);
+	public JtaTransaction removeErrorTransaction(XidImpl globalXid);
 
 	public TransactionLogger getTransactionLogger();
 
-	public Set<TransactionImpl> getActiveTransactionSet();
+	public Set<JtaTransaction> getActiveTransactionSet();
 
-	public Set<TransactionImpl> getErrorTransactionSet();
+	public Set<JtaTransaction> getErrorTransactionSet();
 
 }

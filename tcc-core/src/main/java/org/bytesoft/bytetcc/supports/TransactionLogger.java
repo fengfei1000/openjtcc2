@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bytesoft.bytetcc.archive.CompensableArchive;
-import org.bytesoft.bytetcc.archive.TerminatorArchive;
 import org.bytesoft.bytetcc.archive.TransactionArchive;
 import org.bytesoft.bytetcc.common.TransactionContext;
 
@@ -45,15 +44,15 @@ public interface TransactionLogger {
 	public void rollbackService(TransactionContext transactionContext, CompensableArchive holder);
 
 	/* remote terminator */
-	public void registerTerminator(TransactionContext transactionContext, TerminatorArchive holder);
+	// public void registerTerminator(TransactionContext transactionContext, TerminatorArchive holder);
 
-	public void prepareTerminator(TransactionContext transactionContext, TerminatorArchive holder);
+	// public void prepareTerminator(TransactionContext transactionContext, TerminatorArchive holder);
 
-	public void commitTerminator(TransactionContext transactionContext, TerminatorArchive holder);
+	// public void commitTerminator(TransactionContext transactionContext, TerminatorArchive holder);
 
-	public void rollbackTerminator(TransactionContext transactionContext, TerminatorArchive holder);
+	// public void rollbackTerminator(TransactionContext transactionContext, TerminatorArchive holder);
 
-	public void cleanupTerminator(TransactionContext transactionContext, TerminatorArchive holder);
+	// public void cleanupTerminator(TransactionContext transactionContext, TerminatorArchive holder);
 
 	/* transaction */
 	public void beginTransaction(TransactionArchive transaction);

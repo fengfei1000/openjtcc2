@@ -30,10 +30,7 @@ public class XidImpl implements Xid, Serializable {
 	private final int formatId = xidFormatId;
 	private byte[] globalTransactionId;
 	private byte[] branchQualifier;
-
-	public XidImpl() {
-		this(new byte[0], new byte[0]);
-	}
+	private transient XidFactory xidFactory;
 
 	public XidImpl(byte[] global) {
 		this(global, new byte[0]);
@@ -55,6 +52,26 @@ public class XidImpl implements Xid, Serializable {
 		this.branchQualifier = branch;
 	}
 
+	public XidImpl getGlobalXid() {
+		if (this.globalTransactionId == null || this.globalTransactionId.length == 0) {
+			throw new IllegalStateException();
+		} else if (this.branchQualifier != null && this.branchQualifier.length > 0) {
+			return this.xidFactory.createGlobalXid(this.globalTransactionId);
+		} else {
+			return this;
+		}
+	}
+
+	public XidImpl createBranchXid() {
+		if (this.globalTransactionId == null || this.globalTransactionId.length == 0) {
+			throw new IllegalStateException();
+		} else if (this.branchQualifier != null && this.branchQualifier.length > 0) {
+			throw new IllegalStateException();
+		} else {
+			return this.xidFactory.createBranchXid(this);
+		}
+	}
+
 	public byte[] getBranchQualifier() {
 		return this.branchQualifier;
 	}
@@ -65,6 +82,14 @@ public class XidImpl implements Xid, Serializable {
 
 	public byte[] getGlobalTransactionId() {
 		return this.globalTransactionId;
+	}
+
+	public XidFactory getXidFactory() {
+		return xidFactory;
+	}
+
+	public void setXidFactory(XidFactory xidFactory) {
+		this.xidFactory = xidFactory;
 	}
 
 	public int hashCode() {

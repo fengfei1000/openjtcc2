@@ -22,37 +22,37 @@ import org.bytesoft.bytetcc.Compensable;
 import org.bytesoft.bytetcc.supports.NativeBeanFactory;
 import org.bytesoft.bytetcc.supports.serialize.CompensableInfo;
 import org.bytesoft.bytetcc.supports.serialize.CompensableMarshaller;
-import org.bytesoft.bytetcc.supports.spring.NativeCompensableProxy;
+import org.bytesoft.bytetcc.supports.spring.tmp.NativeCompensableProxy;
 
 public class CompensableMarshallerImpl implements CompensableMarshaller/* , ApplicationContextAware */{
 	private NativeBeanFactory beanFactory;
 
-	@SuppressWarnings("unchecked")
-	public CompensableInfo marshallCompensable(Compensable<Serializable> compensable) {
-		if (Proxy.isProxyClass(compensable.getClass())) {
-			NativeCompensableProxy<Serializable> handler = (NativeCompensableProxy<Serializable>) Proxy
-					.getInvocationHandler(compensable);
-			try {
-				CompensableInfo info = new CompensableInfo();
-				info.setIdentifier(handler.getBeanName());
-				return info;
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		return null;
-	}
-
-	@SuppressWarnings("unchecked")
-	public Compensable<Serializable> unmarshallCompensable(CompensableInfo info) {
-		Serializable identifier = info.getIdentifier();
-		if (info != null && String.class.isInstance(identifier)) {
-			String beanName = (String) identifier;
-			Compensable<Serializable> service = this.beanFactory.getBean(Compensable.class, beanName);
-			return service;
-		}
-		return null;
-	}
+	// @SuppressWarnings("unchecked")
+	// public CompensableInfo marshallCompensable(Compensable<Serializable> compensable) {
+	// if (Proxy.isProxyClass(compensable.getClass())) {
+	// NativeCompensableProxy<Serializable> handler = (NativeCompensableProxy<Serializable>) Proxy
+	// .getInvocationHandler(compensable);
+	// try {
+	// CompensableInfo info = new CompensableInfo();
+	// info.setIdentifier(handler.getBeanName());
+	// return info;
+	// } catch (Exception e) {
+	// e.printStackTrace();
+	// }
+	// }
+	// return null;
+	// }
+	//
+	// @SuppressWarnings("unchecked")
+	// public Compensable<Serializable> unmarshallCompensable(CompensableInfo info) {
+	// Serializable identifier = info.getIdentifier();
+	// if (info != null && String.class.isInstance(identifier)) {
+	// String beanName = (String) identifier;
+	// Compensable<Serializable> service = this.beanFactory.getBean(Compensable.class, beanName);
+	// return service;
+	// }
+	// return null;
+	// }
 
 	public void setBeanFactory(NativeBeanFactory beanFactory) {
 		this.beanFactory = beanFactory;
