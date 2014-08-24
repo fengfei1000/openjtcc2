@@ -15,12 +15,19 @@
  */
 package org.bytesoft.bytetcc;
 
-import java.io.Serializable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface Compensable<T extends Serializable> {
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.TYPE })
+public @interface Compensable {
 
-	public void confirm(T variable) throws CompensableException;
+	public Class<?> attempt();
 
-	public void cancel(T variable) throws CompensableException;
+	public Class<?> confirm() default Object.class;
+
+	public Class<?> cancel() default Object.class;
 
 }

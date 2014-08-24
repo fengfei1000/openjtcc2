@@ -18,16 +18,15 @@ package org.bytesoft.bytetcc.supports.dubbo.internal;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-import org.bytesoft.bytetcc.common.TerminalKey;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationService;
 import org.springframework.context.ApplicationContext;
 
 public class RemoteInvocationEndpointSelector implements InvocationHandler {
 	public static final String DEFAULT_REMOTE_SERVICE_NAME = "remote-service";
 	private ApplicationContext applicationContext;
-	private TerminalKey terminalKey;
 
-	@Override
+	// private TerminalKey terminalKey;
+
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		Method handlerMethod = null;
 		try {
@@ -45,10 +44,10 @@ public class RemoteInvocationEndpointSelector implements InvocationHandler {
 		String application = null;
 		String endpoint = null;
 
-		if (this.terminalKey != null) {
-			application = this.terminalKey.getApplication();
-			endpoint = this.terminalKey.getEndpoint();
-		}
+		// if (this.terminalKey != null) {
+		// application = this.terminalKey.getApplication();
+		// endpoint = this.terminalKey.getEndpoint();
+		// }
 
 		if (application == null || application.trim().equals("")) {
 			return (RemoteInvocationService) this.applicationContext.getBean(DEFAULT_REMOTE_SERVICE_NAME);
@@ -69,14 +68,6 @@ public class RemoteInvocationEndpointSelector implements InvocationHandler {
 
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
-	}
-
-	public TerminalKey getTerminalKey() {
-		return terminalKey;
-	}
-
-	public void setTerminalKey(TerminalKey terminalKey) {
-		this.terminalKey = terminalKey;
 	}
 
 }

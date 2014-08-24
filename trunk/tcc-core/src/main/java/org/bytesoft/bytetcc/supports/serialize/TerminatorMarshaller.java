@@ -15,14 +15,10 @@
  */
 package org.bytesoft.bytetcc.supports.serialize;
 
-import java.io.IOException;
-
-import org.bytesoft.bytetcc.remote.RemoteTerminator;
-
 public interface TerminatorMarshaller {
 
-	public TerminatorInfo marshallTerminator(RemoteTerminator terminator) throws IOException;
+	// public TerminatorInfo marshallTerminator(RemoteTerminator terminator) throws IOException;
 
-	public RemoteTerminator unmarshallTerminator(TerminatorInfo info) throws IOException;
+	// public RemoteTerminator unmarshallTerminator(TerminatorInfo info) throws IOException;
 
 }

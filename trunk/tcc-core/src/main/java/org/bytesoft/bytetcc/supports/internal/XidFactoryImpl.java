@@ -17,7 +17,6 @@ package org.bytesoft.bytetcc.supports.internal;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.bytesoft.bytetcc.common.TerminalKey;
 import org.bytesoft.bytetcc.xa.XidFactory;
 import org.bytesoft.bytetcc.xa.XidImpl;
 import org.bytesoft.utils.ByteUtils;
@@ -25,12 +24,11 @@ import org.bytesoft.utils.ByteUtils;
 public class XidFactoryImpl implements XidFactory {
 
 	private final AtomicLong atomic = new AtomicLong();
-	private TerminalKey terminalKey;
 
 	public XidImpl createGlobalXid() {
 		byte[] global = new byte[18];
-		int appcode = terminalKey.getApplication().hashCode();
-		int endcode = terminalKey.getEndpoint().hashCode();
+		int appcode = 0;// terminalKey.getApplication().hashCode();
+		int endcode = 0;// terminalKey.getEndpoint().hashCode();
 		byte[] appByteArray = ByteUtils.intToByteArray(appcode);
 		byte[] endByteArray = ByteUtils.intToByteArray(endcode);
 
@@ -44,7 +42,9 @@ public class XidFactoryImpl implements XidFactory {
 		System.arraycopy(millisByteArray, 0, global, 8, 8);
 		System.arraycopy(atomicByteArray, 0, global, 16, 2);
 
-		return new XidImpl(global);
+		XidImpl globalXid = new XidImpl(global);
+		globalXid.setXidFactory(this);
+		return globalXid;
 	}
 
 	public XidImpl createGlobalXid(byte[] globalTransactionId) {
@@ -55,7 +55,9 @@ public class XidFactoryImpl implements XidFactory {
 		}
 		byte[] global = new byte[globalTransactionId.length];
 		System.arraycopy(globalTransactionId, 0, global, 0, global.length);
-		return new XidImpl(global);
+		XidImpl globalXid = new XidImpl(global);
+		globalXid.setXidFactory(this);
+		return globalXid;
 	}
 
 	public XidImpl createBranchXid(XidImpl globalXid) {
@@ -71,8 +73,8 @@ public class XidFactoryImpl implements XidFactory {
 		System.arraycopy(globalXid.getGlobalTransactionId(), 0, global, 0, global.length);
 
 		byte[] branch = new byte[10];
-		int appcode = terminalKey.getApplication().hashCode();
-		int endcode = terminalKey.getEndpoint().hashCode();
+		int appcode = 0;// terminalKey.getApplication().hashCode();
+		int endcode = 0;// terminalKey.getEndpoint().hashCode();
 		byte[] appByteArray = ByteUtils.intToByteArray(appcode);
 		byte[] endByteArray = ByteUtils.intToByteArray(endcode);
 
@@ -82,7 +84,9 @@ public class XidFactoryImpl implements XidFactory {
 		System.arraycopy(appByteArray, 0, branch, 0, 4);
 		System.arraycopy(endByteArray, 0, branch, 4, 4);
 		System.arraycopy(atomicByteArray, 0, branch, 8, 2);
-		return new XidImpl(global, branch);
+		XidImpl branchXid = new XidImpl(global, branch);
+		branchXid.setXidFactory(this);
+		return branchXid;
 	}
 
 	public XidImpl createBranchXid(XidImpl globalXid, byte[] branchQualifier) {
@@ -103,15 +107,9 @@ public class XidFactoryImpl implements XidFactory {
 		byte[] global = new byte[globalXid.getGlobalTransactionId().length];
 		System.arraycopy(globalXid.getGlobalTransactionId(), 0, global, 0, global.length);
 
-		return new XidImpl(global, branchQualifier);
-	}
-
-	public TerminalKey getTerminalKey() {
-		return terminalKey;
-	}
-
-	public void setTerminalKey(TerminalKey terminalKey) {
-		this.terminalKey = terminalKey;
+		XidImpl branchXid = new XidImpl(global, branchQualifier);
+		branchXid.setXidFactory(this);
+		return branchXid;
 	}
 
 }

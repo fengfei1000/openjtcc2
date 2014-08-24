@@ -22,6 +22,7 @@ public class XAResourceArchive {
 	public XAResource xaRes;
 	public int vote;
 	public Xid xid;
+	public boolean terminator;
 	public boolean completed;
 	public boolean committed;
 	public boolean rolledback;

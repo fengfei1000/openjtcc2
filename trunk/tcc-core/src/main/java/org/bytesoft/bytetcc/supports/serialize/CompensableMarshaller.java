@@ -21,8 +21,8 @@ import org.bytesoft.bytetcc.Compensable;
 
 public interface CompensableMarshaller {
 
-	public CompensableInfo marshallCompensable(Compensable<Serializable> compensable);
+//	public CompensableInfo marshallCompensable(Compensable<Serializable> compensable);
 
-	public Compensable<Serializable> unmarshallCompensable(CompensableInfo node);
+//	public Compensable<Serializable> unmarshallCompensable(CompensableInfo node);
 
 }

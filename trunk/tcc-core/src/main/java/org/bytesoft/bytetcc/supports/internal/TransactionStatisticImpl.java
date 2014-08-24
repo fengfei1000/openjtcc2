@@ -15,219 +15,214 @@
  */
 package org.bytesoft.bytetcc.supports.internal;
 
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.bytesoft.bytetcc.TransactionImpl;
-import org.bytesoft.bytetcc.supports.TransactionStatistic;
-
-public class TransactionStatisticImpl implements TransactionStatistic {
-
-	private AtomicLong totalAtomic = new AtomicLong();
-	private AtomicLong errorTotalAtomic = new AtomicLong();
-
-	private AtomicLong errorAtomic = new AtomicLong();
-	private AtomicLong activeAtomic = new AtomicLong();
-	private AtomicLong preparingAtomic = new AtomicLong();
-	private AtomicLong preparedAtomic = new AtomicLong();
-	private AtomicLong committingAtomic = new AtomicLong();
-	private AtomicLong committedAtomic = new AtomicLong();
-	private AtomicLong rollingbackAtomic = new AtomicLong();
-	private AtomicLong rolledbackAtomic = new AtomicLong();
-
-	private void unmarkActive(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ACTIVE)) {
-			this.activeAtomic.decrementAndGet();
-			transaction.resetTransientFlags(TransactionStatistic.FLAGS_ACTIVE);
-		}
-	}
-
-	private void markPreparing(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_PREPARING) == false) {
-			this.preparingAtomic.incrementAndGet();
-			transaction.affixTransientFlags(TransactionStatistic.FLAGS_PREPARING);
-		}
-	}
-
-	private void unmarkPreparing(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_PREPARING)) {
-			this.preparingAtomic.decrementAndGet();
-			transaction.resetTransientFlags(TransactionStatistic.FLAGS_PREPARING);
-		}
-	}
-
-	private void markPrepared(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_PREPARED) == false) {
-			this.preparedAtomic.incrementAndGet();
-			transaction.affixTransientFlags(TransactionStatistic.FLAGS_PREPARED);
-		}
-	}
-
-	private void unmarkPrepared(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_PREPARED)) {
-			this.preparedAtomic.decrementAndGet();
-			transaction.resetTransientFlags(TransactionStatistic.FLAGS_PREPARED);
-		}
-	}
-
-	private void markCommitting(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_COMMITTING) == false) {
-			this.committingAtomic.incrementAndGet();
-			transaction.affixTransientFlags(TransactionStatistic.FLAGS_COMMITTING);
-		}
-	}
-
-	private void unmarkCommitting(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_COMMITTING)) {
-			this.committingAtomic.decrementAndGet();
-			transaction.resetTransientFlags(TransactionStatistic.FLAGS_COMMITTING);
-		}
-	}
-
-	private void markCommitted(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_COMMITTED) == false) {
-			this.committedAtomic.incrementAndGet();
-			transaction.affixTransientFlags(TransactionStatistic.FLAGS_COMMITTED);
-		}
-	}
-
-	private void unmarkCommitted(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_COMMITTED)) {
-			this.committedAtomic.decrementAndGet();
-			transaction.resetTransientFlags(TransactionStatistic.FLAGS_COMMITTED);
-		}
-	}
-
-	private void markRollingback(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ROLLINGBACK) == false) {
-			this.rollingbackAtomic.incrementAndGet();
-			transaction.affixTransientFlags(TransactionStatistic.FLAGS_ROLLINGBACK);
-		}
-	}
-
-	private void unmarkRollingback(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ROLLINGBACK)) {
-			this.rollingbackAtomic.decrementAndGet();
-			transaction.resetTransientFlags(TransactionStatistic.FLAGS_ROLLINGBACK);
-		}
-	}
-
-	private void markRolledback(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ROLEDBACK) == false) {
-			this.rolledbackAtomic.incrementAndGet();
-			transaction.affixTransientFlags(TransactionStatistic.FLAGS_ROLEDBACK);
-		}
-	}
-
-	private void unmarkRolledback(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ROLEDBACK)) {
-			this.rolledbackAtomic.decrementAndGet();
-			transaction.resetTransientFlags(TransactionStatistic.FLAGS_ROLEDBACK);
-		}
-	}
-
-	private void markError(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ERROR) == false) {
-			this.errorAtomic.incrementAndGet();
-			transaction.affixTransientFlags(TransactionStatistic.FLAGS_ERROR);
-		}
-
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ERROR_TOTAL) == false) {
-			this.errorTotalAtomic.incrementAndGet();
-			transaction.affixTransientFlags(TransactionStatistic.FLAGS_ERROR_TOTAL);
-		}
-	}
-
-	private void unmarkErrork(TransactionImpl transaction) {
-		if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ERROR)) {
-			this.errorAtomic.decrementAndGet();
-			transaction.resetTransientFlags(TransactionStatistic.FLAGS_ERROR);
-		}
-	}
-
-	public void fireRecoverTransaction(TransactionImpl transaction) {
-		this.totalAtomic.incrementAndGet();
-		this.errorTotalAtomic.incrementAndGet();
-		this.errorAtomic.incrementAndGet();
-	}
-
-	public void fireBeginTransaction(TransactionImpl transaction) {
-		this.totalAtomic.incrementAndGet();
-		this.activeAtomic.incrementAndGet();
-		transaction.affixTransientFlags(TransactionStatistic.FLAGS_ACTIVE);
-	}
-
-	public void firePreparingTransaction(TransactionImpl transaction) {
-		this.unmarkActive(transaction);
-
-		this.unmarkErrork(transaction);
-		this.markPreparing(transaction);
-	}
-
-	public void firePreparedTransaction(TransactionImpl transaction) {
-		this.unmarkActive(transaction);
-		this.unmarkPreparing(transaction);
-
-		this.unmarkErrork(transaction);
-		this.markPrepared(transaction);
-	}
-
-	public void fireCommittingTransaction(TransactionImpl transaction) {
-		this.unmarkActive(transaction);
-		this.unmarkPreparing(transaction);
-		this.unmarkPrepared(transaction);
-
-		this.unmarkErrork(transaction);
-		this.markCommitting(transaction);
-	}
-
-	public void fireCommittedTransaction(TransactionImpl transaction) {
-		this.unmarkActive(transaction);
-		this.unmarkPreparing(transaction);
-		this.unmarkPrepared(transaction);
-		this.unmarkCommitting(transaction);
-
-		this.unmarkErrork(transaction);
-		this.markCommitted(transaction);
-	}
-
-	public void fireRollingBackTransaction(TransactionImpl transaction) {
-		this.unmarkActive(transaction);
-		this.unmarkPreparing(transaction);
-		this.unmarkPrepared(transaction);
-		this.unmarkCommitting(transaction);
-
-		this.unmarkErrork(transaction);
-		this.markRollingback(transaction);
-	}
-
-	public void fireRolledbackTransaction(TransactionImpl transaction) {
-		this.unmarkActive(transaction);
-		this.unmarkPreparing(transaction);
-		this.unmarkPrepared(transaction);
-		this.unmarkCommitting(transaction);
-		this.unmarkRollingback(transaction);
-
-		this.unmarkErrork(transaction);
-		this.markRolledback(transaction);
-	}
-
-	public void fireCompleteFailure(TransactionImpl transaction) {
-		this.markError(transaction);
-	}
-
-	public void fireCleanupTransaction(TransactionImpl transaction) {
-		this.unmarkActive(transaction);
-
-		this.unmarkPreparing(transaction);
-		this.unmarkPrepared(transaction);
-
-		this.unmarkCommitting(transaction);
-		this.unmarkCommitted(transaction);
-
-		this.unmarkRollingback(transaction);
-		this.unmarkRolledback(transaction);
-
-		this.unmarkErrork(transaction);
-	}
-
+public class TransactionStatisticImpl /* implements TransactionStatistic */{
+	//
+	// private AtomicLong totalAtomic = new AtomicLong();
+	// private AtomicLong errorTotalAtomic = new AtomicLong();
+	//
+	// private AtomicLong errorAtomic = new AtomicLong();
+	// private AtomicLong activeAtomic = new AtomicLong();
+	// private AtomicLong preparingAtomic = new AtomicLong();
+	// private AtomicLong preparedAtomic = new AtomicLong();
+	// private AtomicLong committingAtomic = new AtomicLong();
+	// private AtomicLong committedAtomic = new AtomicLong();
+	// private AtomicLong rollingbackAtomic = new AtomicLong();
+	// private AtomicLong rolledbackAtomic = new AtomicLong();
+	//
+	// private void unmarkActive(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ACTIVE)) {
+	// this.activeAtomic.decrementAndGet();
+	// transaction.resetTransientFlags(TransactionStatistic.FLAGS_ACTIVE);
+	// }
+	// }
+	//
+	// private void markPreparing(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_PREPARING) == false) {
+	// this.preparingAtomic.incrementAndGet();
+	// transaction.affixTransientFlags(TransactionStatistic.FLAGS_PREPARING);
+	// }
+	// }
+	//
+	// private void unmarkPreparing(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_PREPARING)) {
+	// this.preparingAtomic.decrementAndGet();
+	// transaction.resetTransientFlags(TransactionStatistic.FLAGS_PREPARING);
+	// }
+	// }
+	//
+	// private void markPrepared(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_PREPARED) == false) {
+	// this.preparedAtomic.incrementAndGet();
+	// transaction.affixTransientFlags(TransactionStatistic.FLAGS_PREPARED);
+	// }
+	// }
+	//
+	// private void unmarkPrepared(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_PREPARED)) {
+	// this.preparedAtomic.decrementAndGet();
+	// transaction.resetTransientFlags(TransactionStatistic.FLAGS_PREPARED);
+	// }
+	// }
+	//
+	// private void markCommitting(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_COMMITTING) == false) {
+	// this.committingAtomic.incrementAndGet();
+	// transaction.affixTransientFlags(TransactionStatistic.FLAGS_COMMITTING);
+	// }
+	// }
+	//
+	// private void unmarkCommitting(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_COMMITTING)) {
+	// this.committingAtomic.decrementAndGet();
+	// transaction.resetTransientFlags(TransactionStatistic.FLAGS_COMMITTING);
+	// }
+	// }
+	//
+	// private void markCommitted(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_COMMITTED) == false) {
+	// this.committedAtomic.incrementAndGet();
+	// transaction.affixTransientFlags(TransactionStatistic.FLAGS_COMMITTED);
+	// }
+	// }
+	//
+	// private void unmarkCommitted(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_COMMITTED)) {
+	// this.committedAtomic.decrementAndGet();
+	// transaction.resetTransientFlags(TransactionStatistic.FLAGS_COMMITTED);
+	// }
+	// }
+	//
+	// private void markRollingback(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ROLLINGBACK) == false) {
+	// this.rollingbackAtomic.incrementAndGet();
+	// transaction.affixTransientFlags(TransactionStatistic.FLAGS_ROLLINGBACK);
+	// }
+	// }
+	//
+	// private void unmarkRollingback(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ROLLINGBACK)) {
+	// this.rollingbackAtomic.decrementAndGet();
+	// transaction.resetTransientFlags(TransactionStatistic.FLAGS_ROLLINGBACK);
+	// }
+	// }
+	//
+	// private void markRolledback(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ROLEDBACK) == false) {
+	// this.rolledbackAtomic.incrementAndGet();
+	// transaction.affixTransientFlags(TransactionStatistic.FLAGS_ROLEDBACK);
+	// }
+	// }
+	//
+	// private void unmarkRolledback(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ROLEDBACK)) {
+	// this.rolledbackAtomic.decrementAndGet();
+	// transaction.resetTransientFlags(TransactionStatistic.FLAGS_ROLEDBACK);
+	// }
+	// }
+	//
+	// private void markError(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ERROR) == false) {
+	// this.errorAtomic.incrementAndGet();
+	// transaction.affixTransientFlags(TransactionStatistic.FLAGS_ERROR);
+	// }
+	//
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ERROR_TOTAL) == false) {
+	// this.errorTotalAtomic.incrementAndGet();
+	// transaction.affixTransientFlags(TransactionStatistic.FLAGS_ERROR_TOTAL);
+	// }
+	// }
+	//
+	// private void unmarkErrork(CompensableTransaction transaction) {
+	// if (transaction.containTransientFlags(TransactionStatistic.FLAGS_ERROR)) {
+	// this.errorAtomic.decrementAndGet();
+	// transaction.resetTransientFlags(TransactionStatistic.FLAGS_ERROR);
+	// }
+	// }
+	//
+	// public void fireRecoverTransaction(CompensableTransaction transaction) {
+	// this.totalAtomic.incrementAndGet();
+	// this.errorTotalAtomic.incrementAndGet();
+	// this.errorAtomic.incrementAndGet();
+	// }
+	//
+	// public void fireBeginTransaction(CompensableTransaction transaction) {
+	// this.totalAtomic.incrementAndGet();
+	// this.activeAtomic.incrementAndGet();
+	// transaction.affixTransientFlags(TransactionStatistic.FLAGS_ACTIVE);
+	// }
+	//
+	// public void firePreparingTransaction(CompensableTransaction transaction) {
+	// this.unmarkActive(transaction);
+	//
+	// this.unmarkErrork(transaction);
+	// this.markPreparing(transaction);
+	// }
+	//
+	// public void firePreparedTransaction(CompensableTransaction transaction) {
+	// this.unmarkActive(transaction);
+	// this.unmarkPreparing(transaction);
+	//
+	// this.unmarkErrork(transaction);
+	// this.markPrepared(transaction);
+	// }
+	//
+	// public void fireCommittingTransaction(CompensableTransaction transaction) {
+	// this.unmarkActive(transaction);
+	// this.unmarkPreparing(transaction);
+	// this.unmarkPrepared(transaction);
+	//
+	// this.unmarkErrork(transaction);
+	// this.markCommitting(transaction);
+	// }
+	//
+	// public void fireCommittedTransaction(CompensableTransaction transaction) {
+	// this.unmarkActive(transaction);
+	// this.unmarkPreparing(transaction);
+	// this.unmarkPrepared(transaction);
+	// this.unmarkCommitting(transaction);
+	//
+	// this.unmarkErrork(transaction);
+	// this.markCommitted(transaction);
+	// }
+	//
+	// public void fireRollingBackTransaction(CompensableTransaction transaction) {
+	// this.unmarkActive(transaction);
+	// this.unmarkPreparing(transaction);
+	// this.unmarkPrepared(transaction);
+	// this.unmarkCommitting(transaction);
+	//
+	// this.unmarkErrork(transaction);
+	// this.markRollingback(transaction);
+	// }
+	//
+	// public void fireRolledbackTransaction(CompensableTransaction transaction) {
+	// this.unmarkActive(transaction);
+	// this.unmarkPreparing(transaction);
+	// this.unmarkPrepared(transaction);
+	// this.unmarkCommitting(transaction);
+	// this.unmarkRollingback(transaction);
+	//
+	// this.unmarkErrork(transaction);
+	// this.markRolledback(transaction);
+	// }
+	//
+	// public void fireCompleteFailure(CompensableTransaction transaction) {
+	// this.markError(transaction);
+	// }
+	//
+	// public void fireCleanupTransaction(CompensableTransaction transaction) {
+	// this.unmarkActive(transaction);
+	//
+	// this.unmarkPreparing(transaction);
+	// this.unmarkPrepared(transaction);
+	//
+	// this.unmarkCommitting(transaction);
+	// this.unmarkCommitted(transaction);
+	//
+	// this.unmarkRollingback(transaction);
+	// this.unmarkRolledback(transaction);
+	//
+	// this.unmarkErrork(transaction);
+	// }
+	//
 }

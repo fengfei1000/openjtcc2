@@ -17,14 +17,13 @@ package org.bytesoft.bytetcc.archive;
 
 import java.io.Serializable;
 
-import org.bytesoft.bytetcc.Compensable;
 import org.bytesoft.bytetcc.xa.XidImpl;
 import org.bytesoft.utils.CommonUtils;
 
 public class CompensableArchive {
 	public boolean launchSvc;
 	public XidImpl branchXid;
-	public Compensable<Serializable> service;
+	// public Compensable<Serializable> service;
 	public Serializable variable;
 	public boolean tryCommitted;
 	public boolean confirmed;

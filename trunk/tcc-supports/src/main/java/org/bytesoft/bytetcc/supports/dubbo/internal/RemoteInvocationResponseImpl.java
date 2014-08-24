@@ -17,11 +17,10 @@ package org.bytesoft.bytetcc.supports.dubbo.internal;
 
 import java.io.Serializable;
 
-import org.bytesoft.bytetcc.common.TerminalKey;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationType;
-import org.bytesoft.bytetcc.supports.rmi.RemoteInvocationResponse;
+import org.bytesoft.bytetcc.supports.rmi.TransactionalResponse;
 
-public class RemoteInvocationResponseImpl implements RemoteInvocationResponse, Serializable {
+public class RemoteInvocationResponseImpl implements TransactionalResponse, Serializable {
 	private static final long serialVersionUID = 1L;
 	private transient RemoteInvocationRequestImpl request;
 	private RemoteInvocationType invocationType;
@@ -29,7 +28,6 @@ public class RemoteInvocationResponseImpl implements RemoteInvocationResponse, S
 	private Object transactionContext;
 	private Throwable throwable;
 	private boolean failure;
-	private TerminalKey terminalKey;
 
 	public RemoteInvocationResponseImpl() {
 	}
@@ -71,14 +69,6 @@ public class RemoteInvocationResponseImpl implements RemoteInvocationResponse, S
 		this.invocationType = invocationType;
 	}
 
-	public TerminalKey getTerminalKey() {
-		return terminalKey;
-	}
-
-	public void setTerminalKey(TerminalKey terminalKey) {
-		this.terminalKey = terminalKey;
-	}
-
 	public RemoteInvocationRequestImpl getRequest() {
 		return request;
 	}
@@ -88,7 +78,7 @@ public class RemoteInvocationResponseImpl implements RemoteInvocationResponse, S
 	}
 
 	public String toString() {
-		return String.format("Rmi-Response [%s] bean: %s, method: %s", this.terminalKey,//
+		return String.format("[Rmi-Response] bean: %s, method: %s", //
 				this.request == null ? "" : this.request.getBeanId(),//
 				this.request == null ? "" : this.request.getMethodName());
 	}
