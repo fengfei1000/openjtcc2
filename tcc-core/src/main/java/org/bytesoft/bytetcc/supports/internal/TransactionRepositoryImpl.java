@@ -20,10 +20,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bytesoft.bytejta.common.XidImpl;
 import org.bytesoft.bytetcc.jta.JtaTransaction;
 import org.bytesoft.bytetcc.supports.TransactionLogger;
 import org.bytesoft.bytetcc.supports.TransactionRepository;
-import org.bytesoft.bytetcc.xa.XidImpl;
 
 public class TransactionRepositoryImpl implements TransactionRepository {
 	private final Map<XidImpl, JtaTransaction> xidToTxMap = new ConcurrentHashMap<XidImpl, JtaTransaction>();

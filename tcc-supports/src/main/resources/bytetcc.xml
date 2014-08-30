@@ -17,22 +17,25 @@
 
 	<bean id="xidFactory" class="org.bytesoft.bytetcc.supports.internal.XidFactoryImpl" />
 
-	<bean id="tccTransactionManager" class="org.bytesoft.bytetcc.jta.JtaTransactionManager">
-		<property name="transactionRepository" ref="transactionRepository" />
-		<!--<property name="cleanupProcesser" ref="cleanupWork" />
-		<property name="transactionStatistic" ref="transactionStatistic" />-->
-		<property name="xidFactory" ref="xidFactory" />
+	<bean id="tccTransactionManager" class="org.bytesoft.bytejta.TransactionManagerImpl">
+		<!--<property name="cleanupProcesser" ref="cleanupWork" /> <property name="transactionStatistic" ref="transactionStatistic" 
+			/> -->
 	</bean>
 
 	<bean id="userTransaction" class="org.bytesoft.bytetcc.UserTransactionImpl">
 		<property name="transactionManager" ref="tccTransactionManager" />
 	</bean>
 
-	<bean id="transactionManager" class="org.bytesoft.bytetcc.supports.spring.CompensableJtaTransactionManager">
+	<bean id="transactionManager" class="org.springframework.transaction.jta.JtaTransactionManager">
 		<property name="userTransaction" ref="userTransaction" />
 		<property name="transactionManager" ref="tccTransactionManager" />
 	</bean>
 	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<bean id="transactionConfigurator" class="org.bytesoft.bytejta.common.TransactionConfigurator">
+		<property name="xidFactory" ref="xidFactory" />
+		<property name="transactionManager" ref="tccTransactionManager" />
+	</bean>
 
 	<bean id="transactionRepository" class="org.bytesoft.bytetcc.supports.internal.TransactionRepositoryImpl">
 		<property name="transactionLogger" ref="transactionLogger" />
@@ -46,66 +49,41 @@
 		ref="terminatorMarshaller" /> <property name="serializer" ref="objectSerializer" /> <property name="xidFactory" ref="xidFactory" 
 		/> <property name="instanceKey" ref="terminalKey" /> </bean> -->
 
-	<!--<bean id="compensableMarshaller" class="org.bytesoft.bytetcc.supports.marshall.CompensableMarshallerImpl">
-		<property name="beanFactory" ref="nativeBeanFactory" />
-	</bean>-->
+	<!--<bean id="compensableMarshaller" class="org.bytesoft.bytetcc.supports.marshall.CompensableMarshallerImpl"> <property 
+		name="beanFactory" ref="nativeBeanFactory" /> </bean> -->
 
-<!--
-	<bean id="remoteBeanFactory" class="org.bytesoft.bytetcc.supports.spring.RemoteBeanFactoryImpl">
-		<property name="transactionManager" ref="tccTransactionManager" />
-		<property name="remoteInvocationInterceptor" ref="remoteInvocationInterceptor" />
-		<property name="remoteInvocationServiceFactory" ref="remoteInvocationServiceFactory" />
-	</bean>
-
-	<bean id="nativeBeanFactory" class="org.bytesoft.bytetcc.supports.spring.NativeBeanFactoryImpl">
-		<property name="transactionManager" ref="tccTransactionManager" />
-	</bean>
-
-	<bean id="propagateBeanFactory" class="org.bytesoft.bytetcc.supports.spring.PropagateBeanFactoryImpl">
-		<property name="transactionManager" ref="tccTransactionManager" />
-	</bean>-->
+	<!-- <bean id="remoteBeanFactory" class="org.bytesoft.bytetcc.supports.spring.RemoteBeanFactoryImpl"> <property name="transactionManager" 
+		ref="tccTransactionManager" /> <property name="remoteInvocationInterceptor" ref="remoteInvocationInterceptor" /> <property 
+		name="remoteInvocationServiceFactory" ref="remoteInvocationServiceFactory" /> </bean> <bean id="nativeBeanFactory" class="org.bytesoft.bytetcc.supports.spring.NativeBeanFactoryImpl"> 
+		<property name="transactionManager" ref="tccTransactionManager" /> </bean> <bean id="propagateBeanFactory" class="org.bytesoft.bytetcc.supports.spring.PropagateBeanFactoryImpl"> 
+		<property name="transactionManager" ref="tccTransactionManager" /> </bean> -->
 
 	<bean id="transactionStatistic" class="org.bytesoft.bytetcc.supports.internal.TransactionStatisticImpl" />
 
-	<!--<bean id="recoveryManager" class="org.bytesoft.bytetcc.recovery.RecoveryManager">
-		<property name="transactionManager" ref="tccTransactionManager" />
-		<property name="transactionStatistic" ref="transactionStatistic" />
-	</bean>
-
-	<bean id="recoveryWork" class="org.bytesoft.bytetcc.supports.adapter.work.TransactionRecoveryWork">
-		<property name="recoveryManager" ref="recoveryManager" />
-		<property name="expireIntervalSeconds" value="30" />
-	</bean>-->
+	<!--<bean id="recoveryManager" class="org.bytesoft.bytetcc.recovery.RecoveryManager"> <property name="transactionManager" 
+		ref="tccTransactionManager" /> <property name="transactionStatistic" ref="transactionStatistic" /> </bean> <bean id="recoveryWork" 
+		class="org.bytesoft.bytetcc.supports.adapter.work.TransactionRecoveryWork"> <property name="recoveryManager" ref="recoveryManager" 
+		/> <property name="expireIntervalSeconds" value="30" /> </bean> -->
 	<bean id="timingWork" class="org.bytesoft.bytetcc.supports.adapter.work.TransactionTimingWork">
-		<!--<property name="timingProcesser" ref="tccTransactionManager" />-->
+		<!--<property name="timingProcesser" ref="tccTransactionManager" /> -->
 	</bean>
 	<bean id="cleanupWork" class="org.bytesoft.bytetcc.supports.adapter.work.TransactionCleanupWork" />
-	<!--<bean id="resourceAdapter" class="org.springframework.jca.support.ResourceAdapterFactoryBean">
-		<property name="resourceAdapter">
-			<bean class="org.bytesoft.bytetcc.supports.adapter.TransactionResourceAdapter">
-				<property name="cleanupWork" ref="cleanupWork" />
-				<property name="recoveryWork" ref="recoveryWork" />
-				<property name="timingWork" ref="timingWork" />
-				<property name="recoveryManager" ref="recoveryManager" />
-			</bean>
-		</property>
-		<property name="workManager">
-			<bean class="org.springframework.jca.work.SimpleTaskWorkManager" />
-		</property>
-	</bean>-->
+	<!--<bean id="resourceAdapter" class="org.springframework.jca.support.ResourceAdapterFactoryBean"> <property name="resourceAdapter"> 
+		<bean class="org.bytesoft.bytetcc.supports.adapter.TransactionResourceAdapter"> <property name="cleanupWork" ref="cleanupWork" 
+		/> <property name="recoveryWork" ref="recoveryWork" /> <property name="timingWork" ref="timingWork" /> <property name="recoveryManager" 
+		ref="recoveryManager" /> </bean> </property> <property name="workManager"> <bean class="org.springframework.jca.work.SimpleTaskWorkManager" 
+		/> </property> </bean> -->
 
-	<!--<bean id="remoteInvocationService" class="org.bytesoft.bytetcc.supports.dubbo.internal.RemoteInvocationServerInvoker">
-		<property name="transactionManager" ref="tccTransactionManager" />
-		<property name="beanFactory" ref="nativeBeanFactory" />
-		<property name="remoteInvocationInterceptor" ref="remoteInvocationInterceptor" />
-	</bean>-->
+	<!--<bean id="remoteInvocationService" class="org.bytesoft.bytetcc.supports.dubbo.internal.RemoteInvocationServerInvoker"> 
+		<property name="transactionManager" ref="tccTransactionManager" /> <property name="beanFactory" ref="nativeBeanFactory" /> 
+		<property name="remoteInvocationInterceptor" ref="remoteInvocationInterceptor" /> </bean> -->
 
 	<bean id="terminatorMarshaller" class="org.bytesoft.bytetcc.supports.marshall.TerminatorMarshallerImpl" />
 
 	<bean id="remoteInvocationServiceFactory" class="org.bytesoft.bytetcc.supports.dubbo.internal.RemoteInvocationServiceFactoryImpl" />
 
 	<bean id="remoteInvocationInterceptor" class="org.bytesoft.bytetcc.supports.internal.TransactionalInterceptorImpl">
-		<!--<property name="transactionManager" ref="tccTransactionManager" />-->
+		<!--<property name="transactionManager" ref="tccTransactionManager" /> -->
 		<property name="terminatorMarshaller" ref="terminatorMarshaller" />
 	</bean>
 

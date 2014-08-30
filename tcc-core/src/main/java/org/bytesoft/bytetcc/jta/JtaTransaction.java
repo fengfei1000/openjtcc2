@@ -11,9 +11,9 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.xa.XAResource;
 
-import org.bytesoft.bytetcc.common.TransactionContext;
-import org.bytesoft.bytetcc.common.TransactionStatus;
 import org.bytesoft.bytetcc.supports.TransactionLogger;
+import org.bytesoft.transaction.TransactionContext;
+import org.bytesoft.transaction.TransactionStatus;
 
 public class JtaTransaction implements Transaction {
 	protected TransactionLogger transactionLogger;

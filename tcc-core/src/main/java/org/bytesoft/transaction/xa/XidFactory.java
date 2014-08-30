@@ -13,23 +13,16 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this distribution; if not, see <http://www.gnu.org/licenses/>.
  */
-package org.bytesoft.bytetcc.xa;
+package org.bytesoft.transaction.xa;
 
-public class TxException extends javax.transaction.xa.XAException {
-	private static final long serialVersionUID = 1L;
+import org.bytesoft.bytejta.common.XidImpl;
 
-	public static int XAER_REMOTE = Integer.MIN_VALUE;
+public interface XidFactory {
+	public XidImpl createGlobalXid();
 
-	public TxException() {
-		super();
-	}
+	public XidImpl createGlobalXid(byte[] globalTransactionId);
 
-	public TxException(int errcode) {
-		super(errcode);
-	}
+	public XidImpl createBranchXid(XidImpl globalXid);
 
-	public TxException(String s) {
-		super(s);
-	}
-
+	public XidImpl createBranchXid(XidImpl globalXid, byte[] branchQualifier);
 }

@@ -21,11 +21,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bytesoft.bytejta.common.XidImpl;
 import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.bytetcc.archive.TransactionArchive;
-import org.bytesoft.bytetcc.common.TransactionContext;
 import org.bytesoft.bytetcc.supports.TransactionLogger;
-import org.bytesoft.bytetcc.xa.XidImpl;
+import org.bytesoft.transaction.TransactionContext;
 
 public class TransactionLoggerImpl implements TransactionLogger {
 	private TransactionLogger delegate = TransactionLogger.defaultTransactionLogger;

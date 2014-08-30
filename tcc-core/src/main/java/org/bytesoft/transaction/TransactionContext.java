@@ -13,11 +13,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this distribution; if not, see <http://www.gnu.org/licenses/>.
  */
-package org.bytesoft.bytetcc.common;
+package org.bytesoft.transaction;
 
 import java.io.Serializable;
 
-import org.bytesoft.bytetcc.xa.XidImpl;
+import org.bytesoft.bytejta.common.XidImpl;
 
 public class TransactionContext implements Serializable, Cloneable {
 	private static final long serialVersionUID = 1L;

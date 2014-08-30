@@ -13,12 +13,21 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this distribution; if not, see <http://www.gnu.org/licenses/>.
  */
-package org.bytesoft.bytetcc.supports.rmi;
+package org.bytesoft.transaction.xa;
 
-public interface TransactionalResponse {
+public class RemoteXAException extends javax.transaction.xa.XAException {
+	private static final long serialVersionUID = 1L;
 
-	public Object getTransactionContext();
+	public RemoteXAException() {
+		super();
+	}
 
-	public void setTransactionContext(Object transactionContext);
+	public RemoteXAException(int errcode) {
+		super(errcode);
+	}
+
+	public RemoteXAException(String s) {
+		super(s);
+	}
 
 }

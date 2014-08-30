@@ -17,15 +17,15 @@ package org.bytesoft.bytetcc.supports.internal;
 
 import java.util.logging.Logger;
 
+import org.bytesoft.bytejta.common.XidImpl;
 import org.bytesoft.bytetcc.TransactionImpl;
 import org.bytesoft.bytetcc.TransactionManagerImpl;
-import org.bytesoft.bytetcc.common.TransactionContext;
-import org.bytesoft.bytetcc.supports.rmi.TransactionalInterceptor;
-import org.bytesoft.bytetcc.supports.rmi.TransactionalRequest;
-import org.bytesoft.bytetcc.supports.rmi.TransactionalResponse;
 import org.bytesoft.bytetcc.supports.serialize.TerminatorMarshaller;
-import org.bytesoft.bytetcc.xa.XidFactory;
-import org.bytesoft.bytetcc.xa.XidImpl;
+import org.bytesoft.transaction.TransactionContext;
+import org.bytesoft.transaction.rpc.TransactionalInterceptor;
+import org.bytesoft.transaction.rpc.TransactionalRequest;
+import org.bytesoft.transaction.rpc.TransactionalResponse;
+import org.bytesoft.transaction.xa.XidFactory;
 
 public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 	private static final Logger logger = Logger.getLogger("bytetcc");

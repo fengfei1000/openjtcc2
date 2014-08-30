@@ -13,37 +13,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this distribution; if not, see <http://www.gnu.org/licenses/>.
  */
-package org.bytesoft.bytetcc.internal;
+package org.bytesoft.transaction.rpc;
 
-import org.bytesoft.bytetcc.jta.JtaTransaction;
+public interface TransactionalRequest {
 
-public class AssociatedContext {
-	private Thread thread;
-	private JtaTransaction transaction;
-	private boolean expired;
+	public Object getTransactionContext();
 
-	public Thread getThread() {
-		return thread;
-	}
-
-	public void setThread(Thread thread) {
-		this.thread = thread;
-	}
-
-	public JtaTransaction getTransaction() {
-		return transaction;
-	}
-
-	public void setTransaction(JtaTransaction transaction) {
-		this.transaction = transaction;
-	}
-
-	public boolean isExpired() {
-		return expired;
-	}
-
-	public void setExpired(boolean expired) {
-		this.expired = expired;
-	}
+	public void setTransactionContext(Object transactionContext);
 
 }

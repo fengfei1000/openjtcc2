@@ -12,12 +12,12 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 
-import org.bytesoft.bytetcc.common.TransactionContext;
-import org.bytesoft.bytetcc.common.TransactionStatus;
-import org.bytesoft.bytetcc.internal.AssociatedContext;
+import org.bytesoft.bytejta.common.XidImpl;
 import org.bytesoft.bytetcc.supports.TransactionRepository;
-import org.bytesoft.bytetcc.xa.XidFactory;
-import org.bytesoft.bytetcc.xa.XidImpl;
+import org.bytesoft.transaction.AssociatedContext;
+import org.bytesoft.transaction.TransactionContext;
+import org.bytesoft.transaction.TransactionStatus;
+import org.bytesoft.transaction.xa.XidFactory;
 
 public class JtaTransactionManager implements TransactionManager {
 	protected int transactionTimeout = 5 * 60;

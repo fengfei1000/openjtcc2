@@ -22,16 +22,14 @@ import javax.transaction.TransactionManager;
 
 import org.bytesoft.bytetcc.TransactionImpl;
 import org.bytesoft.bytetcc.TransactionManagerImpl;
-import org.bytesoft.bytetcc.common.TransactionContext;
 import org.bytesoft.bytetcc.supports.NativeBeanFactory;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationService;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationType;
-import org.bytesoft.bytetcc.supports.rmi.TransactionalInterceptor;
 
 public class RemoteInvocationServerInvoker implements RemoteInvocationService {
 	private NativeBeanFactory beanFactory;
 	private TransactionManager transactionManager;
-	private TransactionalInterceptor remoteInvocationInterceptor;
+//	private TransactionalInterceptor remoteInvocationInterceptor;
 
 	public RemoteInvocationResponseImpl invoke(RemoteInvocationRequestImpl request) {
 		RemoteInvocationResponseImpl response = this.validateRequest(request);
@@ -86,7 +84,7 @@ public class RemoteInvocationServerInvoker implements RemoteInvocationService {
 	private RemoteInvocationResponseImpl handleCleanupRequest(RemoteInvocationRequestImpl request,
 			RemoteInvocationResponseImpl response) {
 		try {
-			TransactionContext context = (TransactionContext) request.getTransactionContext();
+//			TransactionContext context = (TransactionContext) request.getTransactionContext();
 			TransactionManagerImpl txm = (TransactionManagerImpl) this.transactionManager;
 			TransactionImpl transaction = null;// TODO txm.getTransaction(context.getGlobalXid());
 			if (transaction == null) {
@@ -128,7 +126,7 @@ public class RemoteInvocationServerInvoker implements RemoteInvocationService {
 
 		TransactionManagerImpl txManager = (TransactionManagerImpl) this.transactionManager;
 		try {
-			TransactionContext context = (TransactionContext) request.getTransactionContext();
+//			TransactionContext context = (TransactionContext) request.getTransactionContext();
 			TransactionImpl transaction = null;// TODO txManager.getTransaction(context.getGlobalXid());
 
 			if (transaction == null) {
@@ -229,15 +227,15 @@ public class RemoteInvocationServerInvoker implements RemoteInvocationService {
 	}
 
 	private void afterReceiveRequest(RemoteInvocationRequestImpl request) {
-		if (this.remoteInvocationInterceptor != null) {
-			this.remoteInvocationInterceptor.afterReceiveRequest(request);
-		}
+//		if (this.remoteInvocationInterceptor != null) {
+//			this.remoteInvocationInterceptor.afterReceiveRequest(request);
+//		}
 	}
 
 	private void beforeSendResponse(RemoteInvocationResponseImpl response) {
-		if (this.remoteInvocationInterceptor != null) {
-			this.remoteInvocationInterceptor.beforeSendResponse(response);
-		}
+//		if (this.remoteInvocationInterceptor != null) {
+//			this.remoteInvocationInterceptor.beforeSendResponse(response);
+//		}
 	}
 
 	private Class<?> loadClass(String clsName) throws ClassNotFoundException {
@@ -261,9 +259,9 @@ public class RemoteInvocationServerInvoker implements RemoteInvocationService {
 		return Thread.currentThread().getContextClassLoader().loadClass(clsName);
 	}
 
-	public void setRemoteInvocationInterceptor(TransactionalInterceptor remoteInvocationInterceptor) {
-		this.remoteInvocationInterceptor = remoteInvocationInterceptor;
-	}
+//	public void setRemoteInvocationInterceptor(TransactionalInterceptor remoteInvocationInterceptor) {
+//		this.remoteInvocationInterceptor = remoteInvocationInterceptor;
+//	}
 
 	public void setBeanFactory(NativeBeanFactory beanFactory) {
 		this.beanFactory = beanFactory;

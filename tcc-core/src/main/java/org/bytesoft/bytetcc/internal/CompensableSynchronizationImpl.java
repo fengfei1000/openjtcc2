@@ -17,13 +17,13 @@ package org.bytesoft.bytetcc.internal;
 
 import javax.transaction.Synchronization;
 
+import org.bytesoft.bytejta.common.XidImpl;
 import org.bytesoft.bytetcc.supports.CompensableSynchronization;
-import org.bytesoft.bytetcc.xa.XidImpl;
 
-public class SynchronizationImpl extends CompensableSynchronization {
+public class CompensableSynchronizationImpl extends CompensableSynchronization {
 	public Synchronization synchronization;
 
-	public SynchronizationImpl(XidImpl globalXid, Synchronization sync) {
+	public CompensableSynchronizationImpl(XidImpl globalXid, Synchronization sync) {
 		super(globalXid);
 		this.synchronization = sync;
 	}

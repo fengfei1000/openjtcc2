@@ -15,9 +15,7 @@
  */
 package org.bytesoft.bytetcc.recovery;
 
-import java.rmi.RemoteException;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 import javax.transaction.HeuristicMixedException;
@@ -27,16 +25,15 @@ import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 
+import org.bytesoft.bytejta.common.XidImpl;
 import org.bytesoft.bytetcc.TransactionImpl;
 import org.bytesoft.bytetcc.TransactionManagerImpl;
-import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.bytetcc.archive.TransactionArchive;
-import org.bytesoft.bytetcc.common.TransactionContext;
-import org.bytesoft.bytetcc.common.TransactionStatus;
 import org.bytesoft.bytetcc.supports.TransactionLogger;
 import org.bytesoft.bytetcc.supports.TransactionRepository;
-import org.bytesoft.bytetcc.supports.TransactionStatistic;
-import org.bytesoft.bytetcc.xa.XidImpl;
+import org.bytesoft.transaction.TransactionContext;
+import org.bytesoft.transaction.TransactionStatistic;
+import org.bytesoft.transaction.TransactionStatus;
 
 public class RecoveryManager {
 

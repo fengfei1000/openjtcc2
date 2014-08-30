@@ -18,9 +18,8 @@ package org.bytesoft.bytetcc.supports.dubbo.internal;
 import java.io.Serializable;
 
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationType;
-import org.bytesoft.bytetcc.supports.rmi.TransactionalResponse;
 
-public class RemoteInvocationResponseImpl implements TransactionalResponse, Serializable {
+public class RemoteInvocationResponseImpl implements /* TransactionalResponse, */Serializable {
 	private static final long serialVersionUID = 1L;
 	private transient RemoteInvocationRequestImpl request;
 	private RemoteInvocationType invocationType;
