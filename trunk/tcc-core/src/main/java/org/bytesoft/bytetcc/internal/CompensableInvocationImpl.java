@@ -5,11 +5,11 @@ import java.lang.reflect.Method;
 
 import javax.transaction.SystemException;
 
+import org.bytesoft.bytejta.common.XidImpl;
 import org.bytesoft.bytetcc.CompensableContext;
 import org.bytesoft.bytetcc.CompensableInvocation;
 import org.bytesoft.bytetcc.TransactionImpl;
 import org.bytesoft.bytetcc.supports.CompensableSynchronization;
-import org.bytesoft.bytetcc.xa.XidImpl;
 
 public class CompensableInvocationImpl extends CompensableSynchronization implements CompensableContext,
 		CompensableInvocation {

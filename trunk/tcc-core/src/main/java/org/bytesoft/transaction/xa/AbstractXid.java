@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this distribution; if not, see <http://www.gnu.org/licenses/>.
  */
-package org.bytesoft.bytetcc.xa;
+package org.bytesoft.transaction.xa;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -22,21 +22,20 @@ import javax.transaction.xa.Xid;
 
 import org.bytesoft.utils.ByteUtils;
 
-public class XidImpl implements Xid, Serializable {
+public abstract class AbstractXid implements Xid, Serializable {
 	private static final long serialVersionUID = 1L;
 
-	public static final int xidFormatId = 13923;
+	public static final int XidFormatId = 8127;
 
-	private final int formatId = xidFormatId;
-	private byte[] globalTransactionId;
-	private byte[] branchQualifier;
-	private transient XidFactory xidFactory;
+	protected final int formatId = XidFormatId;
+	protected byte[] globalTransactionId;
+	protected byte[] branchQualifier;
 
-	public XidImpl(byte[] global) {
+	public AbstractXid(byte[] global) {
 		this(global, new byte[0]);
 	}
 
-	public XidImpl(byte[] global, byte[] branch) {
+	public AbstractXid(byte[] global, byte[] branch) {
 		if (global == null) {
 			throw new IllegalArgumentException("全局事务ID(globalTransactionId)不能为空.");
 		} else if (global.length > MAXGTRIDSIZE) {
@@ -52,25 +51,9 @@ public class XidImpl implements Xid, Serializable {
 		this.branchQualifier = branch;
 	}
 
-	public XidImpl getGlobalXid() {
-		if (this.globalTransactionId == null || this.globalTransactionId.length == 0) {
-			throw new IllegalStateException();
-		} else if (this.branchQualifier != null && this.branchQualifier.length > 0) {
-			return this.xidFactory.createGlobalXid(this.globalTransactionId);
-		} else {
-			return this;
-		}
-	}
+	public abstract AbstractXid getGlobalXid();
 
-	public XidImpl createBranchXid() {
-		if (this.globalTransactionId == null || this.globalTransactionId.length == 0) {
-			throw new IllegalStateException();
-		} else if (this.branchQualifier != null && this.branchQualifier.length > 0) {
-			throw new IllegalStateException();
-		} else {
-			return this.xidFactory.createBranchXid(this);
-		}
-	}
+	public abstract AbstractXid createBranchXid();
 
 	public byte[] getBranchQualifier() {
 		return this.branchQualifier;
@@ -82,14 +65,6 @@ public class XidImpl implements Xid, Serializable {
 
 	public byte[] getGlobalTransactionId() {
 		return this.globalTransactionId;
-	}
-
-	public XidFactory getXidFactory() {
-		return xidFactory;
-	}
-
-	public void setXidFactory(XidFactory xidFactory) {
-		this.xidFactory = xidFactory;
 	}
 
 	public int hashCode() {
@@ -109,7 +84,7 @@ public class XidImpl implements Xid, Serializable {
 		} else if (getClass() != obj.getClass()) {
 			return false;
 		}
-		XidImpl other = (XidImpl) obj;
+		AbstractXid other = (AbstractXid) obj;
 		if (formatId != other.formatId) {
 			return false;
 		} else if (Arrays.equals(branchQualifier, other.branchQualifier) == false) {

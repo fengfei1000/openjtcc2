@@ -1,0 +1,126 @@
+package org.bytesoft.transaction.xa;
+
+import javax.transaction.xa.XAException;
+import javax.transaction.xa.XAResource;
+import javax.transaction.xa.Xid;
+
+public class XAResourceArchive implements XAResource {
+	private XAResourceDescriptor descriptor;
+	private boolean delisted;
+	private Xid xid;
+	private int vote;
+	private boolean completed;
+	private boolean readonly;
+	private boolean committed;
+	private boolean rolledback;
+
+	public void commit(Xid xid, boolean onePhase) throws XAException {
+		descriptor.commit(xid, onePhase);
+	}
+
+	public void end(Xid xid, int flags) throws XAException {
+		descriptor.end(xid, flags);
+	}
+
+	public void forget(Xid xid) throws XAException {
+		descriptor.forget(xid);
+	}
+
+	public int getTransactionTimeout() throws XAException {
+		return descriptor.getTransactionTimeout();
+	}
+
+	public boolean isSameRM(XAResource xares) throws XAException {
+		if (XAResourceArchive.class.isInstance(xares)) {
+			XAResourceArchive archive = (XAResourceArchive) xares;
+			return descriptor.isSameRM(archive.getDescriptor());
+		} else {
+			return descriptor.isSameRM(xares);
+		}
+	}
+
+	public int prepare(Xid xid) throws XAException {
+		return descriptor.prepare(xid);
+	}
+
+	public Xid[] recover(int flag) throws XAException {
+		return descriptor.recover(flag);
+	}
+
+	public void rollback(Xid xid) throws XAException {
+		descriptor.rollback(xid);
+	}
+
+	public boolean setTransactionTimeout(int seconds) throws XAException {
+		return descriptor.setTransactionTimeout(seconds);
+	}
+
+	public void start(Xid xid, int flags) throws XAException {
+		descriptor.start(xid, flags);
+	}
+
+	public XAResourceDescriptor getDescriptor() {
+		return descriptor;
+	}
+
+	public void setDescriptor(XAResourceDescriptor descriptor) {
+		this.descriptor = descriptor;
+	}
+
+	public boolean isDelisted() {
+		return delisted;
+	}
+
+	public void setDelisted(boolean delisted) {
+		this.delisted = delisted;
+	}
+
+	public Xid getXid() {
+		return xid;
+	}
+
+	public void setXid(Xid xid) {
+		this.xid = xid;
+	}
+
+	public int getVote() {
+		return vote;
+	}
+
+	public void setVote(int vote) {
+		this.vote = vote;
+	}
+
+	public boolean isCompleted() {
+		return completed;
+	}
+
+	public void setCompleted(boolean completed) {
+		this.completed = completed;
+	}
+
+	public boolean isCommitted() {
+		return committed;
+	}
+
+	public void setCommitted(boolean committed) {
+		this.committed = committed;
+	}
+
+	public boolean isRolledback() {
+		return rolledback;
+	}
+
+	public void setRolledback(boolean rolledback) {
+		this.rolledback = rolledback;
+	}
+
+	public boolean isReadonly() {
+		return readonly;
+	}
+
+	public void setReadonly(boolean readonly) {
+		this.readonly = readonly;
+	}
+
+}

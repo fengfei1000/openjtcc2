@@ -5,7 +5,6 @@ import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 
 import org.bytesoft.bytetcc.TransactionManagerImpl;
-import org.bytesoft.bytetcc.common.TransactionContext;
 import org.bytesoft.bytetcc.jta.JtaTransaction;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.jta.JtaTransactionManager;
@@ -29,13 +28,13 @@ public class CompensableJtaTransactionManager extends JtaTransactionManager {
 			JtaTransaction transaction = transactionManager.getCurrentTransaction();
 			transaction.afterInitialization(null);
 		} else {
-			TransactionContext transactionContext = existsTransaction.getTransactionContext();
-			boolean compensable = transactionContext.isCompensable();
-			boolean coordinator = transactionContext.isCoordinator();
-			if (compensable && coordinator == false) {
-				JtaTransaction transaction = transactionManager.getCurrentTransaction();
-				transaction.afterInitialization(null);
-			}
+			// TransactionContext transactionContext = existsTransaction.getTransactionContext();
+			// boolean compensable = transactionContext.isCompensable();
+			// boolean coordinator = transactionContext.isCoordinator();
+			// if (compensable && coordinator == false) {
+			// JtaTransaction transaction = transactionManager.getCurrentTransaction();
+			// transaction.afterInitialization(null);
+			// }
 		}
 	}
 

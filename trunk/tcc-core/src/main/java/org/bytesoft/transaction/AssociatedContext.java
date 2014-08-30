@@ -13,14 +13,37 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this distribution; if not, see <http://www.gnu.org/licenses/>.
  */
-package org.bytesoft.bytetcc.xa;
+package org.bytesoft.transaction;
 
-public interface XidFactory {
-	public XidImpl createGlobalXid();
+import javax.transaction.Transaction;
 
-	public XidImpl createGlobalXid(byte[] globalTransactionId);
+public class AssociatedContext<T extends Transaction> {
+	private Thread thread;
+	private T transaction;
+	private boolean expired;
 
-	public XidImpl createBranchXid(XidImpl globalXid);
+	public Thread getThread() {
+		return thread;
+	}
 
-	public XidImpl createBranchXid(XidImpl globalXid, byte[] branchQualifier);
+	public void setThread(Thread thread) {
+		this.thread = thread;
+	}
+
+	public T getTransaction() {
+		return transaction;
+	}
+
+	public void setTransaction(T transaction) {
+		this.transaction = transaction;
+	}
+
+	public boolean isExpired() {
+		return expired;
+	}
+
+	public void setExpired(boolean expired) {
+		this.expired = expired;
+	}
+
 }

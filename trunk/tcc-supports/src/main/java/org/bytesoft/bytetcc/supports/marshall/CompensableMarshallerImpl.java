@@ -15,14 +15,8 @@
  */
 package org.bytesoft.bytetcc.supports.marshall;
 
-import java.io.Serializable;
-import java.lang.reflect.Proxy;
-
-import org.bytesoft.bytetcc.Compensable;
 import org.bytesoft.bytetcc.supports.NativeBeanFactory;
-import org.bytesoft.bytetcc.supports.serialize.CompensableInfo;
 import org.bytesoft.bytetcc.supports.serialize.CompensableMarshaller;
-import org.bytesoft.bytetcc.supports.spring.tmp.NativeCompensableProxy;
 
 public class CompensableMarshallerImpl implements CompensableMarshaller/* , ApplicationContextAware */{
 	private NativeBeanFactory beanFactory;

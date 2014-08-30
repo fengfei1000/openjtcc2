@@ -22,12 +22,10 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.net.SocketException;
 import java.rmi.RemoteException;
 
-import org.bytesoft.bytetcc.common.TransactionContext;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationService;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationServiceMarshaller;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationType;
 import org.bytesoft.bytetcc.supports.serialize.TerminatorInfo;
-import org.bytesoft.bytetcc.xa.XidImpl;
 
 public class RemoteTerminatorHandler implements InvocationHandler {
 	private TerminatorInfo remoteTerminatorInfo;
@@ -65,12 +63,12 @@ public class RemoteTerminatorHandler implements InvocationHandler {
 			request.setParameterTypes(parameterTypes);
 			request.setParameterValues(args);
 
-			TransactionContext transactionContext = new TransactionContext();
-			XidImpl branchXid = this.remoteTerminatorInfo.getBranchXid();
+//			TransactionContext transactionContext = new TransactionContext();
+//			XidImpl branchXid = this.remoteTerminatorInfo.getBranchXid();
 			// XidImpl globalXid = new XidImpl(branchXid.getGlobalTransactionId());
-			transactionContext.setCurrentXid(branchXid);
+//			transactionContext.setCurrentXid(branchXid);
 			// transactionContext.setGlobalXid(globalXid);
-			request.setTransactionContext(transactionContext);
+//			request.setTransactionContext(transactionContext);
 
 			if (this.remoteInvocationService == null) {
 				try {

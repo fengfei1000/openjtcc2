@@ -28,13 +28,12 @@ import org.bytesoft.bytetcc.TransactionManagerImpl;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationService;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationServiceFactory;
 import org.bytesoft.bytetcc.supports.dubbo.RemoteInvocationType;
-import org.bytesoft.bytetcc.supports.rmi.TransactionalInterceptor;
 
 public class RemoteInvocationClientInvoker implements InvocationHandler {
 	private String beanId;
 	// private TerminalKey terminalKey;
 	private RemoteInvocationServiceFactory remoteInvocationServiceFactory;
-	private TransactionalInterceptor remoteInvocationInterceptor;
+//	private TransactionalInterceptor remoteInvocationInterceptor;
 	private TransactionManager transactionManager;
 	private Class<?> remoteInterfaceClass;
 
@@ -209,9 +208,9 @@ public class RemoteInvocationClientInvoker implements InvocationHandler {
 		this.remoteInvocationServiceFactory = remoteInvocationServiceFactory;
 	}
 
-	public void setRemoteInvocationInterceptor(TransactionalInterceptor remoteInvocationInterceptor) {
-		this.remoteInvocationInterceptor = remoteInvocationInterceptor;
-	}
+//	public void setRemoteInvocationInterceptor(TransactionalInterceptor remoteInvocationInterceptor) {
+//		this.remoteInvocationInterceptor = remoteInvocationInterceptor;
+//	}
 
 	public TransactionManager getTransactionManager() {
 		return transactionManager;

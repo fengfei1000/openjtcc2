@@ -17,7 +17,7 @@ package org.bytesoft.bytetcc.supports.serialize;
 
 import java.io.Serializable;
 
-import org.bytesoft.bytetcc.xa.XidImpl;
+import org.bytesoft.bytejta.common.XidImpl;
 import org.bytesoft.utils.CommonUtils;
 
 public class TerminatorInfo implements Serializable {
