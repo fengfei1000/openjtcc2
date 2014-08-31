@@ -38,21 +38,13 @@ public class TransactionManagerImpl implements TransactionManager {
 		long expiredTime = createdTime + (timeoutSeconds * 1000L);
 		transactionContext.setCreatedTime(createdTime);
 		transactionContext.setExpiredTime(expiredTime);
-		// transactionContext.setTerminalKey(this.getTerminalKey());// TODO
 		XidFactory xidFactory = TransactionConfigurator.getInstance().getXidFactory();
 		XidImpl globalXid = xidFactory.createGlobalXid();
-		// transactionContext.setGlobalXid(globalXid);
 		// transactionContext.setCreationXid(globalXid);
 		transactionContext.setCurrentXid(globalXid);
 
 		TransactionImpl transaction = new TransactionImpl(transactionContext);
 		// transaction.setTransactionStatistic(this.transactionStatistic);
-
-		// transaction.setTransactionTimeout(timeoutSeconds);
-		// transaction.setTransactionManager(this);
-		// transaction.setTransactionLogger(this.transactionRepository.getTransactionLogger());
-
-		// transaction.associateInternalTransaction();
 
 		AssociatedContext<TransactionImpl> actx = new AssociatedContext<TransactionImpl>();
 		actx.setTransaction(transaction);
@@ -70,7 +62,7 @@ public class TransactionManagerImpl implements TransactionManager {
 	public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
 			SecurityException, IllegalStateException, SystemException {
 		AssociatedContext<TransactionImpl> associated = this.associateds.remove(Thread.currentThread());
-		Transaction transaction = associated == null ? null : associated.getTransaction();
+		TransactionImpl transaction = associated == null ? null : associated.getTransaction();
 		if (transaction == null) {
 			throw new IllegalStateException();
 		} else if (transaction.getStatus() == Status.STATUS_ROLLEDBACK) {
@@ -84,22 +76,16 @@ public class TransactionManagerImpl implements TransactionManager {
 			throw new IllegalStateException();
 		}
 
+		boolean failure = true;
 		try {
 			transaction.commit();
-		} catch (RollbackException ex) {
-			throw ex;
-		} catch (HeuristicMixedException ex) {
-			throw ex;
-		} catch (HeuristicRollbackException ex) {
-			throw ex;
-		} catch (SecurityException ex) {
-			throw ex;
-		} catch (IllegalStateException ex) {
-			throw ex;
-		} catch (SystemException ex) {
-			throw ex;
-		} catch (RuntimeException ex) {
-			throw ex;
+			failure = false;
+		} finally {
+			if (failure) {
+				TransactionContext transactionContext = transaction.getTransactionContext();
+				XidImpl globalXid = transactionContext.getGlobalXid();
+				TransactionRepository.getInstance().putErrorTransaction(globalXid, transaction);
+			}
 		}
 
 	}
@@ -131,7 +117,7 @@ public class TransactionManagerImpl implements TransactionManager {
 
 	public void rollback() throws IllegalStateException, SecurityException, SystemException {
 		AssociatedContext<TransactionImpl> associated = this.associateds.remove(Thread.currentThread());
-		Transaction transaction = associated == null ? null : associated.getTransaction();
+		TransactionImpl transaction = associated == null ? null : associated.getTransaction();
 		if (transaction == null) {
 			throw new IllegalStateException();
 		} else if (transaction.getStatus() == Status.STATUS_ROLLEDBACK) {
@@ -140,15 +126,18 @@ public class TransactionManagerImpl implements TransactionManager {
 			throw new SystemException();
 		}
 
+		boolean failure = true;
 		try {
 			transaction.rollback();
-		} catch (IllegalStateException ex) {
-			throw ex;
-		} catch (SystemException ex) {
-			throw ex;
-		} catch (RuntimeException ex) {
-			throw ex;
+			failure = false;
+		} finally {
+			if (failure) {
+				TransactionContext transactionContext = transaction.getTransactionContext();
+				XidImpl globalXid = transactionContext.getGlobalXid();
+				TransactionRepository.getInstance().putErrorTransaction(globalXid, transaction);
+			}
 		}
+
 	}
 
 	public void setRollbackOnly() throws IllegalStateException, SystemException {
