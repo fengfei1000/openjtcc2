@@ -21,7 +21,6 @@ import org.bytesoft.transaction.RemoteSystemException;
 import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.SynchronizationImpl;
 import org.bytesoft.transaction.TransactionContext;
-import org.bytesoft.transaction.TransactionStatus;
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.xa.RemoteXAException;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
@@ -31,7 +30,7 @@ import org.bytesoft.utils.ByteUtils;
 public class TransactionImpl implements Transaction {
 	static final Logger logger = Logger.getLogger(TransactionImpl.class.getSimpleName());
 
-	private TransactionStatus transactionStatus;
+	private int transactionStatus;
 	private final TransactionContext transactionContext;
 	private final XATerminator nativeTerminator;
 	private final XATerminator remoteTerminator;
@@ -61,11 +60,11 @@ public class TransactionImpl implements Transaction {
 
 	private void afterCompletion() {
 		int length = this.synchronizations.size();
-		int status = this.transactionStatus.getTransactionStatus();
+		// int status = this.transactionStatus.getTransactionStatus();
 		for (int i = 0; i < length; i++) {
 			SynchronizationImpl synchronization = this.synchronizations.get(i);
 			try {
-				synchronization.afterCompletion(status);
+				synchronization.afterCompletion(this.transactionStatus);
 			} catch (RuntimeException rex) {
 				// ignore
 			}
@@ -102,17 +101,18 @@ public class TransactionImpl implements Transaction {
 	private synchronized boolean checkBeforeCommit() throws RollbackException, IllegalStateException,
 			RollbackRequiredException {
 
-		if (this.transactionStatus.isRolledBack()) {
+		if (this.transactionStatus == Status.STATUS_ROLLEDBACK) {
 			throw new RollbackException();
-		} else if (this.transactionStatus.isRollingBack()) {
+		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
 			throw new RollbackRequiredException();
-		} else if (this.transactionStatus.isMarkedRollbackOnly()) {
+		} else if (this.transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
 			throw new RollbackRequiredException();
-		} else if (this.transactionStatus.isActive()) {
+		} else if (this.transactionStatus == Status.STATUS_ACTIVE) {
 			return false;
-		} else if (this.transactionStatus.isCommitted()) {
+		} else if (this.transactionStatus == Status.STATUS_COMMITTED) {
 			return true;
 		}
+
 		throw new IllegalStateException();
 
 	}
@@ -234,7 +234,7 @@ public class TransactionImpl implements Transaction {
 		XidImpl xid = this.transactionContext.getCurrentXid().getGlobalXid();
 
 		TransactionArchive archive = new TransactionArchive();
-		archive.setOptimized(this.transactionContext.isOptimized());
+		archive.setOptimized(false);
 		archive.setVote(-1);
 		archive.setXid(this.transactionContext.getGlobalXid());
 		archive.getNativeResources().addAll(this.nativeTerminator.getResourceArchives());
@@ -242,8 +242,8 @@ public class TransactionImpl implements Transaction {
 
 		int firstVote = XAResource.XA_RDONLY;
 		try {
-			this.transactionStatus.setStatusPreparing();
-			archive.setStatus(this.transactionStatus.getTransactionStatus());
+			this.transactionStatus = Status.STATUS_PREPARING;// .setStatusPreparing();
+			archive.setStatus(this.transactionStatus);
 			TransactionConfigurator.getInstance().getTransactionLogger().createTransaction(archive);
 
 			firstVote = this.firstTerminator.prepare(xid);
@@ -266,73 +266,98 @@ public class TransactionImpl implements Transaction {
 			throw new HeuristicRollbackException();
 		}
 
-		this.transactionStatus.setStatusPrepared();
-		archive.setStatus(this.transactionStatus.getTransactionStatus());
-		TransactionConfigurator.getInstance().getTransactionLogger().createTransaction(archive);
+		if (firstVote == XAResource.XA_OK || lastVote == XAResource.XA_OK) {
+			this.transactionStatus = Status.STATUS_PREPARED;// .setStatusPrepared();
+			archive.setVote(XAResource.XA_OK);
+			archive.setStatus(this.transactionStatus);
+			TransactionConfigurator.getInstance().getTransactionLogger().updateTransaction(archive);
 
-		if (firstVote == XAResource.XA_OK) {
-			try {
-				firstTerminator.commit(xid, false);
-			} catch (RemoteXAException xaex) {
-				this.rollback();
-				throw new HeuristicRollbackException();
-			} catch (XAException xaex) {
-				this.rollback();
-				throw new HeuristicRollbackException();
-			} catch (RuntimeException rex) {
-				this.rollback();
-				throw new HeuristicRollbackException();
-			}
-		}
+			this.transactionStatus = Status.STATUS_COMMITTING;// .setStatusCommiting();
 
-		if (lastVote == XAResource.XA_OK) {
-			try {
-				lastTerminator.commit(xid, false);
-			} catch (RemoteXAException xaex) {
-				SystemException ex = new SystemException();
-				ex.initCause(xaex);
-				throw ex;
-			} catch (XAException xaex) {
-				switch (xaex.errorCode) {
-				case XAException.XA_HEURHAZ:
-				case XAException.XA_HEURMIX:
-					throw new HeuristicMixedException();
-				case XAException.XA_HEURCOM:
-					break;
-				case XAException.XAER_RMERR:
-				case XAException.XAER_RMFAIL:
-					if (firstVote == XAResource.XA_RDONLY) {
-						this.rollback();
-						throw new HeuristicRollbackException();
-					} else {
-						throw new SystemException();
-					}
-				case XAException.XAER_NOTA:
-				case XAException.XAER_INVAL:
-				case XAException.XAER_PROTO:
-					// TODO ignore
-					break;
-				case XAException.XA_HEURRB:
-				default:
-					if (firstVote == XAResource.XA_RDONLY) {
-						throw new HeuristicRollbackException();
-					} else {
-						throw new HeuristicMixedException();
-					}
+			if (firstVote == XAResource.XA_OK) {
+				try {
+					firstTerminator.commit(xid, false);
+				} catch (RemoteXAException xaex) {
+					this.rollback();
+					throw new HeuristicRollbackException();
+				} catch (XAException xaex) {
+					this.rollback();
+					throw new HeuristicRollbackException();
+				} catch (RuntimeException rex) {
+					this.rollback();
+					throw new HeuristicRollbackException();
 				}
-			} catch (RuntimeException rex) {
-				SystemException ex = new SystemException();
-				ex.initCause(rex);
-				throw ex;
 			}
+
+			if (lastVote == XAResource.XA_OK) {
+				try {
+					lastTerminator.commit(xid, false);
+				} catch (RemoteXAException xaex) {
+					SystemException ex = new SystemException();
+					ex.initCause(xaex);
+					throw ex;
+				} catch (XAException xaex) {
+					switch (xaex.errorCode) {
+					case XAException.XA_HEURHAZ:
+					case XAException.XA_HEURMIX:
+						throw new HeuristicMixedException();
+					case XAException.XA_HEURCOM:
+						break;
+					case XAException.XAER_RMERR:
+					case XAException.XAER_RMFAIL:
+						if (firstVote == XAResource.XA_RDONLY) {
+							this.rollback();
+							throw new HeuristicRollbackException();
+						} else {
+							throw new SystemException();
+						}
+					case XAException.XAER_NOTA:
+					case XAException.XAER_INVAL:
+					case XAException.XAER_PROTO:
+						// TODO ignore
+						break;
+					case XAException.XA_HEURRB:
+					default:
+						if (firstVote == XAResource.XA_RDONLY) {
+							throw new HeuristicRollbackException();
+						} else {
+							throw new HeuristicMixedException();
+						}
+					}
+				} catch (RuntimeException rex) {
+					SystemException ex = new SystemException();
+					ex.initCause(rex);
+					throw ex;
+				}
+			}
+
+			this.transactionStatus = Status.STATUS_COMMITTED;// .setStatusCommitted();
+			archive.setStatus(this.transactionStatus);
+			TransactionConfigurator.getInstance().getTransactionLogger().deleteTransaction(archive);
+		} else {
+			this.transactionStatus = Status.STATUS_PREPARED;// .setStatusPrepared();
+			archive.setVote(XAResource.XA_RDONLY);
+			archive.setStatus(this.transactionStatus);
+			TransactionConfigurator.getInstance().getTransactionLogger().deleteTransaction(archive);
 		}
+
 	}
 
 	private void optimizeCommit() throws SystemException, HeuristicRollbackException, HeuristicMixedException {
 		XidImpl xid = this.transactionContext.getCurrentXid().getGlobalXid();
 
-		// step4: prepare
+		TransactionArchive archive = new TransactionArchive();
+		archive.setOptimized(true);
+		archive.setVote(-1);
+		archive.setXid(this.transactionContext.getGlobalXid());
+		archive.getNativeResources().addAll(this.nativeTerminator.getResourceArchives());
+		archive.getRemoteResources().addAll(this.remoteTerminator.getResourceArchives());
+
 		try {
+			this.transactionStatus = Status.STATUS_PREPARING;
+			archive.setStatus(this.transactionStatus);
+			TransactionConfigurator.getInstance().getTransactionLogger().createTransaction(archive);
+
 			this.firstTerminator.prepare(xid);
 		} catch (XAException xaex) {
 			this.rollback();
@@ -342,9 +367,6 @@ public class TransactionImpl implements Transaction {
 			throw new HeuristicRollbackException();
 		}
 
-		// step5: log
-
-		// step6: one-phase-commit the last-resource
 		try {
 			lastTerminator.commit(xid, true);
 		} catch (RemoteXAException xaex) {
@@ -358,7 +380,11 @@ public class TransactionImpl implements Transaction {
 			throw new HeuristicRollbackException();
 		}
 
-		// step7: two-phase-commit the first-resource
+		this.transactionStatus = Status.STATUS_COMMITTING;
+		archive.setStatus(this.transactionStatus);
+		archive.setVote(XAResource.XA_OK);
+		TransactionConfigurator.getInstance().getTransactionLogger().updateTransaction(archive);
+
 		try {
 			firstTerminator.commit(xid, false);
 		} catch (RemoteXAException xaex) {
@@ -389,6 +415,11 @@ public class TransactionImpl implements Transaction {
 			ex.initCause(rex);
 			throw ex;
 		}
+
+		this.transactionStatus = Status.STATUS_COMMITTED;
+		archive.setStatus(this.transactionStatus);
+		TransactionConfigurator.getInstance().getTransactionLogger().deleteTransaction(archive);
+
 	}
 
 	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException,
@@ -481,7 +512,7 @@ public class TransactionImpl implements Transaction {
 	}
 
 	public int getStatus() throws SystemException {
-		return this.transactionStatus.getTransactionStatus();
+		return this.transactionStatus;
 	}
 
 	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException,
@@ -504,13 +535,13 @@ public class TransactionImpl implements Transaction {
 
 	private boolean checkBeforeRollback() throws IllegalStateException {
 
-		if (this.transactionStatus.isMarkedRollbackOnly()) {
+		if (this.transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
 			return false;
-		} else if (this.transactionStatus.isActive()) {
+		} else if (this.transactionStatus == Status.STATUS_ACTIVE) {
 			return false;
-		} else if (this.transactionStatus.isRolledBack()) {
+		} else if (this.transactionStatus == Status.STATUS_ROLLEDBACK) {
 			return true;
-		} else if (this.transactionStatus.isCommitted()) {
+		} else if (this.transactionStatus == Status.STATUS_COMMITTED) {
 			throw new IllegalStateException();
 		}
 		throw new IllegalStateException();
@@ -528,10 +559,7 @@ public class TransactionImpl implements Transaction {
 		// step1: before-completion
 		this.beforeCompletion();
 
-		// step2: log
-		// TransactionConfigurator.getInstance().getTransactionLogger();
-
-		// step3: rollback the last-resource
+		// step2: rollback the last-resource
 		try {
 			lastTerminator.rollback(xid);
 		} catch (RemoteXAException xaex) {
@@ -542,7 +570,7 @@ public class TransactionImpl implements Transaction {
 			// TODO
 		}
 
-		// step4: rollback the first-resource
+		// step3: rollback the first-resource
 		try {
 			firstTerminator.rollback(xid);
 		} catch (RemoteXAException xaex) {
@@ -558,15 +586,11 @@ public class TransactionImpl implements Transaction {
 	}
 
 	public synchronized void setRollbackOnly() throws IllegalStateException, SystemException {
-		this.transactionStatus.markStatusRollback();
-	}
-
-	public TransactionStatus getTransactionStatus() {
-		return transactionStatus;
-	}
-
-	public void setTransactionStatus(TransactionStatus transactionStatus) {
-		this.transactionStatus = transactionStatus;
+		if (this.transactionStatus == Status.STATUS_ACTIVE || this.transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
+			this.transactionStatus = Status.STATUS_MARKED_ROLLBACK;
+		} else {
+			throw new IllegalStateException();
+		}
 	}
 
 	public TransactionContext getTransactionContext() {
