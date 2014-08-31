@@ -18,7 +18,6 @@ import org.bytesoft.bytejta.common.TransactionRepository;
 import org.bytesoft.bytejta.common.XidImpl;
 import org.bytesoft.transaction.AssociatedContext;
 import org.bytesoft.transaction.TransactionContext;
-import org.bytesoft.transaction.TransactionStatus;
 import org.bytesoft.transaction.xa.XidFactory;
 
 public class TransactionManagerImpl implements TransactionManager {
@@ -50,7 +49,6 @@ public class TransactionManagerImpl implements TransactionManager {
 		// transaction.setTransactionStatistic(this.transactionStatistic);
 
 		// transaction.setTransactionTimeout(timeoutSeconds);
-		transaction.setTransactionStatus(new TransactionStatus());
 		// transaction.setTransactionManager(this);
 		// transaction.setTransactionLogger(this.transactionRepository.getTransactionLogger());
 

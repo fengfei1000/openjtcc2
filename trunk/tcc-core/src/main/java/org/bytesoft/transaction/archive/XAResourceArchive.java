@@ -10,14 +10,22 @@ public class XAResourceArchive implements XAResource {
 	private XAResourceDescriptor descriptor;
 	private transient boolean delisted;
 	private Xid xid;
-	private int vote;
+	private int vote = -1;
 	private transient boolean completed;
 	private transient boolean readonly;
 	private boolean committed;
 	private boolean rolledback;
 
 	public void commit(Xid xid, boolean onePhase) throws XAException {
-		descriptor.commit(xid, onePhase);
+		if (this.readonly) {
+			throw new XAException(XAException.XAER_NOTA);
+		} else if (this.committed) {
+			// ignore
+		} else if (this.rolledback) {
+			throw new XAException(XAException.XA_HEURRB);
+		} else {
+			descriptor.commit(xid, onePhase);
+		}
 	}
 
 	public void end(Xid xid, int flags) throws XAException {
@@ -42,7 +50,15 @@ public class XAResourceArchive implements XAResource {
 	}
 
 	public int prepare(Xid xid) throws XAException {
-		return descriptor.prepare(xid);
+
+		if (this.readonly) {
+			return XAResource.XA_RDONLY;
+		} else if (this.vote != -1) {
+			return this.vote;
+		} else {
+			return descriptor.prepare(xid);
+		}
+
 	}
 
 	public Xid[] recover(int flag) throws XAException {
@@ -50,7 +66,17 @@ public class XAResourceArchive implements XAResource {
 	}
 
 	public void rollback(Xid xid) throws XAException {
-		descriptor.rollback(xid);
+
+		if (this.readonly) {
+			throw new XAException(XAException.XAER_NOTA);
+		} else if (this.committed) {
+			throw new XAException(XAException.XA_HEURCOM);
+		} else if (this.rolledback) {
+			// ignore
+		} else {
+			descriptor.rollback(xid);
+		}
+
 	}
 
 	public boolean setTransactionTimeout(int seconds) throws XAException {
