@@ -2,6 +2,7 @@ package org.bytesoft.bytejta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -21,12 +22,14 @@ import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.SynchronizationImpl;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionStatus;
+import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.xa.RemoteXAException;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
 import org.bytesoft.transaction.xa.XATerminator;
 import org.bytesoft.utils.ByteUtils;
 
 public class TransactionImpl implements Transaction {
+	static final Logger logger = Logger.getLogger(TransactionImpl.class.getSimpleName());
 
 	private TransactionStatus transactionStatus;
 	private final TransactionContext transactionContext;
@@ -114,11 +117,13 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	private synchronized void analysisTerminator() {
+	private synchronized boolean analysisTerminator() {
 		if (this.firstTerminator == null || this.lastTerminator == null) {
 
-			boolean nativeValid = this.nativeTerminator.valid();
-			boolean remoteValid = this.remoteTerminator.valid();
+			int nativeResNum = this.nativeTerminator.getResourceArchives().size();
+			int remoteResNum = this.remoteTerminator.getResourceArchives().size();
+			boolean nativeValid = nativeResNum > 0;
+			boolean remoteValid = remoteResNum > 0;
 
 			if (nativeValid == false && remoteValid == false) {
 				this.firstTerminator = this.nativeTerminator;
@@ -144,6 +149,11 @@ public class TransactionImpl implements Transaction {
 					this.lastTerminator = this.nativeTerminator;
 				}
 			}
+			return (nativeResNum + remoteResNum) <= 1;
+		} else {
+			int firstResNum = this.firstTerminator.getResourceArchives().size();
+			int lastResNum = this.lastTerminator.getResourceArchives().size();
+			return (firstResNum + lastResNum) <= 1;
 		}
 	}
 
@@ -159,22 +169,167 @@ public class TransactionImpl implements Transaction {
 			throw new HeuristicRollbackException();
 		}
 
-		XidImpl xid = this.transactionContext.getCurrentXid().getGlobalXid();
-
 		// step1: before-completion
 		this.beforeCompletion();
 		this.delistAllResource();
 
 		// step2: analysis
+		boolean opcEnabled = false;
 		try {
-			this.analysisTerminator();
+			opcEnabled = this.analysisTerminator();
 		} catch (RuntimeException xaex) {
 			this.rollback();
 			throw new HeuristicRollbackException();
 		}
 
-		// step3: log
-		// TransactionConfigurator.getInstance().getTransactionLogger();
+		try {
+			if (opcEnabled) {
+				this.opcCommit();
+			} else if (this.transactionContext.isOptimized()) {
+				this.optimizeCommit();
+			} else {
+				this.regularCommit();
+			}
+		} finally {
+			this.afterCompletion();
+		}
+
+	}
+
+	private void opcCommit() throws SystemException, HeuristicRollbackException, HeuristicMixedException {
+		XidImpl xid = this.transactionContext.getCurrentXid().getGlobalXid();
+		try {
+			lastTerminator.commit(xid, true);
+		} catch (RemoteXAException xaex) {
+			SystemException ex = new SystemException();
+			ex.initCause(xaex);
+			throw ex;
+		} catch (XAException xaex) {
+			switch (xaex.errorCode) {
+			case XAException.XA_HEURHAZ:
+			case XAException.XA_HEURMIX:
+				throw new HeuristicMixedException();
+			case XAException.XA_HEURCOM:
+				break;
+			case XAException.XAER_RMERR:
+			case XAException.XAER_RMFAIL:
+				throw new SystemException();
+			case XAException.XAER_NOTA:
+			case XAException.XAER_INVAL:
+			case XAException.XAER_PROTO:
+				// TODO ignore
+				break;
+			case XAException.XA_HEURRB:
+			default:
+				throw new HeuristicRollbackException();
+			}
+		} catch (RuntimeException rex) {
+			SystemException ex = new SystemException();
+			ex.initCause(rex);
+			throw ex;
+		}
+	}
+
+	private void regularCommit() throws SystemException, HeuristicRollbackException, HeuristicMixedException {
+		XidImpl xid = this.transactionContext.getCurrentXid().getGlobalXid();
+
+		TransactionArchive archive = new TransactionArchive();
+		archive.setOptimized(this.transactionContext.isOptimized());
+		archive.setVote(-1);
+		archive.setXid(this.transactionContext.getGlobalXid());
+		archive.getNativeResources().addAll(this.nativeTerminator.getResourceArchives());
+		archive.getRemoteResources().addAll(this.remoteTerminator.getResourceArchives());
+
+		int firstVote = XAResource.XA_RDONLY;
+		try {
+			this.transactionStatus.setStatusPreparing();
+			archive.setStatus(this.transactionStatus.getTransactionStatus());
+			TransactionConfigurator.getInstance().getTransactionLogger().createTransaction(archive);
+
+			firstVote = this.firstTerminator.prepare(xid);
+		} catch (XAException xaex) {
+			this.rollback();
+			throw new HeuristicRollbackException();
+		} catch (RuntimeException xaex) {
+			this.rollback();
+			throw new HeuristicRollbackException();
+		}
+
+		int lastVote = XAResource.XA_RDONLY;
+		try {
+			lastVote = this.lastTerminator.prepare(xid);
+		} catch (XAException xaex) {
+			this.rollback();
+			throw new HeuristicRollbackException();
+		} catch (RuntimeException xaex) {
+			this.rollback();
+			throw new HeuristicRollbackException();
+		}
+
+		this.transactionStatus.setStatusPrepared();
+		archive.setStatus(this.transactionStatus.getTransactionStatus());
+		TransactionConfigurator.getInstance().getTransactionLogger().createTransaction(archive);
+
+		if (firstVote == XAResource.XA_OK) {
+			try {
+				firstTerminator.commit(xid, false);
+			} catch (RemoteXAException xaex) {
+				this.rollback();
+				throw new HeuristicRollbackException();
+			} catch (XAException xaex) {
+				this.rollback();
+				throw new HeuristicRollbackException();
+			} catch (RuntimeException rex) {
+				this.rollback();
+				throw new HeuristicRollbackException();
+			}
+		}
+
+		if (lastVote == XAResource.XA_OK) {
+			try {
+				lastTerminator.commit(xid, false);
+			} catch (RemoteXAException xaex) {
+				SystemException ex = new SystemException();
+				ex.initCause(xaex);
+				throw ex;
+			} catch (XAException xaex) {
+				switch (xaex.errorCode) {
+				case XAException.XA_HEURHAZ:
+				case XAException.XA_HEURMIX:
+					throw new HeuristicMixedException();
+				case XAException.XA_HEURCOM:
+					break;
+				case XAException.XAER_RMERR:
+				case XAException.XAER_RMFAIL:
+					if (firstVote == XAResource.XA_RDONLY) {
+						this.rollback();
+						throw new HeuristicRollbackException();
+					} else {
+						throw new SystemException();
+					}
+				case XAException.XAER_NOTA:
+				case XAException.XAER_INVAL:
+				case XAException.XAER_PROTO:
+					// TODO ignore
+					break;
+				case XAException.XA_HEURRB:
+				default:
+					if (firstVote == XAResource.XA_RDONLY) {
+						throw new HeuristicRollbackException();
+					} else {
+						throw new HeuristicMixedException();
+					}
+				}
+			} catch (RuntimeException rex) {
+				SystemException ex = new SystemException();
+				ex.initCause(rex);
+				throw ex;
+			}
+		}
+	}
+
+	private void optimizeCommit() throws SystemException, HeuristicRollbackException, HeuristicMixedException {
+		XidImpl xid = this.transactionContext.getCurrentXid().getGlobalXid();
 
 		// step4: prepare
 		try {
@@ -223,22 +378,17 @@ public class TransactionImpl implements Transaction {
 			case XAException.XAER_NOTA:
 			case XAException.XAER_INVAL:
 			case XAException.XAER_PROTO:
-				// ignore
+				// TODO ignore
 				break;
 			case XAException.XA_HEURRB:
 			default:
-				throw new HeuristicRollbackException();
+				throw new HeuristicMixedException();
 			}
 		} catch (RuntimeException rex) {
 			SystemException ex = new SystemException();
 			ex.initCause(rex);
 			throw ex;
-		} finally {
-			this.afterCompletion();
 		}
-
-		// step8: log
-
 	}
 
 	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException,
@@ -342,8 +492,8 @@ public class TransactionImpl implements Transaction {
 		} else if (this.getStatus() == Status.STATUS_ACTIVE) {
 			SynchronizationImpl synchronization = new SynchronizationImpl(sync);
 			this.synchronizations.add(synchronization);
-			System.out.printf(String.format(
-					"[%s] register-sync: sync= %s%n"//
+			logger.info(String.format(
+					"[%s] register-sync: sync= %s"//
 					, ByteUtils.byteArrayToString(this.transactionContext.getCurrentXid().getGlobalTransactionId()),
 					sync));
 		} else {

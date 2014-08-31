@@ -1,16 +1,18 @@
-package org.bytesoft.transaction.xa;
+package org.bytesoft.transaction.archive;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.bytesoft.transaction.xa.XAResourceDescriptor;
+
 public class XAResourceArchive implements XAResource {
 	private XAResourceDescriptor descriptor;
-	private boolean delisted;
+	private transient boolean delisted;
 	private Xid xid;
 	private int vote;
-	private boolean completed;
-	private boolean readonly;
+	private transient boolean completed;
+	private transient boolean readonly;
 	private boolean committed;
 	private boolean rolledback;
 
