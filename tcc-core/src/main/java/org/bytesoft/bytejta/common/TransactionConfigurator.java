@@ -1,6 +1,8 @@
 package org.bytesoft.bytejta.common;
 
 import org.bytesoft.bytejta.TransactionManagerImpl;
+import org.bytesoft.transaction.logger.TransactionLogger;
+import org.bytesoft.transaction.logger.TransactionLoggerProxy;
 import org.bytesoft.transaction.xa.XidFactory;
 import org.bytesoft.transaction.xa.supports.rm.ResourceRecognizer;
 
@@ -10,6 +12,7 @@ public final class TransactionConfigurator {
 	private TransactionManagerImpl transactionManager;
 	private XidFactory xidFactory;
 	private ResourceRecognizer resourceRecognizer;
+	private final TransactionLoggerProxy transactionLogger = new TransactionLoggerProxy();
 
 	private TransactionConfigurator() throws IllegalStateException {
 		if (instance == null) {
@@ -49,6 +52,10 @@ public final class TransactionConfigurator {
 		return instance;
 	}
 
+	public void setTransactionLogger(TransactionLogger transactionLogger) {
+		this.transactionLogger.setDelegate(transactionLogger);
+	}
+
 	public TransactionManagerImpl getTransactionManager() {
 		return transactionManager;
 	}
@@ -71,6 +78,10 @@ public final class TransactionConfigurator {
 
 	public void setResourceRecognizer(ResourceRecognizer resourceRecognizer) {
 		this.resourceRecognizer = resourceRecognizer;
+	}
+
+	public TransactionLogger getTransactionLogger() {
+		return transactionLogger;
 	}
 
 }

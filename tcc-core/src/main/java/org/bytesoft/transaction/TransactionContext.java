@@ -22,6 +22,7 @@ import org.bytesoft.bytejta.common.XidImpl;
 public class TransactionContext implements Serializable, Cloneable {
 	private static final long serialVersionUID = 1L;
 
+	private boolean optimized;
 	private transient boolean coordinator;
 	private transient boolean recovery;
 	// private transient XidImpl creationXid;
@@ -126,6 +127,14 @@ public class TransactionContext implements Serializable, Cloneable {
 
 	public void setRecovery(boolean recovery) {
 		this.recovery = recovery;
+	}
+
+	public boolean isOptimized() {
+		return optimized;
+	}
+
+	public void setOptimized(boolean optimized) {
+		this.optimized = optimized;
 	}
 
 }

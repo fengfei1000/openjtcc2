@@ -3,6 +3,7 @@ package org.bytesoft.bytejta.xa;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
@@ -14,13 +15,14 @@ import org.bytesoft.bytejta.common.XidImpl;
 import org.bytesoft.transaction.RemoteSystemException;
 import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.TransactionContext;
-import org.bytesoft.transaction.xa.XAResourceArchive;
+import org.bytesoft.transaction.archive.XAResourceArchive;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
 import org.bytesoft.transaction.xa.XATerminator;
 import org.bytesoft.utils.ByteUtils;
 import org.bytesoft.utils.CommonUtils;
 
 public class XATerminatorImpl implements XATerminator {
+	static final Logger logger = Logger.getLogger(XATerminatorImpl.class.getSimpleName());
 	private TransactionContext transactionContext;
 	private int transactionTimeout;
 	private final List<XAResourceArchive> resources = new ArrayList<XAResourceArchive>();
@@ -29,9 +31,9 @@ public class XATerminatorImpl implements XATerminator {
 		this.transactionContext = txContext;
 	}
 
-	public boolean valid() {
-		return this.resources.size() > 0;
-	}
+	// public boolean valid() {
+	// return this.resources.size() > 0;
+	// }
 
 	public int prepare(Xid xid) throws XAException {
 		return this.invokePrepare(false);
@@ -138,9 +140,12 @@ public class XATerminatorImpl implements XATerminator {
 						break;
 					case XAException.XAER_RMERR:
 					case XAException.XAER_RMFAIL:
+						errorExists = true;
+						break;
 					case XAException.XAER_NOTA:
 					case XAException.XAER_INVAL:
 					case XAException.XAER_PROTO:
+						// TODO
 						errorExists = true;
 						break;
 					case XAException.XA_HEURRB:
@@ -259,9 +264,12 @@ public class XATerminatorImpl implements XATerminator {
 						break;
 					case XAException.XAER_RMERR:
 					case XAException.XAER_RMFAIL:
+						errorExists = true;
+						break;
 					case XAException.XAER_NOTA:
 					case XAException.XAER_INVAL:
 					case XAException.XAER_PROTO:
+						// TODO
 						errorExists = true;
 						break;
 					case XAException.XA_HEURRB:
@@ -389,8 +397,8 @@ public class XATerminatorImpl implements XATerminator {
 			RollbackRequiredException {
 		try {
 			Xid branchXid = archive.getXid();
-			System.out.printf(String.format("\t[%s] delist: xares= %s, flags= %s%n",
-					ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), archive, branchXid));
+			logger.info(String.format("\t[%s] delist: xares= %s, flags= %s",
+					ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), archive, flag));
 
 			archive.end(branchXid, flag);
 			archive.setDelisted(true);
@@ -449,7 +457,7 @@ public class XATerminatorImpl implements XATerminator {
 	private boolean enlistResource(XAResourceArchive archive, int flags) throws SystemException, RollbackException {
 		try {
 			Xid branchXid = archive.getXid();
-			System.out.printf(String.format("\t[%s] enlist: xares= %s, flags: %s%n",
+			logger.info(String.format("\t[%s] enlist: xares= %s, flags: %s",
 					ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), archive, flags));
 
 			if (flags == XAResource.TMNOFLAGS) {
@@ -595,6 +603,10 @@ public class XATerminatorImpl implements XATerminator {
 			throw new SystemException(XAException.XAER_RMERR);
 		}
 
+	}
+
+	public List<XAResourceArchive> getResourceArchives() {
+		return this.resources;
 	}
 
 }
