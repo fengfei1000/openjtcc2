@@ -16,7 +16,7 @@ public class XAResourceArchive implements XAResource {
 	private boolean committed;
 	private boolean rolledback;
 
-	public void commit(Xid xid, boolean onePhase) throws XAException {
+	public void commit(Xid ignore, boolean onePhase) throws XAException {
 		if (this.readonly) {
 			throw new XAException(XAException.XAER_NOTA);
 		} else if (this.committed) {
@@ -28,11 +28,11 @@ public class XAResourceArchive implements XAResource {
 		}
 	}
 
-	public void end(Xid xid, int flags) throws XAException {
+	public void end(Xid ignore, int flags) throws XAException {
 		descriptor.end(xid, flags);
 	}
 
-	public void forget(Xid xid) throws XAException {
+	public void forget(Xid ignore) throws XAException {
 		descriptor.forget(xid);
 	}
 
@@ -49,7 +49,7 @@ public class XAResourceArchive implements XAResource {
 		}
 	}
 
-	public int prepare(Xid xid) throws XAException {
+	public int prepare(Xid ignore) throws XAException {
 
 		if (this.readonly) {
 			return XAResource.XA_RDONLY;
@@ -65,7 +65,7 @@ public class XAResourceArchive implements XAResource {
 		return descriptor.recover(flag);
 	}
 
-	public void rollback(Xid xid) throws XAException {
+	public void rollback(Xid ignore) throws XAException {
 
 		if (this.readonly) {
 			throw new XAException(XAException.XAER_NOTA);
@@ -83,7 +83,7 @@ public class XAResourceArchive implements XAResource {
 		return descriptor.setTransactionTimeout(seconds);
 	}
 
-	public void start(Xid xid, int flags) throws XAException {
+	public void start(Xid ignore, int flags) throws XAException {
 		descriptor.start(xid, flags);
 	}
 

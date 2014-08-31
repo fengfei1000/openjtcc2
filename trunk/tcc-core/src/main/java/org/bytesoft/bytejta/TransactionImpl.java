@@ -212,13 +212,7 @@ public class TransactionImpl implements Transaction {
 			case XAException.XA_HEURCOM:
 				break;
 			case XAException.XAER_RMERR:
-			case XAException.XAER_RMFAIL:
 				throw new SystemException();
-			case XAException.XAER_NOTA:
-			case XAException.XAER_INVAL:
-			case XAException.XAER_PROTO:
-				// TODO ignore
-				break;
 			case XAException.XA_HEURRB:
 			default:
 				throw new HeuristicRollbackException();
@@ -304,18 +298,12 @@ public class TransactionImpl implements Transaction {
 					case XAException.XA_HEURCOM:
 						break;
 					case XAException.XAER_RMERR:
-					case XAException.XAER_RMFAIL:
 						if (firstVote == XAResource.XA_RDONLY) {
 							this.rollback();
 							throw new HeuristicRollbackException();
 						} else {
 							throw new SystemException();
 						}
-					case XAException.XAER_NOTA:
-					case XAException.XAER_INVAL:
-					case XAException.XAER_PROTO:
-						// TODO ignore
-						break;
 					case XAException.XA_HEURRB:
 					default:
 						if (firstVote == XAResource.XA_RDONLY) {
@@ -399,13 +387,7 @@ public class TransactionImpl implements Transaction {
 			case XAException.XA_HEURCOM:
 				break;
 			case XAException.XAER_RMERR:
-			case XAException.XAER_RMFAIL:
 				throw new SystemException();
-			case XAException.XAER_NOTA:
-			case XAException.XAER_INVAL:
-			case XAException.XAER_PROTO:
-				// TODO ignore
-				break;
 			case XAException.XA_HEURRB:
 			default:
 				throw new HeuristicMixedException();
@@ -559,28 +541,65 @@ public class TransactionImpl implements Transaction {
 		// step1: before-completion
 		this.beforeCompletion();
 
-		// step2: rollback the last-resource
-		try {
-			lastTerminator.rollback(xid);
-		} catch (RemoteXAException xaex) {
-			// TODO
-		} catch (XAException xaex) {
-			// TODO
-		} catch (RuntimeException rex) {
-			// TODO
-		}
-
-		// step3: rollback the first-resource
+		// step2: rollback the first-resource
+		SystemException systemErr = null;
+		RuntimeException runtimeErr = null;
 		try {
 			firstTerminator.rollback(xid);
 		} catch (RemoteXAException xaex) {
-			// TODO
+			RemoteSystemException rsex = new RemoteSystemException();
+			rsex.initCause(xaex);
+			systemErr = rsex;
 		} catch (XAException xaex) {
-			// TODO
+			switch (xaex.errorCode) {
+			case XAException.XA_HEURRB:
+				// ignore
+				break;
+			case XAException.XA_HEURMIX:
+			case XAException.XA_HEURHAZ:
+			case XAException.XA_HEURCOM:
+			case XAException.XAER_RMERR:
+			default:
+				SystemException rsex = new SystemException();
+				rsex.initCause(xaex);
+				systemErr = rsex;
+				break;
+			}
 		} catch (RuntimeException rex) {
-			// TODO
+			runtimeErr = rex;
+		}
+
+		// step3: rollback the last-resource
+		try {
+			lastTerminator.rollback(xid);
+		} catch (RemoteXAException xaex) {
+			RemoteSystemException rsex = new RemoteSystemException();
+			rsex.initCause(xaex);
+			throw rsex;
+		} catch (XAException xaex) {
+			switch (xaex.errorCode) {
+			case XAException.XA_HEURRB:
+				// ignore
+				break;
+			case XAException.XA_HEURMIX:
+			case XAException.XA_HEURHAZ:
+			case XAException.XA_HEURCOM:
+			case XAException.XAER_RMERR:
+			default:
+				SystemException rsex = new SystemException();
+				rsex.initCause(xaex);
+				throw rsex;
+			}
+		} catch (RuntimeException rex) {
+			throw rex;
 		} finally {
 			this.afterCompletion();
+		}
+
+		if (systemErr != null) {
+			throw systemErr;
+		} else if (runtimeErr != null) {
+			throw runtimeErr;
 		}
 
 	}
