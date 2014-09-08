@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.bytetcc.archive.TransactionArchive;
 import org.bytesoft.bytetcc.supports.TransactionLogger;
@@ -29,10 +29,10 @@ import org.bytesoft.transaction.TransactionContext;
 
 public class TransactionLoggerImpl implements TransactionLogger {
 	private TransactionLogger delegate = TransactionLogger.defaultTransactionLogger;
-	private final Map<XidImpl, ArchiveObject> xidToRecMap = new ConcurrentHashMap<XidImpl, ArchiveObject>();
+	private final Map<TransactionXid, ArchiveObject> xidToRecMap = new ConcurrentHashMap<TransactionXid, ArchiveObject>();
 
 	public void enlistService(TransactionContext transactionContext, CompensableArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			delegate.enlistService(transactionContext, holder);
@@ -45,7 +45,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 	}
 
 	public void delistService(TransactionContext transactionContext, CompensableArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
@@ -58,7 +58,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 	}
 
 	public void updateService(TransactionContext transactionContext, CompensableArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
@@ -71,7 +71,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 	}
 
 	public void confirmService(TransactionContext transactionContext, CompensableArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
@@ -84,7 +84,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 	}
 
 	public void cancelService(TransactionContext transactionContext, CompensableArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
@@ -97,7 +97,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 	}
 
 	public void commitService(TransactionContext transactionContext, CompensableArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
@@ -110,7 +110,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 	}
 
 	public void rollbackService(TransactionContext transactionContext, CompensableArchive holder) {
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
@@ -150,7 +150,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 
 	public void beginTransaction(TransactionArchive transaction) {
 		TransactionContext transactionContext = transaction.getTransactionContext();
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			delegate.beginTransaction(transaction);
@@ -161,7 +161,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 
 	public void prepareTransaction(TransactionArchive transaction) {
 		TransactionContext transactionContext = transaction.getTransactionContext();
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			this.beginTransaction(transaction);
@@ -171,7 +171,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 
 	public void updateTransaction(TransactionArchive transaction) {
 		TransactionContext transactionContext = transaction.getTransactionContext();
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			this.beginTransaction(transaction);
@@ -181,7 +181,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 
 	public void completeTransaction(TransactionArchive transaction) {
 		TransactionContext transactionContext = transaction.getTransactionContext();
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			this.beginTransaction(transaction);
@@ -191,7 +191,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 
 	public void cleanupTransaction(TransactionArchive transaction) {
 		TransactionContext transactionContext = transaction.getTransactionContext();
-		XidImpl globalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		this.xidToRecMap.remove(globalXid);
 
 		delegate.cleanupTransaction(transaction);
@@ -203,15 +203,15 @@ public class TransactionLoggerImpl implements TransactionLogger {
 		while (itr.hasNext()) {
 			TransactionArchive meta = itr.next();
 			TransactionContext transactionContext = meta.getTransactionContext();
-			XidImpl globalXid = transactionContext.getGlobalXid();
+			TransactionXid globalXid = transactionContext.getGlobalXid();
 			ArchiveObject object = new ArchiveObject();
 			this.xidToRecMap.put(globalXid, object);
 
-			Map<XidImpl, CompensableArchive> nativeSvrMap = meta.getCompensableArchiveMap();
-			Iterator<Map.Entry<XidImpl, CompensableArchive>> nativeSvrItr = nativeSvrMap.entrySet().iterator();
+			Map<TransactionXid, CompensableArchive> nativeSvrMap = meta.getCompensableArchiveMap();
+			Iterator<Map.Entry<TransactionXid, CompensableArchive>> nativeSvrItr = nativeSvrMap.entrySet().iterator();
 			while (nativeSvrItr.hasNext()) {
-				Map.Entry<XidImpl, CompensableArchive> entry = nativeSvrItr.next();
-				XidImpl branchXid = entry.getKey();
+				Map.Entry<TransactionXid, CompensableArchive> entry = nativeSvrItr.next();
+				TransactionXid branchXid = entry.getKey();
 				CompensableArchive holder = entry.getValue();
 				object.xidToNativeSvrMap.put(branchXid, holder);
 			}
@@ -239,7 +239,7 @@ public class TransactionLoggerImpl implements TransactionLogger {
 
 	public static class ArchiveObject {
 
-		public Map<XidImpl, CompensableArchive> xidToNativeSvrMap = new HashMap<XidImpl, CompensableArchive>();
+		public Map<TransactionXid, CompensableArchive> xidToNativeSvrMap = new HashMap<TransactionXid, CompensableArchive>();
 		// public Set<TerminatorArchive> terminators = new HashSet<TerminatorArchive>();
 	}
 

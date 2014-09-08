@@ -15,7 +15,7 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 
 import org.bytesoft.bytejta.common.TransactionConfigurator;
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytejta.xa.XATerminatorImpl;
 import org.bytesoft.transaction.RemoteSystemException;
 import org.bytesoft.transaction.RollbackRequiredException;
@@ -197,7 +197,7 @@ public class TransactionImpl implements Transaction {
 	}
 
 	private void opcCommit() throws SystemException, HeuristicRollbackException, HeuristicMixedException {
-		XidImpl xid = this.transactionContext.getCurrentXid().getGlobalXid();
+		TransactionXid xid = this.transactionContext.getCurrentXid().getGlobalXid();
 		try {
 			lastTerminator.commit(xid, true);
 		} catch (RemoteXAException xaex) {
@@ -225,7 +225,7 @@ public class TransactionImpl implements Transaction {
 	}
 
 	private void regularCommit() throws SystemException, HeuristicRollbackException, HeuristicMixedException {
-		XidImpl xid = this.transactionContext.getCurrentXid().getGlobalXid();
+		TransactionXid xid = this.transactionContext.getCurrentXid().getGlobalXid();
 
 		TransactionArchive archive = new TransactionArchive();
 		archive.setOptimized(false);
@@ -332,7 +332,7 @@ public class TransactionImpl implements Transaction {
 	}
 
 	private void optimizeCommit() throws SystemException, HeuristicRollbackException, HeuristicMixedException {
-		XidImpl xid = this.transactionContext.getCurrentXid().getGlobalXid();
+		TransactionXid xid = this.transactionContext.getCurrentXid().getGlobalXid();
 
 		TransactionArchive archive = new TransactionArchive();
 		archive.setOptimized(true);
@@ -536,7 +536,7 @@ public class TransactionImpl implements Transaction {
 			return;
 		}
 
-		XidImpl xid = this.transactionContext.getCurrentXid().getGlobalXid();
+		TransactionXid xid = this.transactionContext.getCurrentXid().getGlobalXid();
 
 		// step1: before-completion
 		this.beforeCompletion();

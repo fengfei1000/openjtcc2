@@ -9,6 +9,7 @@ public class XAResourceDescriptor implements XAResource {
 	private boolean supportsXA;
 	private XAResource delegate;
 	private String identifier;
+	private int descriptorId;
 
 	public void commit(Xid arg0, boolean arg1) throws XAException {
 		delegate.commit(arg0, arg1);
@@ -85,6 +86,14 @@ public class XAResourceDescriptor implements XAResource {
 
 	public void setIdentifier(String identifier) {
 		this.identifier = identifier;
+	}
+
+	public int getDescriptorId() {
+		return descriptorId;
+	}
+
+	public void setDescriptorId(int descriptorId) {
+		this.descriptorId = descriptorId;
 	}
 
 }

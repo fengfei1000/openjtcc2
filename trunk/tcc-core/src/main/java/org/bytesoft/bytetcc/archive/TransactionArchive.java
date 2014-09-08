@@ -17,7 +17,7 @@ package org.bytesoft.bytetcc.archive;
 
 import java.util.Map;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionStatus;
 
@@ -25,7 +25,7 @@ public interface TransactionArchive {
 
 	public TransactionStatus getTransactionStatus();
 
-	public Map<XidImpl, CompensableArchive> getCompensableArchiveMap();
+	public Map<TransactionXid, CompensableArchive> getCompensableArchiveMap();
 
 	public TransactionContext getTransactionContext();
 

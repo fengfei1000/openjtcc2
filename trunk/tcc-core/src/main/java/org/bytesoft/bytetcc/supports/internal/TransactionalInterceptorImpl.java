@@ -17,7 +17,7 @@ package org.bytesoft.bytetcc.supports.internal;
 
 import java.util.logging.Logger;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.TransactionImpl;
 import org.bytesoft.bytetcc.TransactionManagerImpl;
 import org.bytesoft.bytetcc.supports.serialize.TerminatorMarshaller;
@@ -38,7 +38,7 @@ public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 		if (transaction != null) {
 			TransactionContext transactionContext = transaction.getTransactionContext();
 			XidFactory xidFactory = this.transactionManager.getXidFactory();
-			XidImpl branchXid = xidFactory.createBranchXid(transactionContext.getGlobalXid());
+			TransactionXid branchXid = xidFactory.createBranchXid(transactionContext.getGlobalXid());
 			TransactionContext propagationContext = transactionContext.clone();
 			propagationContext.setCurrentXid(branchXid);
 			// propagationContext.setInstanceKey(this.transactionManager.getInstanceKey());

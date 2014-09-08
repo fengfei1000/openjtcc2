@@ -25,9 +25,7 @@ import org.bytesoft.utils.ByteUtils;
 public abstract class AbstractXid implements Xid, Serializable {
 	private static final long serialVersionUID = 1L;
 
-	public static final int XidFormatId = 8127;
-
-	protected final int formatId = XidFormatId;
+	protected final int formatId = XidFactory.XID_FORMAT_ID;
 	protected byte[] globalTransactionId;
 	protected byte[] branchQualifier;
 

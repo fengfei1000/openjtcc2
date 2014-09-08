@@ -12,7 +12,7 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.supports.TransactionRepository;
 import org.bytesoft.transaction.AssociatedContext;
 import org.bytesoft.transaction.TransactionContext;
@@ -38,7 +38,7 @@ public class JtaTransactionManager implements TransactionManager {
 		long expiredTime = createdTime + (timeoutSeconds * 1000L);
 		transactionContext.setCreatedTime(createdTime);
 		transactionContext.setExpiredTime(expiredTime);
-		XidImpl globalXid = this.xidFactory.createGlobalXid();
+		TransactionXid globalXid = this.xidFactory.createGlobalXid();
 		transactionContext.setCurrentXid(globalXid);
 
 		JtaTransaction transaction = new JtaTransaction();
