@@ -47,7 +47,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 		this.storageFile = storageFile;
 	}
 
-	public void initialize() throws IOException {
+	public synchronized void initialize() throws IOException {
 		if (this.storageFile.exists()) {
 			this.raf = new RandomAccessFile(this.storageFile, "rw");
 		} else {
@@ -59,7 +59,6 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 			this.validation();
 		} catch (Exception ex) {
 			this.raf.setLength(SIZE_STORAGE_FILE);
-			this.truncateStorageFile();
 			this.updateStorageMetaData();
 		}
 
@@ -149,12 +148,6 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 		}
 	}
 
-	private void truncateStorageFile() throws IOException {
-		FileChannel channel = this.raf.getChannel();
-		channel.position(0);
-		channel.truncate(channel.size());
-	}
-
 	private synchronized void updateStorageMetaData() throws IOException {
 		FileChannel channel = this.raf.getChannel();
 		ByteBuffer buffer = ByteBuffer.allocate(SIZE_SECTION_HEADER);
@@ -170,7 +163,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 		this.forceRaf();
 	}
 
-	private void validation() throws IllegalStateException, IOException {
+	private synchronized void validation() throws IllegalStateException, IOException {
 		FileChannel channel = this.raf.getChannel();
 
 		if (this.raf.length() != SIZE_STORAGE_FILE) {
@@ -201,7 +194,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 		this.maxPosition = maxPos;
 	}
 
-	private void createStorageFile() throws IOException {
+	private synchronized void createStorageFile() throws IOException {
 		try {
 			this.raf = new RandomAccessFile(this.storageFile, "rw");
 			this.raf.setLength(SIZE_STORAGE_FILE);
