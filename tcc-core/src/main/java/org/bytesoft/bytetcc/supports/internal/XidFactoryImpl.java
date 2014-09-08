@@ -17,7 +17,7 @@ package org.bytesoft.bytetcc.supports.internal;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.transaction.xa.XidFactory;
 import org.bytesoft.utils.ByteUtils;
 
@@ -25,7 +25,7 @@ public class XidFactoryImpl implements XidFactory {
 
 	private final AtomicLong atomic = new AtomicLong();
 
-	public XidImpl createGlobalXid() {
+	public TransactionXid createGlobalXid() {
 		byte[] global = new byte[18];
 		int appcode = 0;// terminalKey.getApplication().hashCode();
 		int endcode = 0;// terminalKey.getEndpoint().hashCode();
@@ -42,26 +42,26 @@ public class XidFactoryImpl implements XidFactory {
 		System.arraycopy(millisByteArray, 0, global, 8, 8);
 		System.arraycopy(atomicByteArray, 0, global, 16, 2);
 
-		return new XidImpl(global);
+		return new TransactionXid(global);
 	}
 
-	public XidImpl createGlobalXid(byte[] globalTransactionId) {
+	public TransactionXid createGlobalXid(byte[] globalTransactionId) {
 		if (globalTransactionId == null) {
 			throw new IllegalArgumentException("The globalTransactionId cannot be null.");
-		} else if (globalTransactionId.length > XidImpl.MAXGTRIDSIZE) {
+		} else if (globalTransactionId.length > TransactionXid.MAXGTRIDSIZE) {
 			throw new IllegalArgumentException("The length of globalTransactionId cannot exceed 64 bytes.");
 		}
 		byte[] global = new byte[globalTransactionId.length];
 		System.arraycopy(globalTransactionId, 0, global, 0, global.length);
-		return new XidImpl(global);
+		return new TransactionXid(global);
 	}
 
-	public XidImpl createBranchXid(XidImpl globalXid) {
+	public TransactionXid createBranchXid(TransactionXid globalXid) {
 		if (globalXid == null) {
 			throw new IllegalArgumentException("Xid cannot be null.");
 		} else if (globalXid.getGlobalTransactionId() == null) {
 			throw new IllegalArgumentException("The globalTransactionId cannot be null.");
-		} else if (globalXid.getGlobalTransactionId().length > XidImpl.MAXGTRIDSIZE) {
+		} else if (globalXid.getGlobalTransactionId().length > TransactionXid.MAXGTRIDSIZE) {
 			throw new IllegalArgumentException("The length of globalTransactionId cannot exceed 64 bytes.");
 		}
 
@@ -80,28 +80,28 @@ public class XidFactoryImpl implements XidFactory {
 		System.arraycopy(appByteArray, 0, branch, 0, 4);
 		System.arraycopy(endByteArray, 0, branch, 4, 4);
 		System.arraycopy(atomicByteArray, 0, branch, 8, 2);
-		return new XidImpl(global, branch);
+		return new TransactionXid(global, branch);
 	}
 
-	public XidImpl createBranchXid(XidImpl globalXid, byte[] branchQualifier) {
+	public TransactionXid createBranchXid(TransactionXid globalXid, byte[] branchQualifier) {
 		if (globalXid == null) {
 			throw new IllegalArgumentException("Xid cannot be null.");
 		} else if (globalXid.getGlobalTransactionId() == null) {
 			throw new IllegalArgumentException("The globalTransactionId cannot be null.");
-		} else if (globalXid.getGlobalTransactionId().length > XidImpl.MAXGTRIDSIZE) {
+		} else if (globalXid.getGlobalTransactionId().length > TransactionXid.MAXGTRIDSIZE) {
 			throw new IllegalArgumentException("The length of globalTransactionId cannot exceed 64 bytes.");
 		}
 
 		if (branchQualifier == null) {
 			throw new IllegalArgumentException("The branchQulifier cannot be null.");
-		} else if (branchQualifier.length > XidImpl.MAXBQUALSIZE) {
+		} else if (branchQualifier.length > TransactionXid.MAXBQUALSIZE) {
 			throw new IllegalArgumentException("The length of branchQulifier cannot exceed 64 bytes.");
 		}
 
 		byte[] global = new byte[globalXid.getGlobalTransactionId().length];
 		System.arraycopy(globalXid.getGlobalTransactionId(), 0, global, 0, global.length);
 
-		return new XidImpl(global, branchQualifier);
+		return new TransactionXid(global, branchQualifier);
 	}
 
 }

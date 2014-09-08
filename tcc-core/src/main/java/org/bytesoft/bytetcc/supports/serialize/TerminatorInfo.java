@@ -17,7 +17,7 @@ package org.bytesoft.bytetcc.supports.serialize;
 
 import java.io.Serializable;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.utils.CommonUtils;
 
 public class TerminatorInfo implements Serializable {
@@ -25,7 +25,7 @@ public class TerminatorInfo implements Serializable {
 
 	private String application;
 	private String endpoint;
-	private XidImpl branchXid;
+	private TransactionXid branchXid;
 
 	public String getApplication() {
 		return application;
@@ -43,11 +43,11 @@ public class TerminatorInfo implements Serializable {
 		this.endpoint = endpoint;
 	}
 
-	public XidImpl getBranchXid() {
+	public TransactionXid getBranchXid() {
 		return branchXid;
 	}
 
-	public void setBranchXid(XidImpl branchXid) {
+	public void setBranchXid(TransactionXid branchXid) {
 		this.branchXid = branchXid;
 	}
 

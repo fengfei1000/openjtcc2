@@ -9,30 +9,30 @@ import org.bytesoft.bytejta.TransactionImpl;
 
 public class TransactionRepository {
 	static TransactionRepository instance;
-	private final Map<XidImpl, TransactionImpl> xidToTxMap = new ConcurrentHashMap<XidImpl, TransactionImpl>();
-	private final Map<XidImpl, TransactionImpl> xidToErrTxMap = new ConcurrentHashMap<XidImpl, TransactionImpl>();
+	private final Map<TransactionXid, TransactionImpl> xidToTxMap = new ConcurrentHashMap<TransactionXid, TransactionImpl>();
+	private final Map<TransactionXid, TransactionImpl> xidToErrTxMap = new ConcurrentHashMap<TransactionXid, TransactionImpl>();
 
-	public void putTransaction(XidImpl globalXid, TransactionImpl transaction) {
+	public void putTransaction(TransactionXid globalXid, TransactionImpl transaction) {
 		this.xidToTxMap.put(globalXid, transaction);
 	}
 
-	public TransactionImpl getTransaction(XidImpl globalXid) {
+	public TransactionImpl getTransaction(TransactionXid globalXid) {
 		return this.xidToTxMap.get(globalXid);
 	}
 
-	public TransactionImpl removeTransaction(XidImpl globalXid) {
+	public TransactionImpl removeTransaction(TransactionXid globalXid) {
 		return this.xidToTxMap.remove(globalXid);
 	}
 
-	public void putErrorTransaction(XidImpl globalXid, TransactionImpl transaction) {
+	public void putErrorTransaction(TransactionXid globalXid, TransactionImpl transaction) {
 		this.xidToErrTxMap.put(globalXid, transaction);
 	}
 
-	public TransactionImpl getErrorTransaction(XidImpl globalXid) {
+	public TransactionImpl getErrorTransaction(TransactionXid globalXid) {
 		return this.xidToErrTxMap.get(globalXid);
 	}
 
-	public TransactionImpl removeErrorTransaction(XidImpl globalXid) {
+	public TransactionImpl removeErrorTransaction(TransactionXid globalXid) {
 		return this.xidToErrTxMap.remove(globalXid);
 	}
 

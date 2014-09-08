@@ -17,7 +17,7 @@ package org.bytesoft.transaction;
 
 import java.io.Serializable;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 
 public class TransactionContext implements Serializable, Cloneable {
 	private static final long serialVersionUID = 1L;
@@ -29,7 +29,7 @@ public class TransactionContext implements Serializable, Cloneable {
 	// private transient Object terminalKey;
 	// private transient final Stack<XidImpl> stack;
 
-	private XidImpl currentXid;
+	private TransactionXid currentXid;
 	// private PropagationKey instanceKey;
 	private long createdTime;
 	private long expiredTime;
@@ -77,15 +77,15 @@ public class TransactionContext implements Serializable, Cloneable {
 		// throw new RuntimeException();
 	}
 
-	public XidImpl getCurrentXid() {
+	public TransactionXid getCurrentXid() {
 		return currentXid;
 	}
 
-	public void setCurrentXid(XidImpl branchXid) {
+	public void setCurrentXid(TransactionXid branchXid) {
 		this.currentXid = branchXid;
 	}
 
-	public XidImpl getGlobalXid() {
+	public TransactionXid getGlobalXid() {
 		return this.currentXid.getGlobalXid();
 	}
 

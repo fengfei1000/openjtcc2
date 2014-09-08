@@ -15,14 +15,19 @@
  */
 package org.bytesoft.transaction.xa;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 
 public interface XidFactory {
-	public XidImpl createGlobalXid();
 
-	public XidImpl createGlobalXid(byte[] globalTransactionId);
+	public static final int XID_FORMAT_ID = 8127;
+	public static final int GLOBAL_TRANSACTION_LENGTH = 32;
+	public static final int BRANCH_QUALIFIER_LENGTH = 32;
 
-	public XidImpl createBranchXid(XidImpl globalXid);
+	public TransactionXid createGlobalXid();
 
-	public XidImpl createBranchXid(XidImpl globalXid, byte[] branchQualifier);
+	public TransactionXid createGlobalXid(byte[] globalTransactionId);
+
+	public TransactionXid createBranchXid(TransactionXid globalXid);
+
+	public TransactionXid createBranchXid(TransactionXid globalXid, byte[] branchQualifier);
 }

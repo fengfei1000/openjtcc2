@@ -11,7 +11,7 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.transaction.RemoteSystemException;
 import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.TransactionContext;
@@ -469,7 +469,7 @@ public class XATerminatorImpl implements XATerminator {
 			if (resourceSupportsXA || currentSupportXA) {
 				archive = new XAResourceArchive();
 				archive.setDescriptor(descriptor);
-				XidImpl globalXid = this.transactionContext.getCurrentXid().getGlobalXid();
+				TransactionXid globalXid = this.transactionContext.getCurrentXid().getGlobalXid();
 				archive.setXid(globalXid.createBranchXid());
 			} else {
 				throw new SystemException("There already has a non-xa resource exists.");

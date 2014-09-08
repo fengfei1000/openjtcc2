@@ -25,7 +25,7 @@ import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.TransactionImpl;
 import org.bytesoft.bytetcc.TransactionManagerImpl;
 import org.bytesoft.bytetcc.archive.TransactionArchive;
@@ -50,7 +50,7 @@ public class RecoveryManager {
 			RecoveredTransactionImpl transaction = this.reconstructTransaction(archive);
 
 			TransactionContext transactionContext = null;// TODO transaction.getTransactionContext();
-			XidImpl globalXid = transactionContext.getGlobalXid();
+			TransactionXid globalXid = transactionContext.getGlobalXid();
 
 			repository.putTransaction(globalXid, transaction);
 			repository.putErrorTransaction(globalXid, transaction);
@@ -175,7 +175,7 @@ public class RecoveryManager {
 	 * @throws HeuristicMixedException
 	 * @throws SystemException
 	 */
-	public void recoverTransaction(XidImpl globalXid) throws HeuristicMixedException, SystemException {
+	public void recoverTransaction(TransactionXid globalXid) throws HeuristicMixedException, SystemException {
 		TransactionRepository repository = this.getTransactionRepository();
 //		TransactionImpl transaction = repository.getErrorTransaction(globalXid);
 //		this.recoverTransaction(transaction);

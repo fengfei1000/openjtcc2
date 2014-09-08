@@ -5,7 +5,7 @@ import java.lang.reflect.Method;
 
 import javax.transaction.SystemException;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.CompensableContext;
 import org.bytesoft.bytetcc.CompensableInvocation;
 import org.bytesoft.bytetcc.TransactionImpl;
@@ -41,13 +41,13 @@ public class CompensableInvocationImpl extends CompensableSynchronization implem
 		}
 	}
 
-	public void afterInitialization(XidImpl xid) {
+	public void afterInitialization(TransactionXid xid) {
 	}
 
-	public void beforeCompletion(XidImpl xid) {
+	public void beforeCompletion(TransactionXid xid) {
 	}
 
-	public void afterCompletion(XidImpl xid, int status) {
+	public void afterCompletion(TransactionXid xid, int status) {
 	}
 
 	public boolean isRollbackOnly() throws IllegalStateException {

@@ -21,18 +21,18 @@ import javax.transaction.xa.Xid;
 
 import org.bytesoft.transaction.xa.AbstractXid;
 
-public class XidImpl extends AbstractXid implements Xid, Serializable {
+public class TransactionXid extends AbstractXid implements Xid, Serializable {
 	private static final long serialVersionUID = 1L;
 
-	public XidImpl(byte[] global) {
+	public TransactionXid(byte[] global) {
 		this(global, new byte[0]);
 	}
 
-	public XidImpl(byte[] global, byte[] branch) {
+	public TransactionXid(byte[] global, byte[] branch) {
 		super(global, branch);
 	}
 
-	public XidImpl getGlobalXid() {
+	public TransactionXid getGlobalXid() {
 		if (this.globalTransactionId == null || this.globalTransactionId.length == 0) {
 			throw new IllegalStateException();
 		} else if (this.branchQualifier != null && this.branchQualifier.length > 0) {
@@ -42,7 +42,7 @@ public class XidImpl extends AbstractXid implements Xid, Serializable {
 		}
 	}
 
-	public XidImpl createBranchXid() {
+	public TransactionXid createBranchXid() {
 		if (this.globalTransactionId == null || this.globalTransactionId.length == 0) {
 			throw new IllegalStateException();
 		} else if (this.branchQualifier != null && this.branchQualifier.length > 0) {

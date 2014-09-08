@@ -15,7 +15,7 @@ import javax.transaction.TransactionManager;
 
 import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.bytejta.common.TransactionRepository;
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.transaction.AssociatedContext;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.xa.XidFactory;
@@ -39,7 +39,7 @@ public class TransactionManagerImpl implements TransactionManager {
 		transactionContext.setCreatedTime(createdTime);
 		transactionContext.setExpiredTime(expiredTime);
 		XidFactory xidFactory = TransactionConfigurator.getInstance().getXidFactory();
-		XidImpl globalXid = xidFactory.createGlobalXid();
+		TransactionXid globalXid = xidFactory.createGlobalXid();
 		// transactionContext.setCreationXid(globalXid);
 		transactionContext.setCurrentXid(globalXid);
 
@@ -83,7 +83,7 @@ public class TransactionManagerImpl implements TransactionManager {
 		} finally {
 			if (failure) {
 				TransactionContext transactionContext = transaction.getTransactionContext();
-				XidImpl globalXid = transactionContext.getGlobalXid();
+				TransactionXid globalXid = transactionContext.getGlobalXid();
 				TransactionRepository.getInstance().putErrorTransaction(globalXid, transaction);
 			}
 		}
@@ -133,7 +133,7 @@ public class TransactionManagerImpl implements TransactionManager {
 		} finally {
 			if (failure) {
 				TransactionContext transactionContext = transaction.getTransactionContext();
-				XidImpl globalXid = transactionContext.getGlobalXid();
+				TransactionXid globalXid = transactionContext.getGlobalXid();
 				TransactionRepository.getInstance().putErrorTransaction(globalXid, transaction);
 			}
 		}

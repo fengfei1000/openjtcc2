@@ -20,25 +20,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.jta.JtaTransaction;
 import org.bytesoft.bytetcc.supports.TransactionLogger;
 import org.bytesoft.bytetcc.supports.TransactionRepository;
 
 public class TransactionRepositoryImpl implements TransactionRepository {
-	private final Map<XidImpl, JtaTransaction> xidToTxMap = new ConcurrentHashMap<XidImpl, JtaTransaction>();
-	private final Map<XidImpl, JtaTransaction> xidToErrTxMap = new ConcurrentHashMap<XidImpl, JtaTransaction>();
+	private final Map<TransactionXid, JtaTransaction> xidToTxMap = new ConcurrentHashMap<TransactionXid, JtaTransaction>();
+	private final Map<TransactionXid, JtaTransaction> xidToErrTxMap = new ConcurrentHashMap<TransactionXid, JtaTransaction>();
 	private final TransactionLoggerImpl transactionLoggerWrapper = new TransactionLoggerImpl();
 
-	public void putTransaction(XidImpl globalXid, JtaTransaction transaction) {
+	public void putTransaction(TransactionXid globalXid, JtaTransaction transaction) {
 		this.xidToTxMap.put(globalXid, transaction);
 	}
 
-	public JtaTransaction getTransaction(XidImpl globalXid) {
+	public JtaTransaction getTransaction(TransactionXid globalXid) {
 		return this.xidToTxMap.get(globalXid);
 	}
 
-	public JtaTransaction removeTransaction(XidImpl globalXid) {
+	public JtaTransaction removeTransaction(TransactionXid globalXid) {
 		return this.xidToTxMap.remove(globalXid);
 	}
 
@@ -54,15 +54,15 @@ public class TransactionRepositoryImpl implements TransactionRepository {
 		}
 	}
 
-	public void putErrorTransaction(XidImpl globalXid, JtaTransaction transaction) {
+	public void putErrorTransaction(TransactionXid globalXid, JtaTransaction transaction) {
 		this.xidToErrTxMap.put(globalXid, transaction);
 	}
 
-	public JtaTransaction getErrorTransaction(XidImpl globalXid) {
+	public JtaTransaction getErrorTransaction(TransactionXid globalXid) {
 		return this.xidToErrTxMap.get(globalXid);
 	}
 
-	public JtaTransaction removeErrorTransaction(XidImpl globalXid) {
+	public JtaTransaction removeErrorTransaction(TransactionXid globalXid) {
 		return this.xidToErrTxMap.remove(globalXid);
 	}
 

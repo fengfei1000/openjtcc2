@@ -17,28 +17,28 @@ package org.bytesoft.bytetcc.internal;
 
 import javax.transaction.Synchronization;
 
-import org.bytesoft.bytejta.common.XidImpl;
+import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.supports.CompensableSynchronization;
 
 public class CompensableSynchronizationImpl extends CompensableSynchronization {
 	public Synchronization synchronization;
 
-	public CompensableSynchronizationImpl(XidImpl globalXid, Synchronization sync) {
+	public CompensableSynchronizationImpl(TransactionXid globalXid, Synchronization sync) {
 		super(globalXid);
 		this.synchronization = sync;
 	}
 
-	public void afterInitialization(XidImpl xid) {
+	public void afterInitialization(TransactionXid xid) {
 		// ignore
 	}
 
-	public void beforeCompletion(XidImpl xid) {
+	public void beforeCompletion(TransactionXid xid) {
 		if (this.synchronization != null) {
 			this.synchronization.beforeCompletion();
 		}
 	}
 
-	public void afterCompletion(XidImpl xid, int status) {
+	public void afterCompletion(TransactionXid xid, int status) {
 		if (this.synchronization != null) {
 			this.synchronization.afterCompletion(status);
 		}
