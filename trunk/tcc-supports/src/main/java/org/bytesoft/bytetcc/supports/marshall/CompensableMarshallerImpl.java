@@ -16,9 +16,8 @@
 package org.bytesoft.bytetcc.supports.marshall;
 
 import org.bytesoft.bytetcc.supports.NativeBeanFactory;
-import org.bytesoft.bytetcc.supports.serialize.CompensableMarshaller;
 
-public class CompensableMarshallerImpl implements CompensableMarshaller/* , ApplicationContextAware */{
+public class CompensableMarshallerImpl /*implements CompensableMarshaller , ApplicationContextAware */{
 	private NativeBeanFactory beanFactory;
 
 	// @SuppressWarnings("unchecked")

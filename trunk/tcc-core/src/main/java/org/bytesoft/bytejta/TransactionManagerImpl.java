@@ -51,7 +51,8 @@ public class TransactionManagerImpl implements TransactionManager {
 		actx.setThread(Thread.currentThread());
 
 		this.associateds.put(Thread.currentThread(), actx);
-		TransactionRepository.getInstance().putTransaction(transactionContext.getGlobalXid(), transaction);
+		TransactionRepository transactionRepository = TransactionConfigurator.getInstance().getTransactionRepository();
+		transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
 		// this.transactionStatistic.fireBeginTransaction(transaction);
 
 		// TransactionLogger transactionLogger = this.transactionRepository.getTransactionLogger();
@@ -84,7 +85,8 @@ public class TransactionManagerImpl implements TransactionManager {
 			if (failure) {
 				TransactionContext transactionContext = transaction.getTransactionContext();
 				TransactionXid globalXid = transactionContext.getGlobalXid();
-				TransactionRepository.getInstance().putErrorTransaction(globalXid, transaction);
+				TransactionRepository transactionRepository = TransactionConfigurator.getInstance().getTransactionRepository();
+				transactionRepository.putErrorTransaction(globalXid, transaction);
 			}
 		}
 
@@ -134,7 +136,8 @@ public class TransactionManagerImpl implements TransactionManager {
 			if (failure) {
 				TransactionContext transactionContext = transaction.getTransactionContext();
 				TransactionXid globalXid = transactionContext.getGlobalXid();
-				TransactionRepository.getInstance().putErrorTransaction(globalXid, transaction);
+				TransactionRepository transactionRepository = TransactionConfigurator.getInstance().getTransactionRepository();
+				transactionRepository.putErrorTransaction(globalXid, transaction);
 			}
 		}
 

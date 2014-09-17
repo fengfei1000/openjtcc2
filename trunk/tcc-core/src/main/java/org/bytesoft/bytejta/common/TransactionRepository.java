@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.bytesoft.bytejta.TransactionImpl;
 
 public class TransactionRepository {
-	static TransactionRepository instance;
+	// static TransactionRepository instance;
 	private final Map<TransactionXid, TransactionImpl> xidToTxMap = new ConcurrentHashMap<TransactionXid, TransactionImpl>();
 	private final Map<TransactionXid, TransactionImpl> xidToErrTxMap = new ConcurrentHashMap<TransactionXid, TransactionImpl>();
 
@@ -44,41 +44,41 @@ public class TransactionRepository {
 		return new HashSet<TransactionImpl>(this.xidToTxMap.values());
 	}
 
-	private TransactionRepository() {
-		if (instance == null) {
-			initialize(this);
-		} else {
-			throw new IllegalStateException();
-		}
-	}
+	// private TransactionRepository() {
+	// if (instance == null) {
+	// initialize(this);
+	// } else {
+	// throw new IllegalStateException();
+	// }
+	// }
+	//
+	// private static synchronized void initialize(TransactionRepository inst) throws IllegalStateException {
+	// if (instance == null) {
+	// instance = inst;
+	// } else {
+	// throw new IllegalStateException();
+	// }
+	// }
 
-	private static synchronized void initialize(TransactionRepository inst) throws IllegalStateException {
-		if (instance == null) {
-			instance = inst;
-		} else {
-			throw new IllegalStateException();
-		}
-	}
+	// public static TransactionRepository getInstance() {
+	// return getInstance(true);
+	// }
 
-	public static TransactionRepository getInstance() {
-		return getInstance(true);
-	}
-
-	public static TransactionRepository getInstance(boolean create) {
-		if (create) {
-			initializeIfRequired();
-		}
-		return instance;
-	}
-
-	private static TransactionRepository initializeIfRequired() {
-		if (instance == null) {
-			try {
-				return new TransactionRepository();
-			} catch (IllegalStateException ex) {
-				return instance;
-			}
-		}
-		return instance;
-	}
+	// public static TransactionRepository getInstance(boolean create) {
+	// if (create) {
+	// initializeIfRequired();
+	// }
+	// return instance;
+	// }
+	//
+	// private static TransactionRepository initializeIfRequired() {
+	// if (instance == null) {
+	// try {
+	// return new TransactionRepository();
+	// } catch (IllegalStateException ex) {
+	// return instance;
+	// }
+	// }
+	// return instance;
+	// }
 }

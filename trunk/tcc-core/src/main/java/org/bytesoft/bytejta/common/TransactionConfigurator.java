@@ -13,6 +13,7 @@ public final class TransactionConfigurator {
 	private XidFactory xidFactory;
 	private ResourceRecognizer resourceRecognizer;
 	private final TransactionLoggerProxy transactionLogger = new TransactionLoggerProxy();
+	private TransactionRepository transactionRepository;
 
 	private TransactionConfigurator() throws IllegalStateException {
 		if (instance == null) {
@@ -82,6 +83,14 @@ public final class TransactionConfigurator {
 
 	public TransactionLogger getTransactionLogger() {
 		return transactionLogger;
+	}
+
+	public TransactionRepository getTransactionRepository() {
+		return transactionRepository;
+	}
+
+	public void setTransactionRepository(TransactionRepository transactionRepository) {
+		this.transactionRepository = transactionRepository;
 	}
 
 }
