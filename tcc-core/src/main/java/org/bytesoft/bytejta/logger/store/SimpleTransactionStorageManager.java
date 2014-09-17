@@ -43,6 +43,10 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 
 	protected transient long maxPosition;
 
+	public SimpleTransactionStorageManager(String storageFilePath) {
+		this(new File(storageFilePath));
+	}
+
 	public SimpleTransactionStorageManager(File storageFile) {
 		this.storageFile = storageFile;
 	}
@@ -109,18 +113,18 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 			FileChannel channel = this.raf.getChannel();
 			long eofpos = channel.size();
 			long startIdx = SIZE_SECTION_HEADER + SIZE_SECTION_RESOURCES;
+			long endIndex = startIdx;
 			channel.position(startIdx);
-			while (channel.position() < eofpos) {
-				long position = channel.position();
-				long remain = eofpos - position;
+			while (endIndex < eofpos) {
+				long remain = eofpos - endIndex;
 				if (remain >= SIZE_UNIT_TRANSACTION) {
-					continue;
+					endIndex += SIZE_UNIT_TRANSACTION;
 				} else {
-					this.maxPosition = position;
-					this.updateStorageMetaData();
 					break;
 				}
 			}
+			this.maxPosition = endIndex;
+			this.updateStorageMetaData();
 		}
 	}
 
@@ -236,7 +240,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 
 	public int registerResource(String identifier) throws IllegalArgumentException {
 		try {
-			return this.registerResource(identifier);
+			return this.getRegisteredResource(identifier);
 		} catch (IllegalStateException rex) {
 			SimpleResourcePosition position = locateAvailableResourcePosition();
 			int pos = position.getPosition();

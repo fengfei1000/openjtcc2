@@ -526,7 +526,8 @@ public class TransactionImpl implements Transaction {
 		} else if (this.transactionStatus == Status.STATUS_COMMITTED) {
 			throw new IllegalStateException();
 		}
-		throw new IllegalStateException();
+
+		return false;
 
 	}
 
