@@ -48,10 +48,12 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 		for (int i = 0; i < nativeResources.size(); i++) {
 			XAResourceArchive resourceArchive = nativeResources.get(i);
 			XAResourceDescriptor descriptor = resourceArchive.getDescriptor();
-			if (descriptor.getDescriptorId() <= 0) {
+			if (descriptor.isSupportsXA() && descriptor.getDescriptorId() <= 0) {
 				String identifier = descriptor.getIdentifier();
 				int descriptorId = this.storageManager.registerResource(identifier);
 				descriptor.setDescriptorId(descriptorId);
+			} else if (descriptor.isSupportsXA() == false && descriptor.getDescriptorId() == 0) {
+				descriptor.setDescriptorId(-1);
 			}
 		}
 
@@ -59,10 +61,12 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 		for (int i = 0; i < remoteResources.size(); i++) {
 			XAResourceArchive resourceArchive = remoteResources.get(i);
 			XAResourceDescriptor descriptor = resourceArchive.getDescriptor();
-			if (descriptor.getDescriptorId() <= 0) {
+			if (descriptor.isSupportsXA() && descriptor.getDescriptorId() <= 0) {
 				String identifier = descriptor.getIdentifier();
 				int descriptorId = this.storageManager.registerResource(identifier);
 				descriptor.setDescriptorId(descriptorId);
+			} else if (descriptor.isSupportsXA() == false && descriptor.getDescriptorId() == 0) {
+				descriptor.setDescriptorId(-1);
 			}
 		}
 	}
@@ -152,7 +156,6 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 
 	public TransactionArchive deserialize(byte[] byteArray) throws IOException {
 		ByteBuffer buffer = ByteBuffer.wrap(byteArray);
-		buffer.flip();
 
 		TransactionArchive archive = new TransactionArchive();
 		byte[] transactionId = new byte[XidFactory.GLOBAL_TRANSACTION_LENGTH];
@@ -206,9 +209,18 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 			resourceArchive.setCompleted(true);
 		}
 
-		String identifier = this.storageManager.getRegisteredResource(descriptorId);
-		XAResourceDescriptor descriptor = this.resourceSerializer.deserialize(identifier);
-		resourceArchive.setDescriptor(descriptor);
+		if (descriptorId >= 0) {
+			String identifier = this.storageManager.getRegisteredResource(descriptorId);
+			XAResourceDescriptor descriptor = this.resourceSerializer.deserialize(identifier);
+			resourceArchive.setDescriptor(descriptor);
+		} else {
+			XAResourceDescriptor descriptor = new XAResourceDescriptor();
+			descriptor.setRemote(false);
+			descriptor.setSupportsXA(false);
+			descriptor.setDescriptorId(descriptorId);
+			resourceArchive.setDescriptor(descriptor);
+		}
+
 		return resourceArchive;
 
 	}

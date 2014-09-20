@@ -414,20 +414,7 @@ public class TransactionImpl implements Transaction {
 		if (XAResourceDescriptor.class.isInstance(xaRes)) {
 			descriptor = (XAResourceDescriptor) xaRes;
 		} else {
-			try {
-				descriptor = TransactionConfigurator.getInstance().getResourceRecognizer().recognize(xaRes);
-				if (descriptor == null) {
-					descriptor = new XAResourceDescriptor();
-					descriptor.setDelegate(xaRes);
-					descriptor.setRemote(false);
-					descriptor.setSupportsXA(false);
-				}
-			} catch (Exception rnsex) {
-				descriptor = new XAResourceDescriptor();
-				descriptor.setDelegate(xaRes);
-				descriptor.setRemote(false);
-				descriptor.setSupportsXA(false);
-			}
+			descriptor = this.recognizeResource(xaRes);
 		}
 
 		if (descriptor.isRemote()) {
@@ -436,6 +423,22 @@ public class TransactionImpl implements Transaction {
 			return this.nativeTerminator.delistResource(descriptor, flag);
 		}
 
+	}
+
+	private XAResourceDescriptor recognizeResource(XAResource xaRes) {
+		XAResourceDescriptor descriptor;
+		// try {
+		// descriptor = TransactionConfigurator.getInstance().getResourceRecognizer().recognize(xaRes);
+		// if (descriptor == null) {
+		// throw new RuntimeException();
+		// }
+		// } catch (Exception rnsex) {
+		descriptor = new XAResourceDescriptor();
+		descriptor.setDelegate(xaRes);
+		descriptor.setRemote(false);
+		descriptor.setSupportsXA(false);
+		// }
+		return descriptor;
 	}
 
 	public synchronized boolean enlistResource(XAResource xaRes) throws RollbackException, IllegalStateException,
@@ -448,20 +451,7 @@ public class TransactionImpl implements Transaction {
 			if (XAResourceDescriptor.class.isInstance(xaRes)) {
 				descriptor = (XAResourceDescriptor) xaRes;
 			} else {
-				try {
-					descriptor = TransactionConfigurator.getInstance().getResourceRecognizer().recognize(xaRes);
-					if (descriptor == null) {
-						descriptor = new XAResourceDescriptor();
-						descriptor.setDelegate(xaRes);
-						descriptor.setRemote(false);
-						descriptor.setSupportsXA(false);
-					}
-				} catch (Exception rnsex) {
-					descriptor = new XAResourceDescriptor();
-					descriptor.setDelegate(xaRes);
-					descriptor.setRemote(false);
-					descriptor.setSupportsXA(false);
-				}
+				descriptor = this.recognizeResource(xaRes);
 			}
 
 			if (descriptor.isSupportsXA()) {

@@ -285,28 +285,14 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 	}
 
 	public String getRegisteredResource(int index) throws IllegalStateException {
-		IllegalStateException thrown = null;
-		try {
-			SimpleResourcePosition position = this.resources.get(index);
-			if (position.getIndex() == index) {
-				return position.getIdentifier();
-			}
-		} catch (IndexOutOfBoundsException ioobex) {
-			thrown = new IllegalStateException(ioobex);
-		}
-
 		for (int i = 0; i < this.resources.size(); i++) {
-			SimpleResourcePosition position = this.resources.get(index);
+			SimpleResourcePosition position = this.resources.get(i);
 			if (position.getIndex() == index) {
 				return position.getIdentifier();
 			}
 		}
 
-		if (thrown == null) {
-			throw new IllegalStateException();
-		} else {
-			throw thrown;
-		}
+		throw new IllegalStateException();
 	}
 
 	public List<TransactionStorageKey> getStorageKeyList() {
