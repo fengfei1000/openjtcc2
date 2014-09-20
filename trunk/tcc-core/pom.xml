@@ -26,5 +26,12 @@
 			<artifactId>tcc-common</artifactId>
 			<version>0.1.2</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.bytesoft</groupId>
+			<artifactId>bytejta-core</artifactId>
+			<version>0.1.2</version>
+		</dependency>
+
 	</dependencies>
 </project>

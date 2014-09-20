@@ -22,8 +22,8 @@ import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bytesoft.bytejta.common.TransactionXid;
+import org.bytesoft.bytejta.utils.ByteUtils;
 import org.bytesoft.transaction.xa.XidFactory;
-import org.bytesoft.utils.ByteUtils;
 
 public class XidFactoryImpl implements XidFactory {
 

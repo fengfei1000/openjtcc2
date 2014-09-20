@@ -212,6 +212,7 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 		if (descriptorId >= 0) {
 			String identifier = this.storageManager.getRegisteredResource(descriptorId);
 			XAResourceDescriptor descriptor = this.resourceSerializer.deserialize(identifier);
+			descriptor.setDescriptorId(descriptorId);
 			resourceArchive.setDescriptor(descriptor);
 		} else {
 			XAResourceDescriptor descriptor = new XAResourceDescriptor();
