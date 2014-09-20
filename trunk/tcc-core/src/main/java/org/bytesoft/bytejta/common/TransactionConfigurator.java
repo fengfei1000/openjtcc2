@@ -4,14 +4,13 @@ import org.bytesoft.bytejta.TransactionManagerImpl;
 import org.bytesoft.transaction.logger.TransactionLogger;
 import org.bytesoft.transaction.logger.TransactionLoggerProxy;
 import org.bytesoft.transaction.xa.XidFactory;
-import org.bytesoft.transaction.xa.supports.rm.ResourceRecognizer;
 
 public final class TransactionConfigurator {
 	private static TransactionConfigurator instance;
 
 	private TransactionManagerImpl transactionManager;
 	private XidFactory xidFactory;
-	private ResourceRecognizer resourceRecognizer;
+	// private ResourceRecognizer resourceRecognizer;
 	private final TransactionLoggerProxy transactionLogger = new TransactionLoggerProxy();
 	private TransactionRepository transactionRepository;
 
@@ -73,13 +72,13 @@ public final class TransactionConfigurator {
 		this.xidFactory = xidFactory;
 	}
 
-	public ResourceRecognizer getResourceRecognizer() {
-		return resourceRecognizer;
-	}
-
-	public void setResourceRecognizer(ResourceRecognizer resourceRecognizer) {
-		this.resourceRecognizer = resourceRecognizer;
-	}
+	// public ResourceRecognizer getResourceRecognizer() {
+	// return resourceRecognizer;
+	// }
+	//
+	// public void setResourceRecognizer(ResourceRecognizer resourceRecognizer) {
+	// this.resourceRecognizer = resourceRecognizer;
+	// }
 
 	public TransactionLogger getTransactionLogger() {
 		return transactionLogger;
