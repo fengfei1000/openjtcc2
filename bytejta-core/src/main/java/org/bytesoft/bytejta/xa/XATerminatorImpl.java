@@ -12,14 +12,14 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import org.bytesoft.bytejta.common.TransactionXid;
+import org.bytesoft.bytejta.utils.ByteUtils;
+import org.bytesoft.bytejta.utils.CommonUtils;
 import org.bytesoft.transaction.RemoteSystemException;
 import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.archive.XAResourceArchive;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
 import org.bytesoft.transaction.xa.XATerminator;
-import org.bytesoft.utils.ByteUtils;
-import org.bytesoft.utils.CommonUtils;
 
 public class XATerminatorImpl implements XATerminator {
 	static final Logger logger = Logger.getLogger(XATerminatorImpl.class.getSimpleName());
@@ -30,10 +30,6 @@ public class XATerminatorImpl implements XATerminator {
 	public XATerminatorImpl(TransactionContext txContext) {
 		this.transactionContext = txContext;
 	}
-
-	// public boolean valid() {
-	// return this.resources.size() > 0;
-	// }
 
 	public int prepare(Xid xid) throws XAException {
 		return this.invokePrepare(false);

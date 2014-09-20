@@ -16,6 +16,7 @@ import javax.transaction.xa.XAResource;
 
 import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.bytejta.common.TransactionXid;
+import org.bytesoft.bytejta.utils.ByteUtils;
 import org.bytesoft.bytejta.xa.XATerminatorImpl;
 import org.bytesoft.transaction.RemoteSystemException;
 import org.bytesoft.transaction.RollbackRequiredException;
@@ -25,7 +26,6 @@ import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.xa.RemoteXAException;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
 import org.bytesoft.transaction.xa.XATerminator;
-import org.bytesoft.utils.ByteUtils;
 
 public class TransactionImpl implements Transaction {
 	static final Logger logger = Logger.getLogger(TransactionImpl.class.getSimpleName());

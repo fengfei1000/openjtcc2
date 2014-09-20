@@ -40,7 +40,6 @@ public class XAResourceSerializerImpl implements XAResourceSerializer, Applicati
 	}
 
 	public String serialize(XAResourceDescriptor descriptor) throws IOException {
-		// System.out.println("serialize: " + descriptor);
 		return descriptor.getIdentifier();
 	}
 

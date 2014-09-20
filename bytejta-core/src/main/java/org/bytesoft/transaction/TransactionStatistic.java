@@ -15,7 +15,7 @@
  */
 package org.bytesoft.transaction;
 
-import org.bytesoft.bytetcc.TransactionImpl;
+import org.bytesoft.bytejta.TransactionImpl;
 
 public interface TransactionStatistic {
 	public static final long FLAGS_ACTIVE = 0x1;
