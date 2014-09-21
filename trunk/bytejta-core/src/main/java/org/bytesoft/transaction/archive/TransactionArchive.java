@@ -9,6 +9,8 @@ public class TransactionArchive {
 	private Xid xid;
 	private int status;
 	private int vote;
+	private boolean coordinator;
+	private boolean compensable;
 	private boolean optimized;
 	private final List<XAResourceArchive> nativeResources = new ArrayList<XAResourceArchive>();
 	private final List<XAResourceArchive> remoteResources = new ArrayList<XAResourceArchive>();
@@ -51,6 +53,22 @@ public class TransactionArchive {
 
 	public void setOptimized(boolean optimized) {
 		this.optimized = optimized;
+	}
+
+	public boolean isCoordinator() {
+		return coordinator;
+	}
+
+	public void setCoordinator(boolean coordinator) {
+		this.coordinator = coordinator;
+	}
+
+	public boolean isCompensable() {
+		return compensable;
+	}
+
+	public void setCompensable(boolean compensable) {
+		this.compensable = compensable;
 	}
 
 }

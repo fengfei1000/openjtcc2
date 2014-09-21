@@ -1,6 +1,7 @@
 package org.bytesoft.bytejta.common;
 
 import org.bytesoft.bytejta.TransactionManagerImpl;
+import org.bytesoft.transaction.TransactionTimer;
 import org.bytesoft.transaction.logger.TransactionLogger;
 import org.bytesoft.transaction.logger.TransactionLoggerProxy;
 import org.bytesoft.transaction.xa.XidFactory;
@@ -10,7 +11,7 @@ public final class TransactionConfigurator {
 
 	private TransactionManagerImpl transactionManager;
 	private XidFactory xidFactory;
-	// private ResourceRecognizer resourceRecognizer;
+	private TransactionTimer transactionTimer;
 	private final TransactionLoggerProxy transactionLogger = new TransactionLoggerProxy();
 	private TransactionRepository transactionRepository;
 
@@ -72,14 +73,6 @@ public final class TransactionConfigurator {
 		this.xidFactory = xidFactory;
 	}
 
-	// public ResourceRecognizer getResourceRecognizer() {
-	// return resourceRecognizer;
-	// }
-	//
-	// public void setResourceRecognizer(ResourceRecognizer resourceRecognizer) {
-	// this.resourceRecognizer = resourceRecognizer;
-	// }
-
 	public TransactionLogger getTransactionLogger() {
 		return transactionLogger;
 	}
@@ -90,6 +83,14 @@ public final class TransactionConfigurator {
 
 	public void setTransactionRepository(TransactionRepository transactionRepository) {
 		this.transactionRepository = transactionRepository;
+	}
+
+	public TransactionTimer getTransactionTimer() {
+		return transactionTimer;
+	}
+
+	public void setTransactionTimer(TransactionTimer transactionTimer) {
+		this.transactionTimer = transactionTimer;
 	}
 
 }

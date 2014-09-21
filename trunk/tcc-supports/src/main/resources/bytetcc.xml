@@ -30,7 +30,6 @@
 	</bean>
 	<tx:annotation-driven transaction-manager="transactionManager" />
 
-	<!--<bean id="resourceRecognizer" class="org.bytesoft.transaction.supports.spring.ResourceRecognizerImpl" />-->
 	<bean id="resourceSerializer" class="org.bytesoft.transaction.supports.spring.XAResourceSerializerImpl" />
 	<bean id="transactionLogger" class="org.bytesoft.bytejta.logger.SimpleTransactionLogger">
 		<property name="storageManager" ref="transactionStorage" />
@@ -47,8 +46,8 @@
 		<property name="xidFactory" ref="xidFactory" />
 		<property name="transactionManager" ref="bytejtaTransactionManager" />
 		<property name="transactionRepository" ref="transactionRepository" />
+		<property name="transactionTimer" ref="bytejtaTransactionManager" />
 		<property name="transactionLogger" ref="transactionLogger" />
-		<!--<property name="resourceRecognizer" ref="resourceRecognizer" />-->
 	</bean>
 
 </beans>

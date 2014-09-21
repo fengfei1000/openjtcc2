@@ -31,6 +31,10 @@ public class XATerminatorImpl implements XATerminator {
 		this.transactionContext = txContext;
 	}
 
+	public void initializeForRecovery(List<XAResourceArchive> recoveryResources) {
+		this.resources.addAll(recoveryResources);
+	}
+
 	public int prepare(Xid xid) throws XAException {
 		return this.invokePrepare(false);
 	}

@@ -25,42 +25,18 @@ public class TransactionContext implements Serializable, Cloneable {
 	private boolean optimized;
 	private transient boolean coordinator;
 	private transient boolean recovery;
-	// private transient XidImpl creationXid;
-	// private transient Object terminalKey;
-	// private transient final Stack<XidImpl> stack;
 
 	private TransactionXid currentXid;
-	// private PropagationKey instanceKey;
 	private long createdTime;
 	private long expiredTime;
 	private boolean compensable;
 
 	public TransactionContext() {
-		// this.stack = new Stack<XidImpl>();
 	}
-
-	// public synchronized void propagateTransactionContext(TransactionContext that) {
-	// XidImpl xid = that.getCurrentXid();
-	// if (xid.equals(this.creationXid)) {
-	// // ignore
-	// } else {
-	// this.stack.push(this.currentXid);
-	// this.currentXid = xid;
-	// }
-	// }
-
-	// public synchronized void revertTransactionContext() {
-	// if (this.currentXid.equals(this.creationXid)) {
-	// // ignore
-	// } else {
-	// this.currentXid = this.stack.pop();
-	// }
-	// }
 
 	public TransactionContext clone() {
 		TransactionContext that = new TransactionContext();
 		that.currentXid = this.currentXid;
-		// that.instanceKey = this.instanceKey;
 		that.createdTime = System.currentTimeMillis();
 		that.expiredTime = this.getExpiredTime();
 		that.compensable = this.compensable;
@@ -68,13 +44,7 @@ public class TransactionContext implements Serializable, Cloneable {
 	}
 
 	public boolean isCoordinator() {
-		// if (this.coordinator) {
-		// return this.currentXid.equals(this.creationXid);
-		// } else {
-		// return false;
-		// }
 		return this.coordinator;
-		// throw new RuntimeException();
 	}
 
 	public TransactionXid getCurrentXid() {

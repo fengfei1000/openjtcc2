@@ -17,11 +17,13 @@ import javax.transaction.xa.XAResource;
 import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytejta.utils.ByteUtils;
+import org.bytesoft.bytejta.utils.CommonUtils;
 import org.bytesoft.bytejta.xa.XATerminatorImpl;
 import org.bytesoft.transaction.RemoteSystemException;
 import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.SynchronizationImpl;
 import org.bytesoft.transaction.TransactionContext;
+import org.bytesoft.transaction.TransactionTimer;
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.xa.RemoteXAException;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
@@ -30,13 +32,16 @@ import org.bytesoft.transaction.xa.XATerminator;
 public class TransactionImpl implements Transaction {
 	static final Logger logger = Logger.getLogger(TransactionImpl.class.getSimpleName());
 
-	private int transactionStatus;
-	private final TransactionContext transactionContext;
-	private final XATerminator nativeTerminator;
-	private final XATerminator remoteTerminator;
+	private transient Thread thread;
+	private transient boolean timing = true;
 
 	private transient XATerminator firstTerminator;
 	private transient XATerminator lastTerminator;
+
+	private int transactionStatus;
+	private final TransactionContext transactionContext;
+	private final XATerminatorImpl nativeTerminator;
+	private final XATerminatorImpl remoteTerminator;
 
 	private final List<SynchronizationImpl> synchronizations = new ArrayList<SynchronizationImpl>();
 
@@ -169,11 +174,16 @@ public class TransactionImpl implements Transaction {
 			throw new HeuristicRollbackException();
 		}
 
-		// step1: before-completion
+		// stop-timing
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		TransactionTimer transactionTimer = transactionConfigurator.getTransactionTimer();
+		transactionTimer.stopTiming(this);
+
+		// before-completion
 		this.beforeCompletion();
 		this.delistAllResource();
 
-		// step2: analysis
+		// analysis
 		boolean opcEnabled = false;
 		try {
 			opcEnabled = this.analysisTerminator();
@@ -427,17 +437,10 @@ public class TransactionImpl implements Transaction {
 
 	private XAResourceDescriptor recognizeResource(XAResource xaRes) {
 		XAResourceDescriptor descriptor;
-		// try {
-		// descriptor = TransactionConfigurator.getInstance().getResourceRecognizer().recognize(xaRes);
-		// if (descriptor == null) {
-		// throw new RuntimeException();
-		// }
-		// } catch (Exception rnsex) {
 		descriptor = new XAResourceDescriptor();
 		descriptor.setDelegate(xaRes);
 		descriptor.setRemote(false);
 		descriptor.setSupportsXA(false);
-		// }
 		return descriptor;
 	}
 
@@ -483,7 +486,7 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	public int getStatus() throws SystemException {
+	public int getStatus() /* throws SystemException */{
 		return this.transactionStatus;
 	}
 
@@ -529,10 +532,15 @@ public class TransactionImpl implements Transaction {
 
 		TransactionXid xid = this.transactionContext.getCurrentXid().getGlobalXid();
 
-		// step1: before-completion
+		// stop-timing
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		TransactionTimer transactionTimer = transactionConfigurator.getTransactionTimer();
+		transactionTimer.stopTiming(this);
+
+		// before-completion
 		this.beforeCompletion();
 
-		// step2: rollback the first-resource
+		// rollback the first-resource
 		SystemException systemErr = null;
 		RuntimeException runtimeErr = null;
 		try {
@@ -560,7 +568,7 @@ public class TransactionImpl implements Transaction {
 			runtimeErr = rex;
 		}
 
-		// step3: rollback the last-resource
+		// rollback the last-resource
 		try {
 			lastTerminator.rollback(xid);
 		} catch (RemoteXAException xaex) {
@@ -603,16 +611,60 @@ public class TransactionImpl implements Transaction {
 		}
 	}
 
+	public int hashCode() {
+		TransactionXid transactionXid = this.transactionContext == null ? null : this.transactionContext.getGlobalXid();
+		int hash = transactionXid == null ? 0 : transactionXid.hashCode();
+		return hash;
+	}
+
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		} else if (TransactionImpl.class.equals(obj.getClass()) == false) {
+			return false;
+		}
+		TransactionImpl that = (TransactionImpl) obj;
+		TransactionContext thisContext = this.transactionContext;
+		TransactionContext thatContext = that.transactionContext;
+		TransactionXid thisXid = thisContext == null ? null : thisContext.getGlobalXid();
+		TransactionXid thatXid = thatContext == null ? null : thatContext.getGlobalXid();
+		return CommonUtils.equals(thisXid, thatXid);
+	}
+
 	public TransactionContext getTransactionContext() {
 		return transactionContext;
 	}
 
-	public XATerminator getNativeTerminator() {
+	public XATerminatorImpl getNativeTerminator() {
 		return nativeTerminator;
 	}
 
-	public XATerminator getRemoteTerminator() {
+	public XATerminatorImpl getRemoteTerminator() {
 		return remoteTerminator;
+	}
+
+	public boolean isTiming() {
+		return timing;
+	}
+
+	public void setTiming(boolean timing) {
+		this.timing = timing;
+	}
+
+	public Thread getThread() {
+		return thread;
+	}
+
+	public void setThread(Thread thread) {
+		this.thread = thread;
+	}
+
+	public int getTransactionStatus() {
+		return transactionStatus;
+	}
+
+	public void setTransactionStatus(int transactionStatus) {
+		this.transactionStatus = transactionStatus;
 	}
 
 }
