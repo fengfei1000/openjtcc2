@@ -241,6 +241,8 @@ public class TransactionImpl implements Transaction {
 		archive.setOptimized(false);
 		archive.setVote(-1);
 		archive.setXid(this.transactionContext.getGlobalXid());
+		archive.setCompensable(this.transactionContext.isCompensable());
+		archive.setCoordinator(this.transactionContext.isCoordinator());
 		archive.getNativeResources().addAll(this.nativeTerminator.getResourceArchives());
 		archive.getRemoteResources().addAll(this.remoteTerminator.getResourceArchives());
 
@@ -348,6 +350,8 @@ public class TransactionImpl implements Transaction {
 		archive.setOptimized(true);
 		archive.setVote(-1);
 		archive.setXid(this.transactionContext.getGlobalXid());
+		archive.setCompensable(this.transactionContext.isCompensable());
+		archive.setCoordinator(this.transactionContext.isCoordinator());
 		archive.getNativeResources().addAll(this.nativeTerminator.getResourceArchives());
 		archive.getRemoteResources().addAll(this.remoteTerminator.getResourceArchives());
 

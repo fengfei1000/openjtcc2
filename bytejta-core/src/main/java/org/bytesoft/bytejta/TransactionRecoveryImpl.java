@@ -1,10 +1,8 @@
 package org.bytesoft.bytejta;
 
-import java.util.Iterator;
 import java.util.List;
 
 import javax.transaction.Status;
-import javax.transaction.SystemException;
 import javax.transaction.xa.XAResource;
 
 import org.bytesoft.bytejta.common.TransactionConfigurator;
@@ -26,37 +24,40 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 		for (int i = 0; i < transactions.size(); i++) {
 			TransactionImpl transaction = transactions.get(i);
 			TransactionContext transactionContext = transaction.getTransactionContext();
-			int status = transaction.getStatus();
+			boolean coordinator = transactionContext.isCoordinator();
+			if (coordinator) {
+				int status = transaction.getStatus();
 
-			switch (status) {
-			case Status.STATUS_ACTIVE:
-			case Status.STATUS_MARKED_ROLLBACK:
-			case Status.STATUS_PREPARING:
-			case Status.STATUS_ROLLING_BACK:
-			case Status.STATUS_UNKNOWN:
-				try {
-					transaction.rollback();
-					TransactionXid globalXid = transactionContext.getGlobalXid();
-					transactionRepository.removeErrorTransaction(globalXid);
-					transactionRepository.removeTransaction(globalXid);
-				} catch (Exception ex) {
+				switch (status) {
+				case Status.STATUS_ACTIVE:
+				case Status.STATUS_MARKED_ROLLBACK:
+				case Status.STATUS_PREPARING:
+				case Status.STATUS_ROLLING_BACK:
+				case Status.STATUS_UNKNOWN:
+					try {
+						transaction.rollback();
+						TransactionXid globalXid = transactionContext.getGlobalXid();
+						transactionRepository.removeErrorTransaction(globalXid);
+						transactionRepository.removeTransaction(globalXid);
+					} catch (Exception ex) {
+						// ignore
+					}
+				case Status.STATUS_PREPARED:
+				case Status.STATUS_COMMITTING:
+					try {
+						transaction.commit();
+						TransactionXid globalXid = transactionContext.getGlobalXid();
+						transactionRepository.removeErrorTransaction(globalXid);
+						transactionRepository.removeTransaction(globalXid);
+					} catch (Exception ex) {
+						// ignore
+					}
+				case Status.STATUS_COMMITTED:
+				case Status.STATUS_ROLLEDBACK:
+				default:
 					// ignore
 				}
-			case Status.STATUS_PREPARED:
-			case Status.STATUS_COMMITTING:
-				try {
-					transaction.commit();
-					TransactionXid globalXid = transactionContext.getGlobalXid();
-					transactionRepository.removeErrorTransaction(globalXid);
-					transactionRepository.removeTransaction(globalXid);
-				} catch (Exception ex) {
-					// ignore
-				}
-			case Status.STATUS_COMMITTED:
-			case Status.STATUS_ROLLEDBACK:
-			default:
-				// ignore
-			}
+			}// end-if (coordinator)
 		}
 	}
 

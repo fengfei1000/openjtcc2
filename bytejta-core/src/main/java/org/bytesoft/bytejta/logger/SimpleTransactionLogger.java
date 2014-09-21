@@ -109,6 +109,10 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 		buffer.put((byte) status);
 		int vote = archive.getVote();
 		buffer.put((byte) vote);
+		byte compensable = archive.isCompensable() ? (byte) 1 : (byte) 0;
+		buffer.put((byte) compensable);
+		byte coordinator = archive.isCoordinator() ? (byte) 1 : (byte) 0;
+		buffer.put((byte) coordinator);
 		byte optimized = archive.isOptimized() ? (byte) 1 : (byte) 0;
 		buffer.put((byte) optimized);
 
@@ -167,10 +171,14 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 
 		int status = buffer.get();
 		int vote = buffer.get();
+		int compensableValue = buffer.get();
+		int coordinatorValue = buffer.get();
 		int optimizedValue = buffer.get();
 
 		archive.setStatus(status);
 		archive.setVote(vote);
+		archive.setCompensable(compensableValue != 0);
+		archive.setCoordinator(coordinatorValue != 0);
 		archive.setOptimized(optimizedValue != 0);
 
 		int nativeNumber = buffer.get();

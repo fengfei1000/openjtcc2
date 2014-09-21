@@ -1,8 +1,5 @@
 package org.bytesoft.bytetcc.jta;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.InvalidTransactionException;
@@ -14,7 +11,6 @@ import javax.transaction.TransactionManager;
 
 import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.supports.TransactionRepository;
-import org.bytesoft.transaction.AssociatedContext;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionStatus;
 import org.bytesoft.transaction.xa.XidFactory;
@@ -23,7 +19,9 @@ public class JtaTransactionManager implements TransactionManager {
 	protected int transactionTimeout = 5 * 60;
 	protected XidFactory xidFactory;
 	protected TransactionRepository transactionRepository;
-	private final Map<Thread, AssociatedContext> threadToContextMap = new ConcurrentHashMap<Thread, AssociatedContext>();
+
+	// private final Map<Thread, AssociatedContext> threadToContextMap = new ConcurrentHashMap<Thread,
+	// AssociatedContext>();
 
 	public void begin() throws NotSupportedException, SystemException {
 		if (this.getTransaction() != null) {
@@ -49,11 +47,11 @@ public class JtaTransactionManager implements TransactionManager {
 		transaction.setTransactionManager(this);
 		transaction.setTransactionLogger(this.transactionRepository.getTransactionLogger());
 
-		AssociatedContext associated = new AssociatedContext();
-		associated.setTransaction(transaction);
-		associated.setThread(Thread.currentThread());
+		// AssociatedContext associated = new AssociatedContext();
+		// associated.setTransaction(transaction);
+		// associated.setThread(Thread.currentThread());
 
-		this.threadToContextMap.put(Thread.currentThread(), associated);
+		// this.threadToContextMap.put(Thread.currentThread(), associated);
 		this.transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
 		// this.transactionStatistic.fireBeginTransaction(transaction);
 
