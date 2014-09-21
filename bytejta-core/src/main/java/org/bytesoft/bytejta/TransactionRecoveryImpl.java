@@ -27,7 +27,6 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 			boolean coordinator = transactionContext.isCoordinator();
 			if (coordinator) {
 				int status = transaction.getStatus();
-
 				switch (status) {
 				case Status.STATUS_ACTIVE:
 				case Status.STATUS_MARKED_ROLLBACK:
@@ -45,7 +44,7 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 				case Status.STATUS_PREPARED:
 				case Status.STATUS_COMMITTING:
 					try {
-						transaction.commit();
+						transaction.recoveryCommit();
 						TransactionXid globalXid = transactionContext.getGlobalXid();
 						transactionRepository.removeErrorTransaction(globalXid);
 						transactionRepository.removeTransaction(globalXid);

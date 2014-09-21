@@ -19,12 +19,14 @@ import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytejta.utils.ByteUtils;
 import org.bytesoft.bytejta.utils.CommonUtils;
 import org.bytesoft.bytejta.xa.XATerminatorImpl;
+import org.bytesoft.transaction.CommitRequiredException;
 import org.bytesoft.transaction.RemoteSystemException;
 import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.SynchronizationImpl;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionTimer;
 import org.bytesoft.transaction.archive.TransactionArchive;
+import org.bytesoft.transaction.logger.TransactionLogger;
 import org.bytesoft.transaction.xa.RemoteXAException;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
 import org.bytesoft.transaction.xa.XATerminator;
@@ -103,8 +105,8 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	private synchronized boolean checkBeforeCommit() throws RollbackException, IllegalStateException,
-			RollbackRequiredException {
+	private synchronized void checkBeforeCommit() throws RollbackException, IllegalStateException,
+			RollbackRequiredException, CommitRequiredException {
 
 		if (this.transactionStatus == Status.STATUS_ROLLEDBACK) {
 			throw new RollbackException();
@@ -113,13 +115,12 @@ public class TransactionImpl implements Transaction {
 		} else if (this.transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
 			throw new RollbackRequiredException();
 		} else if (this.transactionStatus == Status.STATUS_ACTIVE) {
-			return false;
+			throw new CommitRequiredException();
 		} else if (this.transactionStatus == Status.STATUS_COMMITTED) {
-			return true;
+			// ignore
+		} else {
+			throw new IllegalStateException();
 		}
-
-		throw new IllegalStateException();
-
 	}
 
 	private synchronized boolean analysisTerminator() {
@@ -162,16 +163,128 @@ public class TransactionImpl implements Transaction {
 		}
 	}
 
+	public synchronized void recoveryCommit() throws RollbackException, HeuristicMixedException,
+			HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
+
+		TransactionXid xid = this.transactionContext.getGlobalXid();
+
+		this.transactionStatus = Status.STATUS_COMMITTING;// .setStatusCommiting();
+		boolean nativeReadOnly = this.nativeTerminator.checkReadOnlyForRecovery();
+		boolean remoteReadOnly = this.remoteTerminator.checkReadOnlyForRecovery();
+		boolean committedExists = this.transactionContext.isOptimized();
+		boolean rolledbackExists = false;
+		boolean mixedExists = false;
+		boolean errorExists = false;
+
+		if (nativeReadOnly == false) {
+			try {
+				this.nativeTerminator.commit(xid, false);
+				committedExists = true;
+			} catch (XAException xaex) {
+				switch (xaex.errorCode) {
+				case XAException.XA_HEURHAZ:
+				case XAException.XA_HEURMIX:
+					mixedExists = true;
+					break;
+				case XAException.XA_HEURCOM:
+					committedExists = true;
+					break;
+				case XAException.XAER_RMERR:
+					errorExists = true;
+					break;
+				case XAException.XA_HEURRB:
+					rolledbackExists = true;
+					break;
+				default:
+					errorExists = true;
+				}
+			} catch (RuntimeException rex) {
+				errorExists = true;
+			}
+		}
+
+		if (remoteReadOnly) {
+			try {
+				this.remoteTerminator.commit(xid, false);
+				committedExists = true;
+			} catch (RemoteXAException xaex) {
+				errorExists = true;
+			} catch (XAException xaex) {
+				switch (xaex.errorCode) {
+				case XAException.XA_HEURHAZ:
+				case XAException.XA_HEURMIX:
+					mixedExists = true;
+					break;
+				case XAException.XA_HEURCOM:
+					committedExists = true;
+					break;
+				case XAException.XAER_RMERR:
+					errorExists = true;
+					break;
+				case XAException.XA_HEURRB:
+					rolledbackExists = true;
+					break;
+				default:
+					errorExists = true;
+				}
+			} catch (RuntimeException rex) {
+				errorExists = true;
+			}
+		}
+
+		int txStatus = Status.STATUS_COMMITTED;
+		boolean transactionDone = true;
+		try {
+			if (mixedExists) {
+				transactionDone = false;// TODO
+				throw new HeuristicMixedException();
+			} else if (committedExists && rolledbackExists) {
+				transactionDone = false;// TODO
+				throw new HeuristicMixedException();
+			} else if (errorExists) {
+				transactionDone = false;
+				throw new SystemException();
+			} else if (rolledbackExists) {
+				txStatus = Status.STATUS_ROLLEDBACK;
+				throw new HeuristicRollbackException();
+			}
+		} finally {
+			if (transactionDone) {
+				this.deleteRecoveryTransaction(txStatus);
+			}
+		}
+
+	}
+
+	private void deleteRecoveryTransaction(int txStatus) {
+		TransactionXid xid = this.transactionContext.getGlobalXid();
+		TransactionArchive archive = new TransactionArchive();
+		archive.setOptimized(this.transactionContext.isOptimized());
+		archive.setVote(XAResource.XA_OK);
+		archive.setXid(xid);
+		archive.setCompensable(this.transactionContext.isCompensable());
+		archive.setCoordinator(this.transactionContext.isCoordinator());
+		archive.getNativeResources().addAll(this.nativeTerminator.getResourceArchives());
+		archive.getRemoteResources().addAll(this.remoteTerminator.getResourceArchives());
+
+		this.transactionStatus = txStatus;
+		archive.setStatus(this.transactionStatus);
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		TransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
+		transactionLogger.deleteTransaction(archive);
+	}
+
 	public synchronized void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
 			SecurityException, IllegalStateException, SystemException {
 
 		try {
-			if (this.checkBeforeCommit()) {
-				return;
-			}
-		} catch (RollbackRequiredException rex) {
+			this.checkBeforeCommit();
+			return;
+		} catch (RollbackRequiredException rrex) {
 			this.rollback();
 			throw new HeuristicRollbackException();
+		} catch (CommitRequiredException crex) {
+			// ignore
 		}
 
 		// stop-timing
@@ -207,7 +320,7 @@ public class TransactionImpl implements Transaction {
 	}
 
 	private void opcCommit() throws SystemException, HeuristicRollbackException, HeuristicMixedException {
-		TransactionXid xid = this.transactionContext.getCurrentXid().getGlobalXid();
+		TransactionXid xid = this.transactionContext.getGlobalXid();
 		try {
 			lastTerminator.commit(xid, true);
 		} catch (RemoteXAException xaex) {
@@ -235,7 +348,7 @@ public class TransactionImpl implements Transaction {
 	}
 
 	private void regularCommit() throws SystemException, HeuristicRollbackException, HeuristicMixedException {
-		TransactionXid xid = this.transactionContext.getCurrentXid().getGlobalXid();
+		TransactionXid xid = this.transactionContext.getGlobalXid();
 
 		TransactionArchive archive = new TransactionArchive();
 		archive.setOptimized(false);
@@ -344,7 +457,7 @@ public class TransactionImpl implements Transaction {
 	}
 
 	private void optimizeCommit() throws SystemException, HeuristicRollbackException, HeuristicMixedException {
-		TransactionXid xid = this.transactionContext.getCurrentXid().getGlobalXid();
+		TransactionXid xid = this.transactionContext.getGlobalXid();
 
 		TransactionArchive archive = new TransactionArchive();
 		archive.setOptimized(true);
@@ -512,29 +625,30 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	private boolean checkBeforeRollback() throws IllegalStateException {
+	private void checkBeforeRollback() throws IllegalStateException, RollbackRequiredException {
 
 		if (this.transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
-			return false;
+			throw new RollbackRequiredException();
 		} else if (this.transactionStatus == Status.STATUS_ACTIVE) {
-			return false;
+			throw new RollbackRequiredException();
 		} else if (this.transactionStatus == Status.STATUS_ROLLEDBACK) {
-			return true;
+			// ignore
 		} else if (this.transactionStatus == Status.STATUS_COMMITTED) {
 			throw new IllegalStateException();
+		} else {
+			throw new RollbackRequiredException();
 		}
-
-		return false;
 
 	}
 
 	public synchronized void rollback() throws IllegalStateException, SystemException {
 
-		if (this.checkBeforeRollback()) {
+		try {
+			this.checkBeforeRollback();
 			return;
+		} catch (RollbackRequiredException rrex) {
+			// ignore
 		}
-
-		TransactionXid xid = this.transactionContext.getCurrentXid().getGlobalXid();
 
 		// stop-timing
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
@@ -545,6 +659,7 @@ public class TransactionImpl implements Transaction {
 		this.beforeCompletion();
 
 		// rollback the first-resource
+		TransactionXid xid = this.transactionContext.getGlobalXid();
 		SystemException systemErr = null;
 		RuntimeException runtimeErr = null;
 		try {

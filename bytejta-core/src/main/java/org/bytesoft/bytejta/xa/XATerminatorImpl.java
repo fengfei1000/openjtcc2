@@ -35,15 +35,24 @@ public class XATerminatorImpl implements XATerminator {
 		this.resources.addAll(recoveryResources);
 	}
 
+	public boolean checkReadOnlyForRecovery() {
+		for (int i = 0; i < this.resources.size(); i++) {
+			XAResourceArchive archive = this.resources.get(i);
+			if (archive.getVote() != 0) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	public int prepare(Xid xid) throws XAException {
 		return this.invokePrepare(false);
 	}
 
 	private int invokePrepare(boolean optimizeEnabled) throws XAException {
 		int globalVote = XAResource.XA_RDONLY;
-		int length = this.resources.size();
 		int lastResourceIdx = this.chooseLastResourceIndex();
-		for (int i = 0; i < length; i++) {
+		for (int i = 0; i < this.resources.size(); i++) {
 			boolean currentLastResource = (i == lastResourceIdx);
 			if (optimizeEnabled && currentLastResource) {
 				// ignore
