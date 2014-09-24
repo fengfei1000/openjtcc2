@@ -95,14 +95,10 @@ public class ByteUtils {
 
 	public static String byteArrayToString(final byte[] bytes, final int startIndex, final int len) {
 		StringBuilder ber = new StringBuilder();
-		for (int i = 0, j = 0; i < bytes.length && j < len; i++, j++) {
-			int v0 = bytes[i] << 24;
-			int value = v0 >>> 24;
-			int idx1 = value >> 4;
-			int b1 = idx1 << 4;
-			int idx2 = b1 ^ value;
-			ber.append(chars[idx1]);
-			ber.append(chars[idx2]);
+		for (int i = startIndex, j = 0; j < len; i++, j++) {
+			byte b = bytes[i];
+			ber.append(chars[(b & 0xf0) >> 4]);
+			ber.append(chars[(b & 0x0f)]);
 		}
 		return ber.toString();
 	}
