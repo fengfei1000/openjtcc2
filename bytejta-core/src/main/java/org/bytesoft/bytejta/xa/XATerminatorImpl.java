@@ -139,8 +139,9 @@ public class XATerminatorImpl implements XATerminator {
 					// * one of the XA_RB* exceptions. Upon return, the resource manager has
 					// * rolled back the branch's work and has released all held resources.
 					switch (xaex.errorCode) {
-					case XAException.XA_HEURMIX:
 					case XAException.XA_HEURHAZ:
+						// TODO
+					case XAException.XA_HEURMIX:
 						commitExists = true;
 						rollbackExists = true;
 						break;
@@ -149,15 +150,17 @@ public class XATerminatorImpl implements XATerminator {
 						break;
 					case XAException.XAER_RMERR:
 					case XAException.XAER_RMFAIL:
-						errorExists = true;
-						break;
+						// errorExists = true;
+						// break;
 					case XAException.XAER_NOTA:
 					case XAException.XAER_INVAL:
 					case XAException.XAER_PROTO:
 						errorExists = true;
 						break;
 					case XAException.XA_HEURRB:
-					default:
+						rollbackExists = true;
+						break;
+					default:// XA_RB*
 						rollbackExists = true;
 						break;
 					}
@@ -176,7 +179,7 @@ public class XATerminatorImpl implements XATerminator {
 		try {
 			this.rollback(xid);
 			rolledback = true;
-		} catch (XAException rbex) {
+		} catch (XAException rbex) {// TODO
 			switch (rbex.errorCode) {
 			case XAException.XA_HEURCOM:
 				committed = true;
@@ -213,13 +216,13 @@ public class XATerminatorImpl implements XATerminator {
 			throw new XAException(XAException.XA_HEURMIX);
 		} else if (commitExists) {
 			if (errorExists) {
-				throw new XAException(XAException.XA_HEURHAZ);
+				throw new XAException(XAException.XA_HEURHAZ);// TODO
 			} else {
 				// ignore
 			}
 		} else if (rollbackExists) {
 			if (errorExists) {
-				throw new XAException(XAException.XA_HEURHAZ);
+				throw new XAException(XAException.XA_HEURHAZ);// TODO
 			} else {
 				throw new XAException(XAException.XA_HEURRB);
 			}
@@ -254,7 +257,7 @@ public class XATerminatorImpl implements XATerminator {
 					archive.setCommitted(true);
 					archive.setCompleted(true);
 				}
-			} catch (XAException xaex) {
+			} catch (XAException xaex) {// TODO
 				if (commitExists) {
 					// * @exception XAException An error has occurred. Possible XAExceptions
 					// * are XA_HEURHAZ, XA_HEURCOM, XA_HEURRB, XA_HEURMIX, XAER_RMERR,
@@ -265,13 +268,17 @@ public class XATerminatorImpl implements XATerminator {
 					// * rolled back the branch's work and has released all held resources.
 
 					switch (xaex.errorCode) {
-					case XAException.XA_HEURMIX:
 					case XAException.XA_HEURHAZ:
+						// TODO
+					case XAException.XA_HEURMIX:
 						commitExists = true;
 						rollbackExists = true;
 						break;
 					case XAException.XA_HEURCOM:
 						commitExists = true;
+						break;
+					case XAException.XA_HEURRB:
+						rollbackExists = true;
 						break;
 					case XAException.XAER_RMERR:
 					case XAException.XAER_RMFAIL:
@@ -283,9 +290,8 @@ public class XATerminatorImpl implements XATerminator {
 						// errorExists = true;
 						commitExists = true;
 						break;
-					case XAException.XA_HEURRB:
 					default:
-						rollbackExists = true;
+						errorExists = true;
 						break;
 					}
 				} else {
@@ -317,7 +323,7 @@ public class XATerminatorImpl implements XATerminator {
 				} else {
 					archive.rollback(branchXid);
 				}
-			} catch (XAException xaex) {
+			} catch (XAException xaex) {// TODO
 				// * @exception XAException An error has occurred. Possible XAExceptions are
 				// * XA_HEURHAZ, XA_HEURCOM, XA_HEURRB, XA_HEURMIX, XAER_RMERR, XAER_RMFAIL,
 				// * XAER_NOTA, XAER_INVAL, or XAER_PROTO.
@@ -326,8 +332,9 @@ public class XATerminatorImpl implements XATerminator {
 				// * the resource manager has rolled back the branch's work and has released
 				// * all held resources.
 				switch (xaex.errorCode) {
-				case XAException.XA_HEURMIX:
 				case XAException.XA_HEURHAZ:
+					// TODO
+				case XAException.XA_HEURMIX:
 					commitExists = true;
 					rollbackExists = true;
 					break;
@@ -358,13 +365,13 @@ public class XATerminatorImpl implements XATerminator {
 			throw new XAException(XAException.XA_HEURMIX);
 		} else if (commitExists) {
 			if (errorExists) {
-				throw new XAException(XAException.XA_HEURHAZ);
+				throw new XAException(XAException.XA_HEURHAZ);// TODO
 			} else {
 				throw new XAException(XAException.XA_HEURCOM);
 			}
 		} else if (rollbackExists) {
 			if (errorExists) {
-				throw new XAException(XAException.XA_HEURHAZ);
+				throw new XAException(XAException.XA_HEURHAZ);// TODO
 			} else {
 				// ignore
 			}
@@ -377,24 +384,8 @@ public class XATerminatorImpl implements XATerminator {
 		}
 	}
 
-	public void end(Xid xid, int flags) throws XAException {
-		throw new IllegalStateException("Not supported yet!");
-	}
-
-	public void forget(Xid xid) throws XAException {
-		throw new IllegalStateException("Not supported yet!");
-	}
-
 	public int getTransactionTimeout() throws XAException {
 		return this.transactionTimeout;
-	}
-
-	public boolean isSameRM(XAResource xares) throws XAException {
-		throw new IllegalStateException("Not supported yet!");
-	}
-
-	public Xid[] recover(int flag) throws XAException {
-		throw new IllegalStateException("Not supported yet!");
 	}
 
 	public boolean setTransactionTimeout(int seconds) throws XAException {
@@ -403,7 +394,23 @@ public class XATerminatorImpl implements XATerminator {
 	}
 
 	public void start(Xid xid, int flags) throws XAException {
-		throw new IllegalStateException("Not supported yet!");
+		throw new XAException(XAException.XAER_RMFAIL);
+	}
+
+	public void end(Xid xid, int flags) throws XAException {
+		throw new XAException(XAException.XAER_RMFAIL);
+	}
+
+	public boolean isSameRM(XAResource xares) throws XAException {
+		throw new XAException(XAException.XAER_RMFAIL);
+	}
+
+	public Xid[] recover(int flag) throws XAException {
+		throw new XAException(XAException.XAER_RMFAIL);
+	}
+
+	public void forget(Xid xid) throws XAException {
+		throw new XAException(XAException.XAER_RMFAIL);
 	}
 
 	public boolean xaSupports() throws RemoteSystemException {
@@ -438,7 +445,7 @@ public class XATerminatorImpl implements XATerminator {
 
 			archive.end(branchXid, flag);
 			archive.setDelisted(true);
-		} catch (XAException xae) {
+		} catch (XAException xae) {// TODO
 			xae.printStackTrace();
 
 			// Possible XAException values are XAER_RMERR, XAER_RMFAIL,
@@ -513,7 +520,7 @@ public class XATerminatorImpl implements XATerminator {
 			} else {
 				throw new SystemException();
 			}
-		} catch (XAException xae) {
+		} catch (XAException xae) {// TODO
 			xae.printStackTrace();
 
 			// Possible exceptions are XA_RB*, XAER_RMERR, XAER_RMFAIL,

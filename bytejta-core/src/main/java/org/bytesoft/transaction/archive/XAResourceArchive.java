@@ -15,6 +15,7 @@ public class XAResourceArchive implements XAResource {
 	private transient boolean readonly;
 	private boolean committed;
 	private boolean rolledback;
+	private transient boolean heuristic;
 
 	public void commit(Xid ignore, boolean onePhase) throws XAException {
 		if (this.readonly) {
@@ -149,6 +150,14 @@ public class XAResourceArchive implements XAResource {
 
 	public void setReadonly(boolean readonly) {
 		this.readonly = readonly;
+	}
+
+	public boolean isHeuristic() {
+		return heuristic;
+	}
+
+	public void setHeuristic(boolean heuristic) {
+		this.heuristic = heuristic;
 	}
 
 }

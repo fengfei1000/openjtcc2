@@ -11,10 +11,6 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import org.bytesoft.bytetcc.TransactionImpl;
-import org.bytesoft.bytetcc.supports.TransactionLogger;
-import org.bytesoft.transaction.TransactionStatistic;
-import org.bytesoft.transaction.TransactionStatus;
-import org.bytesoft.transaction.xa.RemoteXAException;
 
 public class TerminatorSkeleton implements XAResource {
 
@@ -196,23 +192,23 @@ public class TerminatorSkeleton implements XAResource {
 		try {
 			this.commit();
 		} catch (RemoteException ex) {
-			RemoteXAException xae = new RemoteXAException();
+			XAException xae = new XAException(XAException.XAER_RMFAIL);
 			xae.initCause(ex);
 			throw xae;
 		} catch (HeuristicMixedException ex) {
-			XAException xae = new XAException(RemoteXAException.XA_HEURMIX);
+			XAException xae = new XAException(XAException.XA_HEURMIX);
 			xae.initCause(ex);
 			throw xae;
 		} catch (HeuristicRollbackException ex) {
-			XAException xae = new XAException(RemoteXAException.XA_HEURRB);
+			XAException xae = new XAException(XAException.XA_HEURRB);
 			xae.initCause(ex);
 			throw xae;
 		} catch (SystemException ex) {
-			XAException xae = new XAException(RemoteXAException.XAER_RMERR);
+			XAException xae = new XAException(XAException.XAER_RMERR);
 			xae.initCause(ex);
 			throw xae;
 		} catch (RuntimeException ex) {
-			XAException xae = new XAException(RemoteXAException.XAER_RMERR);
+			XAException xae = new XAException(XAException.XAER_RMERR);
 			xae.initCause(ex);
 			throw xae;
 		}
@@ -225,11 +221,11 @@ public class TerminatorSkeleton implements XAResource {
 		try {
 			this.cleanup();
 		} catch (RemoteException ex) {
-			RemoteXAException xae = new RemoteXAException();
+			XAException xae = new XAException(XAException.XAER_RMFAIL);
 			xae.initCause(ex);
 			throw xae;
 		} catch (RuntimeException ex) {
-			XAException xae = new XAException(RemoteXAException.XAER_RMERR);
+			XAException xae = new XAException(XAException.XAER_RMERR);
 			xae.initCause(ex);
 			throw xae;
 		}
@@ -247,15 +243,15 @@ public class TerminatorSkeleton implements XAResource {
 		try {
 			this.prepare();
 		} catch (RemoteException ex) {
-			RemoteXAException xae = new RemoteXAException();
+			XAException xae = new XAException(XAException.XAER_RMFAIL);
 			xae.initCause(ex);
 			throw xae;
 		} catch (SystemException ex) {
-			XAException xae = new XAException(RemoteXAException.XAER_RMERR);
+			XAException xae = new XAException(XAException.XAER_RMERR);
 			xae.initCause(ex);
 			throw xae;
 		} catch (RuntimeException ex) {
-			XAException xae = new XAException(RemoteXAException.XAER_RMERR);
+			XAException xae = new XAException(XAException.XAER_RMERR);
 			xae.initCause(ex);
 			throw xae;
 		}
@@ -270,23 +266,23 @@ public class TerminatorSkeleton implements XAResource {
 		try {
 			this.rollback();
 		} catch (RemoteException ex) {
-			RemoteXAException xae = new RemoteXAException();
+			XAException xae = new XAException(XAException.XAER_RMFAIL);
 			xae.initCause(ex);
 			throw xae;
 		} catch (HeuristicMixedException ex) {
-			XAException xae = new XAException(RemoteXAException.XA_HEURMIX);
+			XAException xae = new XAException(XAException.XA_HEURMIX);
 			xae.initCause(ex);
 			throw xae;
 		} catch (HeuristicCommitException ex) {
-			XAException xae = new XAException(RemoteXAException.XA_HEURCOM);
+			XAException xae = new XAException(XAException.XA_HEURCOM);
 			xae.initCause(ex);
 			throw xae;
 		} catch (SystemException ex) {
-			XAException xae = new XAException(RemoteXAException.XAER_RMERR);
+			XAException xae = new XAException(XAException.XAER_RMERR);
 			xae.initCause(ex);
 			throw xae;
 		} catch (RuntimeException ex) {
-			XAException xae = new XAException(RemoteXAException.XAER_RMERR);
+			XAException xae = new XAException(XAException.XAER_RMERR);
 			xae.initCause(ex);
 			throw xae;
 		}
