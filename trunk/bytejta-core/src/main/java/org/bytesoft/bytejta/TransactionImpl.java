@@ -27,7 +27,6 @@ import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionTimer;
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.logger.TransactionLogger;
-import org.bytesoft.transaction.xa.RemoteXAException;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
 import org.bytesoft.transaction.xa.XATerminator;
 
@@ -180,9 +179,10 @@ public class TransactionImpl implements Transaction {
 			try {
 				this.nativeTerminator.commit(xid, false);
 				committedExists = true;
-			} catch (XAException xaex) {
+			} catch (XAException xaex) {// TODO
 				switch (xaex.errorCode) {
 				case XAException.XA_HEURHAZ:
+					// TODO
 				case XAException.XA_HEURMIX:
 					mixedExists = true;
 					break;
@@ -207,11 +207,10 @@ public class TransactionImpl implements Transaction {
 			try {
 				this.remoteTerminator.commit(xid, false);
 				committedExists = true;
-			} catch (RemoteXAException xaex) {
-				errorExists = true;
 			} catch (XAException xaex) {
 				switch (xaex.errorCode) {
 				case XAException.XA_HEURHAZ:
+					// TODO
 				case XAException.XA_HEURMIX:
 					mixedExists = true;
 					break;
@@ -222,6 +221,9 @@ public class TransactionImpl implements Transaction {
 					errorExists = true;
 					break;
 				case XAException.XA_HEURRB:
+					rolledbackExists = true;
+					break;
+				case XAException.XAER_RMFAIL:
 					rolledbackExists = true;
 					break;
 				default:
@@ -323,19 +325,20 @@ public class TransactionImpl implements Transaction {
 		TransactionXid xid = this.transactionContext.getGlobalXid();
 		try {
 			lastTerminator.commit(xid, true);
-		} catch (RemoteXAException xaex) {
-			SystemException ex = new SystemException();
-			ex.initCause(xaex);
-			throw ex;
 		} catch (XAException xaex) {
 			switch (xaex.errorCode) {
 			case XAException.XA_HEURHAZ:
+				// TODO
 			case XAException.XA_HEURMIX:
 				throw new HeuristicMixedException();
 			case XAException.XA_HEURCOM:
 				break;
 			case XAException.XAER_RMERR:
 				throw new SystemException();
+			case XAException.XAER_RMFAIL:
+				SystemException ex = new SystemException();
+				ex.initCause(xaex);
+				throw ex;
 			case XAException.XA_HEURRB:
 			default:
 				throw new HeuristicRollbackException();
@@ -396,9 +399,6 @@ public class TransactionImpl implements Transaction {
 			if (firstVote == XAResource.XA_OK) {
 				try {
 					firstTerminator.commit(xid, false);
-				} catch (RemoteXAException xaex) {
-					this.rollback();
-					throw new HeuristicRollbackException();
 				} catch (XAException xaex) {
 					this.rollback();
 					throw new HeuristicRollbackException();
@@ -411,17 +411,18 @@ public class TransactionImpl implements Transaction {
 			if (lastVote == XAResource.XA_OK) {
 				try {
 					lastTerminator.commit(xid, false);
-				} catch (RemoteXAException xaex) {
-					SystemException ex = new SystemException();
-					ex.initCause(xaex);
-					throw ex;
 				} catch (XAException xaex) {
 					switch (xaex.errorCode) {
 					case XAException.XA_HEURHAZ:
+						// TODO
 					case XAException.XA_HEURMIX:
 						throw new HeuristicMixedException();
 					case XAException.XA_HEURCOM:
 						break;
+					case XAException.XAER_RMFAIL:
+						SystemException ex = new SystemException();
+						ex.initCause(xaex);
+						throw ex;
 					case XAException.XAER_RMERR:
 						if (firstVote == XAResource.XA_RDONLY) {
 							this.rollback();
@@ -484,9 +485,6 @@ public class TransactionImpl implements Transaction {
 
 		try {
 			lastTerminator.commit(xid, true);
-		} catch (RemoteXAException xaex) {
-			this.rollback();
-			throw new HeuristicRollbackException();
 		} catch (XAException xaex) {
 			this.rollback();
 			throw new HeuristicRollbackException();
@@ -502,17 +500,18 @@ public class TransactionImpl implements Transaction {
 
 		try {
 			firstTerminator.commit(xid, false);
-		} catch (RemoteXAException xaex) {
-			SystemException ex = new SystemException();
-			ex.initCause(xaex);
-			throw ex;
 		} catch (XAException xaex) {
 			switch (xaex.errorCode) {
 			case XAException.XA_HEURHAZ:
+				// TODO
 			case XAException.XA_HEURMIX:
 				throw new HeuristicMixedException();
 			case XAException.XA_HEURCOM:
 				break;
+			case XAException.XAER_RMFAIL:
+				SystemException ex = new SystemException();
+				ex.initCause(xaex);
+				throw ex;
 			case XAException.XAER_RMERR:
 				throw new SystemException();
 			case XAException.XA_HEURRB:
@@ -664,17 +663,16 @@ public class TransactionImpl implements Transaction {
 		RuntimeException runtimeErr = null;
 		try {
 			firstTerminator.rollback(xid);
-		} catch (RemoteXAException xaex) {
-			RemoteSystemException rsex = new RemoteSystemException();
-			rsex.initCause(xaex);
-			systemErr = rsex;
-		} catch (XAException xaex) {
+		} /*
+		 * catch (RemoteXAException xaex) { RemoteSystemException rsex = new RemoteSystemException();
+		 * rsex.initCause(xaex); systemErr = rsex; }
+		 */catch (XAException xaex) {
 			switch (xaex.errorCode) {
 			case XAException.XA_HEURRB:
 				// ignore
 				break;
-			case XAException.XA_HEURMIX:
 			case XAException.XA_HEURHAZ:
+			case XAException.XA_HEURMIX:
 			case XAException.XA_HEURCOM:
 			case XAException.XAER_RMERR:
 			default:
@@ -690,19 +688,16 @@ public class TransactionImpl implements Transaction {
 		// rollback the last-resource
 		try {
 			lastTerminator.rollback(xid);
-		} catch (RemoteXAException xaex) {
-			RemoteSystemException rsex = new RemoteSystemException();
-			rsex.initCause(xaex);
-			throw rsex;
 		} catch (XAException xaex) {
 			switch (xaex.errorCode) {
 			case XAException.XA_HEURRB:
 				// ignore
 				break;
-			case XAException.XA_HEURMIX:
 			case XAException.XA_HEURHAZ:
+			case XAException.XA_HEURMIX:
 			case XAException.XA_HEURCOM:
 			case XAException.XAER_RMERR:
+			case XAException.XAER_RMFAIL:
 			default:
 				SystemException rsex = new SystemException();
 				rsex.initCause(xaex);
