@@ -7,13 +7,13 @@ import javax.transaction.xa.XAResource;
 
 import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.bytejta.common.TransactionRepository;
-import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytejta.xa.XATerminatorImpl;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.archive.XAResourceArchive;
 import org.bytesoft.transaction.logger.TransactionLogger;
 import org.bytesoft.transaction.recovery.TransactionRecovery;
+import org.bytesoft.transaction.xa.TransactionXid;
 
 public class TransactionRecoveryImpl implements TransactionRecovery {
 
@@ -25,6 +25,7 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 			TransactionImpl transaction = transactions.get(i);
 			TransactionContext transactionContext = transaction.getTransactionContext();
 			boolean coordinator = transactionContext.isCoordinator();
+			// TODO
 			if (coordinator) {
 				int status = transaction.getStatus();
 				switch (status) {

@@ -9,10 +9,10 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 
-import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.supports.TransactionRepository;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionStatus;
+import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XidFactory;
 
 public class JtaTransactionManager implements TransactionManager {

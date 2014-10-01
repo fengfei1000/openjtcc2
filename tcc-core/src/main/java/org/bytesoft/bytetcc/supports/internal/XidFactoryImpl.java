@@ -21,8 +21,9 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.bytesoft.bytejta.common.TransactionXid;
+import org.bytesoft.bytejta.common.TransactionCommonXid;
 import org.bytesoft.bytejta.utils.ByteUtils;
+import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XidFactory;
 
 public class XidFactoryImpl implements XidFactory {
@@ -69,7 +70,7 @@ public class XidFactoryImpl implements XidFactory {
 				this.hardwareAddress.length + applicationBytes.length + endByteArray.length + millisByteArray.length,//
 				atomicByteArray.length);
 
-		return new TransactionXid(global);
+		return new TransactionCommonXid(global);
 	}
 
 	public TransactionXid createGlobalXid(byte[] globalTransactionId) {
@@ -80,7 +81,7 @@ public class XidFactoryImpl implements XidFactory {
 		}
 		byte[] global = new byte[globalTransactionId.length];
 		System.arraycopy(globalTransactionId, 0, global, 0, global.length);
-		return new TransactionXid(global);
+		return new TransactionCommonXid(global);
 	}
 
 	public TransactionXid createBranchXid(TransactionXid globalXid) {
@@ -118,7 +119,7 @@ public class XidFactoryImpl implements XidFactory {
 				this.hardwareAddress.length + applicationBytes.length + endByteArray.length + millisByteArray.length,//
 				atomicByteArray.length);
 
-		return new TransactionXid(global, branch);
+		return new TransactionCommonXid(global, branch);
 	}
 
 	public TransactionXid createBranchXid(TransactionXid globalXid, byte[] branchQualifier) {
@@ -139,7 +140,7 @@ public class XidFactoryImpl implements XidFactory {
 		byte[] global = new byte[globalXid.getGlobalTransactionId().length];
 		System.arraycopy(globalXid.getGlobalTransactionId(), 0, global, 0, global.length);
 
-		return new TransactionXid(global, branchQualifier);
+		return new TransactionCommonXid(global, branchQualifier);
 	}
 
 }

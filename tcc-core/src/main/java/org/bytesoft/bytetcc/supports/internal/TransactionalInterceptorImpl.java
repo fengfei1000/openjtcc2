@@ -17,7 +17,6 @@ package org.bytesoft.bytetcc.supports.internal;
 
 import java.util.logging.Logger;
 
-import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.TransactionImpl;
 import org.bytesoft.bytetcc.TransactionManagerImpl;
 import org.bytesoft.bytetcc.supports.serialize.TerminatorMarshaller;
@@ -25,6 +24,7 @@ import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.rpc.TransactionalInterceptor;
 import org.bytesoft.transaction.rpc.TransactionalRequest;
 import org.bytesoft.transaction.rpc.TransactionalResponse;
+import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XidFactory;
 
 public class TransactionalInterceptorImpl implements TransactionalInterceptor {

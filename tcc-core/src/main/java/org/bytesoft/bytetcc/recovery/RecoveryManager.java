@@ -25,7 +25,6 @@ import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 
-import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.TransactionImpl;
 import org.bytesoft.bytetcc.TransactionManagerImpl;
 import org.bytesoft.bytetcc.archive.TransactionArchive;
@@ -34,6 +33,7 @@ import org.bytesoft.bytetcc.supports.TransactionRepository;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionStatistic;
 import org.bytesoft.transaction.TransactionStatus;
+import org.bytesoft.transaction.xa.TransactionXid;
 
 public class RecoveryManager {
 

@@ -17,8 +17,8 @@ package org.bytesoft.bytetcc.archive;
 
 import java.io.Serializable;
 
-import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytejta.utils.CommonUtils;
+import org.bytesoft.transaction.xa.TransactionXid;
 
 public class CompensableArchive {
 	public boolean launchSvc;

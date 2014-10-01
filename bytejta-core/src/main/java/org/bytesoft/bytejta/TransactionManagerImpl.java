@@ -18,9 +18,11 @@ import javax.transaction.TransactionManager;
 
 import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.bytejta.common.TransactionRepository;
-import org.bytesoft.bytejta.common.TransactionXid;
+import org.bytesoft.transaction.CommitRequiredException;
+import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionTimer;
+import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XidFactory;
 
 public class TransactionManagerImpl implements TransactionManager, TransactionTimer {
@@ -75,14 +77,18 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 		TransactionXid globalXid = transactionContext.getGlobalXid();
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
-		boolean failure = true;
+		boolean transactionDone = true;
 		try {
 			transaction.commit();
-			failure = false;
+		} catch (CommitRequiredException crex) {
+			transactionDone = false;
+			transactionRepository.putErrorTransaction(globalXid, transaction);
+		} catch (RuntimeException rrex) {
+			transactionDone = false;
+			transactionRepository.putErrorTransaction(globalXid, transaction);
 		} finally {
-			if (failure) {
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-			} else {
+			if (transactionDone) {
+				transactionRepository.removeErrorTransaction(globalXid);
 				transactionRepository.removeTransaction(globalXid);
 			}
 		}
@@ -108,6 +114,7 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 
 		TransactionImpl transaction = (TransactionImpl) tobj;
 		transaction.setThread(Thread.currentThread());
+		transaction.resume();
 		this.associateds.put(Thread.currentThread(), transaction);
 
 	}
@@ -126,14 +133,18 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 		TransactionXid globalXid = transactionContext.getGlobalXid();
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
-		boolean failure = true;
+		boolean transactionDone = true;
 		try {
 			transaction.rollback();
-			failure = false;
+		} catch (RollbackRequiredException rrex) {
+			transactionDone = false;
+			transactionRepository.putErrorTransaction(globalXid, transaction);
+		} catch (RuntimeException rrex) {
+			transactionDone = false;
+			transactionRepository.putErrorTransaction(globalXid, transaction);
 		} finally {
-			if (failure) {
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-			} else {
+			if (transactionDone) {
+				transactionRepository.removeErrorTransaction(globalXid);
 				transactionRepository.removeTransaction(globalXid);
 			}
 		}
@@ -166,7 +177,9 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 	}
 
 	public TransactionImpl suspend() throws SystemException {
-		return this.associateds.remove(Thread.currentThread());
+		TransactionImpl transaction = this.associateds.remove(Thread.currentThread());
+		transaction.suspend();
+		return transaction;
 	}
 
 	public void timingExecution() {

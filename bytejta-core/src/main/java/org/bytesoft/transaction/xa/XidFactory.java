@@ -15,8 +15,6 @@
  */
 package org.bytesoft.transaction.xa;
 
-import org.bytesoft.bytejta.common.TransactionXid;
-
 public interface XidFactory {
 
 	public static final int XID_FORMAT_ID = 8127;

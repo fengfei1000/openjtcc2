@@ -17,8 +17,8 @@ package org.bytesoft.bytetcc.internal;
 
 import javax.transaction.Synchronization;
 
-import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.supports.CompensableSynchronization;
+import org.bytesoft.transaction.xa.TransactionXid;
 
 public class CompensableSynchronizationImpl extends CompensableSynchronization {
 	public Synchronization synchronization;
