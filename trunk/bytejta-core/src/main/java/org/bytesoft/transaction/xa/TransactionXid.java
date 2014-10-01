@@ -22,18 +22,18 @@ import javax.transaction.xa.Xid;
 
 import org.bytesoft.bytejta.utils.ByteUtils;
 
-public abstract class AbstractXid implements Xid, Serializable {
+public abstract class TransactionXid implements Xid, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	protected final int formatId = XidFactory.XID_FORMAT_ID;
 	protected byte[] globalTransactionId;
 	protected byte[] branchQualifier;
 
-	public AbstractXid(byte[] global) {
+	public TransactionXid(byte[] global) {
 		this(global, new byte[0]);
 	}
 
-	public AbstractXid(byte[] global, byte[] branch) {
+	public TransactionXid(byte[] global, byte[] branch) {
 		if (global == null) {
 			throw new IllegalArgumentException("全局事务ID(globalTransactionId)不能为空.");
 		} else if (global.length > MAXGTRIDSIZE) {
@@ -49,9 +49,9 @@ public abstract class AbstractXid implements Xid, Serializable {
 		this.branchQualifier = branch;
 	}
 
-	public abstract AbstractXid getGlobalXid();
+	public abstract TransactionXid getGlobalXid();
 
-	public abstract AbstractXid createBranchXid();
+	public abstract TransactionXid createBranchXid();
 
 	public byte[] getBranchQualifier() {
 		return this.branchQualifier;
@@ -82,7 +82,7 @@ public abstract class AbstractXid implements Xid, Serializable {
 		} else if (getClass() != obj.getClass()) {
 			return false;
 		}
-		AbstractXid other = (AbstractXid) obj;
+		TransactionXid other = (TransactionXid) obj;
 		if (formatId != other.formatId) {
 			return false;
 		} else if (Arrays.equals(branchQualifier, other.branchQualifier) == false) {

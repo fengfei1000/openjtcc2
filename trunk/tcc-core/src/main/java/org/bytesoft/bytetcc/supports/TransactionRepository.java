@@ -17,8 +17,8 @@ package org.bytesoft.bytetcc.supports;
 
 import java.util.Set;
 
-import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytetcc.jta.JtaTransaction;
+import org.bytesoft.transaction.xa.TransactionXid;
 
 public interface TransactionRepository {
 

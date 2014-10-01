@@ -17,11 +17,11 @@ public interface XATerminator extends javax.transaction.xa.XAResource {
 	public boolean enlistResource(XAResourceDescriptor xaRes) throws RollbackException, IllegalStateException,
 			SystemException;
 
-	public void resumeAllResource() throws IllegalStateException, SystemException;
+	public void resumeAllResource() throws RollbackException, SystemException;
 
-	public void suspendAllResource() throws IllegalStateException, SystemException;
+	public void suspendAllResource() throws RollbackException, SystemException;
 
-	public void delistAllResource() throws IllegalStateException, SystemException;
+	public void delistAllResource() throws RollbackException, SystemException;
 
 	public List<XAResourceArchive> getResourceArchives();
 

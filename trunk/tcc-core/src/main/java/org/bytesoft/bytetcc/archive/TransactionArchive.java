@@ -17,9 +17,9 @@ package org.bytesoft.bytetcc.archive;
 
 import java.util.Map;
 
-import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionStatus;
+import org.bytesoft.transaction.xa.TransactionXid;
 
 public interface TransactionArchive {
 

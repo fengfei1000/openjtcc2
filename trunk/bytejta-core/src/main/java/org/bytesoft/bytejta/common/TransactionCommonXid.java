@@ -19,16 +19,17 @@ import java.io.Serializable;
 
 import javax.transaction.xa.Xid;
 
-import org.bytesoft.transaction.xa.AbstractXid;
+import org.bytesoft.transaction.xa.TransactionXid;
+import org.bytesoft.transaction.xa.XidFactory;
 
-public class TransactionXid extends AbstractXid implements Xid, Serializable {
+public class TransactionCommonXid extends TransactionXid implements Xid, Serializable {
 	private static final long serialVersionUID = 1L;
 
-	public TransactionXid(byte[] global) {
+	public TransactionCommonXid(byte[] global) {
 		this(global, new byte[0]);
 	}
 
-	public TransactionXid(byte[] global, byte[] branch) {
+	public TransactionCommonXid(byte[] global, byte[] branch) {
 		super(global, branch);
 	}
 
@@ -36,7 +37,9 @@ public class TransactionXid extends AbstractXid implements Xid, Serializable {
 		if (this.globalTransactionId == null || this.globalTransactionId.length == 0) {
 			throw new IllegalStateException();
 		} else if (this.branchQualifier != null && this.branchQualifier.length > 0) {
-			return TransactionConfigurator.getInstance().getXidFactory().createGlobalXid(this.globalTransactionId);
+			TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+			XidFactory xidFactory = transactionConfigurator.getXidFactory();
+			return xidFactory.createGlobalXid(this.globalTransactionId);
 		} else {
 			return this;
 		}
@@ -48,7 +51,9 @@ public class TransactionXid extends AbstractXid implements Xid, Serializable {
 		} else if (this.branchQualifier != null && this.branchQualifier.length > 0) {
 			throw new IllegalStateException();
 		} else {
-			return TransactionConfigurator.getInstance().getXidFactory().createBranchXid(this);
+			TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+			XidFactory xidFactory = transactionConfigurator.getXidFactory();
+			return xidFactory.createBranchXid(this);
 		}
 	}
 

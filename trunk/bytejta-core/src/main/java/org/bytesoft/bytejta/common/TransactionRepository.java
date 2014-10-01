@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bytesoft.bytejta.TransactionImpl;
+import org.bytesoft.transaction.xa.TransactionXid;
 
 public class TransactionRepository {
 	private final Map<TransactionXid, TransactionImpl> xidToTxMap = new ConcurrentHashMap<TransactionXid, TransactionImpl>();

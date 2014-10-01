@@ -17,8 +17,8 @@ package org.bytesoft.bytetcc.supports.serialize;
 
 import java.io.Serializable;
 
-import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytejta.utils.CommonUtils;
+import org.bytesoft.transaction.xa.TransactionXid;
 
 public class TerminatorInfo implements Serializable {
 	private static final long serialVersionUID = 1L;

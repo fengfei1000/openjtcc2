@@ -9,7 +9,6 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import org.bytesoft.bytejta.common.TransactionConfigurator;
-import org.bytesoft.bytejta.common.TransactionXid;
 import org.bytesoft.bytejta.logger.store.SimpleTransactionStorageObject;
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.archive.XAResourceArchive;
@@ -19,6 +18,7 @@ import org.bytesoft.transaction.serialize.XAResourceSerializer;
 import org.bytesoft.transaction.store.TransactionStorageKey;
 import org.bytesoft.transaction.store.TransactionStorageManager;
 import org.bytesoft.transaction.store.TransactionStorageObject;
+import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
 import org.bytesoft.transaction.xa.XidFactory;
 
