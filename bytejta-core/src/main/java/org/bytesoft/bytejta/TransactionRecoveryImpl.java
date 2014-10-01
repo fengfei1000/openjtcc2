@@ -42,6 +42,8 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 						TransactionXid globalXid = transactionContext.getGlobalXid();
 						transactionRepository.removeErrorTransaction(globalXid);
 						transactionRepository.removeTransaction(globalXid);
+
+						this.deleteRecoveryTransaction(transaction);
 					} catch (RollbackRequiredException ex) {
 						// TODO
 					} catch (SystemException ex) {
@@ -54,6 +56,8 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 						TransactionXid globalXid = transactionContext.getGlobalXid();
 						transactionRepository.removeErrorTransaction(globalXid);
 						transactionRepository.removeTransaction(globalXid);
+
+						this.deleteRecoveryTransaction(transaction);
 					} catch (HeuristicMixedException ex) {
 						// TODO
 					} catch (CommitRequiredException ex) {
@@ -129,22 +133,12 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 	}
 
 	private void deleteRecoveryTransaction(TransactionImpl transaction) {
-		TransactionContext transactionContext = transaction.getTransactionContext();
-		TransactionXid xid = transactionContext.getGlobalXid();
-		TransactionArchive archive = new TransactionArchive();
-		archive.setOptimized(transactionContext.isOptimized());
-		archive.setVote(XAResource.XA_OK);
-		archive.setXid(xid);
-		archive.setCompensable(transactionContext.isCompensable());
-		archive.setCoordinator(transactionContext.isCoordinator());
-		archive.getNativeResources().addAll(this.nativeTerminator.getResourceArchives());
-		archive.getRemoteResources().addAll(this.remoteTerminator.getResourceArchives());
 
-		this.transactionStatus = txStatus;
-		archive.setStatus(this.transactionStatus);
+		TransactionArchive archive = transaction.getTransactionArchive();
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		TransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
 		transactionLogger.deleteTransaction(archive);
+
 	}
 
 }
