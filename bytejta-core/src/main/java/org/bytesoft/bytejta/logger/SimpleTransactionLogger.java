@@ -150,12 +150,14 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 		byte branchVote = (byte) resourceArchive.getVote();
 		byte rolledback = resourceArchive.isRolledback() ? (byte) 1 : (byte) 0;
 		byte committed = resourceArchive.isCommitted() ? (byte) 1 : (byte) 0;
+		byte heuristic = resourceArchive.isHeuristic() ? (byte) 1 : (byte) 0;
 
 		buffer.put(branchQualifier);
 		buffer.put(descriptorId);
 		buffer.put(branchVote);
 		buffer.put(committed);
 		buffer.put(rolledback);
+		buffer.put(heuristic);
 	}
 
 	public TransactionArchive deserialize(byte[] byteArray) throws IOException {
@@ -204,6 +206,7 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 		int branchVote = buffer.get();
 		int committedValue = buffer.get();
 		int rolledbackValue = buffer.get();
+		int heuristicValue = buffer.get();
 		XAResourceArchive resourceArchive = new XAResourceArchive();
 		XidFactory xidFactory = TransactionConfigurator.getInstance().getXidFactory();
 		TransactionXid branchXid = xidFactory.createBranchXid(globalXid, branchQualifier);
@@ -211,6 +214,7 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 		resourceArchive.setVote(branchVote);
 		resourceArchive.setRolledback(rolledbackValue != 0);
 		resourceArchive.setCommitted(committedValue != 0);
+		resourceArchive.setHeuristic(heuristicValue != 0);
 		if (branchVote == XAResource.XA_RDONLY) {
 			resourceArchive.setCompleted(true);
 		} else if (resourceArchive.isCommitted() || resourceArchive.isRolledback()) {

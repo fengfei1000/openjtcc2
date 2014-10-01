@@ -25,6 +25,7 @@ public class TransactionContext implements Serializable, Cloneable {
 	private boolean optimized;
 	private transient boolean coordinator;
 	private transient boolean recovery;
+	private transient int prepareVote = -1;
 
 	private TransactionXid currentXid;
 	private long createdTime;
@@ -105,6 +106,14 @@ public class TransactionContext implements Serializable, Cloneable {
 
 	public void setOptimized(boolean optimized) {
 		this.optimized = optimized;
+	}
+
+	public int getPrepareVote() {
+		return prepareVote;
+	}
+
+	public void setPrepareVote(int prepareVote) {
+		this.prepareVote = prepareVote;
 	}
 
 }

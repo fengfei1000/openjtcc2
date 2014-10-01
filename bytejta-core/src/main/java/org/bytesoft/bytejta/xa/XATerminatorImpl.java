@@ -36,15 +36,15 @@ public class XATerminatorImpl implements XATerminator {
 		this.resources.addAll(recoveryResources);
 	}
 
-	public boolean checkReadOnlyForRecovery() {
-		for (int i = 0; i < this.resources.size(); i++) {
-			XAResourceArchive archive = this.resources.get(i);
-			if (archive.getVote() != 0) {
-				return false;
-			}
-		}
-		return true;
-	}
+	// public boolean checkReadOnlyForRecovery() {
+	// for (int i = 0; i < this.resources.size(); i++) {
+	// XAResourceArchive archive = this.resources.get(i);
+	// if (archive.getVote() != 0) {
+	// return false;
+	// }
+	// }
+	// return true;
+	// }
 
 	public synchronized int prepare(Xid xid) throws XAException {
 		return this.invokePrepare(false);
@@ -611,7 +611,32 @@ public class XATerminatorImpl implements XATerminator {
 	}
 
 	public void forget(Xid xid) throws XAException {
-		throw new XAException(XAException.XAER_RMFAIL);
+		for (int i = 0; i < this.resources.size(); i++) {
+			XAResourceArchive archive = this.resources.get(i);
+			if (archive.isHeuristic()) {
+				try {
+					Xid branchXid = archive.getXid();
+					archive.forget(branchXid);
+				} catch (XAException xae) {
+					// Possible exception values are XAER_RMERR, XAER_RMFAIL
+					// , XAER_NOTA, XAER_INVAL, or XAER_PROTO.
+					switch (xae.errorCode) {
+					case XAException.XAER_RMERR:
+						logger.warning("Error Occurred in forget: " + xae.getMessage());
+						break;
+					case XAException.XAER_RMFAIL:
+						logger.warning("Error Occurred in forget: " + xae.getMessage());
+						break;
+					case XAException.XAER_NOTA:
+					case XAException.XAER_INVAL:
+					case XAException.XAER_PROTO:
+						break;
+					default:
+						logger.warning("Unknown state in forget.");
+					}
+				}
+			}// end-if
+		}// end-for
 	}
 
 	public boolean xaSupports() throws RemoteSystemException {
