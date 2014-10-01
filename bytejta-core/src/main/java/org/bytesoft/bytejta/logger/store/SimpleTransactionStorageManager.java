@@ -259,6 +259,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 					} finally {
 						this.resourceBuf.force();
 					}
+					position.setIdentifier(identifier);
 					this.resourceMap.put(identifier, position);
 					return position.getIndex();
 				}
