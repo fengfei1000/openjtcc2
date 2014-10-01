@@ -2,12 +2,16 @@ package org.bytesoft.bytejta;
 
 import java.util.List;
 
+import javax.transaction.HeuristicMixedException;
 import javax.transaction.Status;
+import javax.transaction.SystemException;
 import javax.transaction.xa.XAResource;
 
 import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.bytejta.common.TransactionRepository;
 import org.bytesoft.bytejta.xa.XATerminatorImpl;
+import org.bytesoft.transaction.CommitRequiredException;
+import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.archive.XAResourceArchive;
@@ -25,7 +29,6 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 			TransactionImpl transaction = transactions.get(i);
 			TransactionContext transactionContext = transaction.getTransactionContext();
 			boolean coordinator = transactionContext.isCoordinator();
-			// TODO
 			if (coordinator) {
 				int status = transaction.getStatus();
 				switch (status) {
@@ -35,12 +38,14 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 				case Status.STATUS_ROLLING_BACK:
 				case Status.STATUS_UNKNOWN:
 					try {
-						transaction.rollback();
+						transaction.recoveryRollback();
 						TransactionXid globalXid = transactionContext.getGlobalXid();
 						transactionRepository.removeErrorTransaction(globalXid);
 						transactionRepository.removeTransaction(globalXid);
-					} catch (Exception ex) {
-						// ignore
+					} catch (RollbackRequiredException ex) {
+						// TODO
+					} catch (SystemException ex) {
+						// TODO
 					}
 				case Status.STATUS_PREPARED:
 				case Status.STATUS_COMMITTING:
@@ -49,8 +54,12 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 						TransactionXid globalXid = transactionContext.getGlobalXid();
 						transactionRepository.removeErrorTransaction(globalXid);
 						transactionRepository.removeTransaction(globalXid);
-					} catch (Exception ex) {
-						// ignore
+					} catch (HeuristicMixedException ex) {
+						// TODO
+					} catch (CommitRequiredException ex) {
+						// TODO
+					} catch (SystemException ex) {
+						// TODO
 					}
 				case Status.STATUS_COMMITTED:
 				case Status.STATUS_ROLLEDBACK:
@@ -117,6 +126,25 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 		// XAResourceArchive archive = nativeResources.get(i);
 		// }
 		// }
+	}
+
+	private void deleteRecoveryTransaction(TransactionImpl transaction) {
+		TransactionContext transactionContext = transaction.getTransactionContext();
+		TransactionXid xid = transactionContext.getGlobalXid();
+		TransactionArchive archive = new TransactionArchive();
+		archive.setOptimized(transactionContext.isOptimized());
+		archive.setVote(XAResource.XA_OK);
+		archive.setXid(xid);
+		archive.setCompensable(transactionContext.isCompensable());
+		archive.setCoordinator(transactionContext.isCoordinator());
+		archive.getNativeResources().addAll(this.nativeTerminator.getResourceArchives());
+		archive.getRemoteResources().addAll(this.remoteTerminator.getResourceArchives());
+
+		this.transactionStatus = txStatus;
+		archive.setStatus(this.transactionStatus);
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		TransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
+		transactionLogger.deleteTransaction(archive);
 	}
 
 }

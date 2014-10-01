@@ -83,6 +83,9 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 		} catch (CommitRequiredException crex) {
 			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
+		} catch (HeuristicMixedException hmex) {// TODO
+			transactionDone = false;
+			transactionRepository.putErrorTransaction(globalXid, transaction);
 		} catch (RuntimeException rrex) {
 			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
