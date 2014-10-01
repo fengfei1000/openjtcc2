@@ -13,41 +13,8 @@
 
 	<description>The bytetcc transaction manager module</description>
 
-	<bean class="org.bytesoft.transaction.supports.spring.resource.ManagedConnectionFactoryProcessor" />
+	<import resource="classpath:bytejta.xml" />
+
 	<bean class="org.bytesoft.bytetcc.supports.spring.CompensablePostProcessor" />
-
-	<bean id="xidFactory" class="org.bytesoft.bytetcc.supports.internal.XidFactoryImpl" />
-
-	<bean id="bytejtaTransactionManager" class="org.bytesoft.bytejta.TransactionManagerImpl" />
-
-	<bean id="userTransaction" class="org.bytesoft.bytetcc.UserTransactionImpl">
-		<property name="transactionManager" ref="bytejtaTransactionManager" />
-	</bean>
-
-	<bean id="transactionManager" class="org.springframework.transaction.jta.JtaTransactionManager">
-		<property name="userTransaction" ref="userTransaction" />
-		<property name="transactionManager" ref="bytejtaTransactionManager" />
-	</bean>
-	<tx:annotation-driven transaction-manager="transactionManager" />
-
-	<bean id="resourceSerializer" class="org.bytesoft.transaction.supports.spring.XAResourceSerializerImpl" />
-	<bean id="transactionLogger" class="org.bytesoft.bytejta.logger.SimpleTransactionLogger">
-		<property name="storageManager" ref="transactionStorage" />
-		<property name="resourceSerializer" ref="resourceSerializer" />
-	</bean>
-
-	<bean id="transactionStorage" class="org.bytesoft.bytejta.logger.store.SimpleTransactionStorageManager"
-		init-method="initialize">
-		<constructor-arg value="D:/temp/bytejta.dat" />
-	</bean>
-
-	<bean id="transactionRepository" class="org.bytesoft.bytejta.common.TransactionRepository" />
-	<bean id="transactionConfigurator" class="org.bytesoft.bytejta.common.TransactionConfigurator">
-		<property name="xidFactory" ref="xidFactory" />
-		<property name="transactionManager" ref="bytejtaTransactionManager" />
-		<property name="transactionRepository" ref="transactionRepository" />
-		<property name="transactionTimer" ref="bytejtaTransactionManager" />
-		<property name="transactionLogger" ref="transactionLogger" />
-	</bean>
 
 </beans>
