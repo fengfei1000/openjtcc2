@@ -9,6 +9,7 @@ import org.bytesoft.transaction.xa.XidFactory;
 public final class TransactionConfigurator {
 	private static TransactionConfigurator instance;
 
+	private boolean optimizedEnabled = true;
 	private TransactionManagerImpl transactionManager;
 	private XidFactory xidFactory;
 	private TransactionTimer transactionTimer;
@@ -91,6 +92,14 @@ public final class TransactionConfigurator {
 
 	public void setTransactionTimer(TransactionTimer transactionTimer) {
 		this.transactionTimer = transactionTimer;
+	}
+
+	public boolean isOptimizedEnabled() {
+		return optimizedEnabled;
+	}
+
+	public void setOptimizedEnabled(boolean optimizedEnabled) {
+		this.optimizedEnabled = optimizedEnabled;
 	}
 
 }

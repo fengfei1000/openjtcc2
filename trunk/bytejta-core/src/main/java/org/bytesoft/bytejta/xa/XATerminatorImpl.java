@@ -36,16 +36,6 @@ public class XATerminatorImpl implements XATerminator {
 		this.resources.addAll(recoveryResources);
 	}
 
-	// public boolean checkReadOnlyForRecovery() {
-	// for (int i = 0; i < this.resources.size(); i++) {
-	// XAResourceArchive archive = this.resources.get(i);
-	// if (archive.getVote() != 0) {
-	// return false;
-	// }
-	// }
-	// return true;
-	// }
-
 	public synchronized int prepare(Xid xid) throws XAException {
 		return this.invokePrepare(false);
 	}
@@ -659,7 +649,16 @@ public class XATerminatorImpl implements XATerminator {
 			throw new SystemException();
 		}
 
+		XAResourceDescriptor originDescriptor = archive.getDescriptor();
+		boolean typeMatched = originDescriptor.isRemote() && descriptor.isRemote();
+		boolean propChanged = originDescriptor.isSupportsXA() && descriptor.isSupportsXA() == false;
+
+		if (typeMatched && propChanged) {
+			archive.setNonxaResourceExists(true);
+		}
+
 		return this.delistResource(archive, flag);
+
 	}
 
 	private boolean delistResource(XAResourceArchive archive, int flag) throws SystemException,

@@ -96,44 +96,33 @@ public class TransactionImpl implements Transaction {
 		}
 	}
 
-	private synchronized boolean analysisTerminator() {
-		if (this.firstTerminator == null || this.lastTerminator == null) {
+	private boolean currentOpcNecessary() {
+		int nativeResNum = this.nativeTerminator.getResourceArchives().size();
+		int remoteResNum = this.remoteTerminator.getResourceArchives().size();
+		return (nativeResNum + remoteResNum) <= 1;
+	}
 
-			int nativeResNum = this.nativeTerminator.getResourceArchives().size();
-			int remoteResNum = this.remoteTerminator.getResourceArchives().size();
-			boolean nativeValid = nativeResNum > 0;
-			boolean remoteValid = remoteResNum > 0;
+	private synchronized void analysisTerminator() {
 
-			if (nativeValid == false && remoteValid == false) {
+		if (this.transactionContext.isOptimized() == false) {
+
+			boolean nativeSupportsXA = false;
+			try {
+				nativeSupportsXA = this.nativeTerminator.xaSupports();
+			} catch (RemoteSystemException rsex) {
+				// ignore
+			}
+			if (nativeSupportsXA) {
 				this.firstTerminator = this.nativeTerminator;
 				this.lastTerminator = this.remoteTerminator;
-			} else if (nativeValid == false) {
-				this.firstTerminator = this.nativeTerminator;
-				this.lastTerminator = this.remoteTerminator;
-			} else if (remoteValid == false) {
+			} else {
 				this.firstTerminator = this.remoteTerminator;
 				this.lastTerminator = this.nativeTerminator;
-			} else {
-				boolean nativeSupportsXA = false;
-				try {
-					nativeSupportsXA = this.nativeTerminator.xaSupports();
-				} catch (RemoteSystemException rsex) {
-					// ignore
-				}
-				if (nativeSupportsXA) {
-					this.firstTerminator = this.nativeTerminator;
-					this.lastTerminator = this.remoteTerminator;
-				} else {
-					this.firstTerminator = this.remoteTerminator;
-					this.lastTerminator = this.nativeTerminator;
-				}
 			}
-			return (nativeResNum + remoteResNum) <= 1;
-		} else {
-			int firstResNum = this.firstTerminator.getResourceArchives().size();
-			int lastResNum = this.lastTerminator.getResourceArchives().size();
-			return (firstResNum + lastResNum) <= 1;
+			this.transactionContext.setOptimized(true);
+
 		}
+
 	}
 
 	public synchronized void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
@@ -171,19 +160,12 @@ public class TransactionImpl implements Transaction {
 			throw new HeuristicRollbackException();
 		}
 
-		// analysis
-		boolean opcEnabled = false;
 		try {
-			opcEnabled = this.analysisTerminator();
-		} catch (RuntimeException xaex) {
-			this.rollback();
-			throw new HeuristicRollbackException();
-		}
-
-		try {
-			if (opcEnabled) {
+			if (this.currentOpcNecessary()) {
 				this.opcCommit();
-			} else if (this.transactionContext.isOptimized()) {
+			} else if (transactionConfigurator.isOptimizedEnabled()) {
+				// analysis
+				this.analysisTerminator();
 				this.optimizeCommit();
 			} else {
 				this.regularCommit();
@@ -224,7 +206,6 @@ public class TransactionImpl implements Transaction {
 			SystemException {
 		TransactionXid xid = this.transactionContext.getGlobalXid();
 
-		this.transactionContext.setOptimized(false);
 		TransactionArchive archive = this.getTransactionArchive();// new TransactionArchive();
 
 		int firstVote = XAResource.XA_RDONLY;
@@ -341,7 +322,6 @@ public class TransactionImpl implements Transaction {
 			SystemException {
 		TransactionXid xid = this.transactionContext.getGlobalXid();
 
-		this.transactionContext.setOptimized(true);
 		TransactionArchive archive = this.getTransactionArchive();// new TransactionArchive();
 
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
@@ -472,33 +452,70 @@ public class TransactionImpl implements Transaction {
 				descriptor = this.recognizeResource(xaRes);
 			}
 
-			if (descriptor.isSupportsXA()) {
-				if (descriptor.isRemote()) {
-					return this.remoteTerminator.enlistResource(descriptor);
-				} else {
-					return this.nativeTerminator.enlistResource(descriptor);
-				}
+			if (descriptor.isRemote()) {
+				return this.enlistRemoteResource(descriptor);
 			} else {
-				if (descriptor.isRemote()) {
-					boolean nativeSupportsXA = this.nativeTerminator.xaSupports();
-					if (nativeSupportsXA) {
-						return this.remoteTerminator.enlistResource(descriptor);
-					} else {
-						throw new SystemException("There already has a non-xa resource exists.");
-					}
-				} else {
-					boolean remoteSupportsXA = this.remoteTerminator.xaSupports();
-					if (remoteSupportsXA) {
-						return this.nativeTerminator.enlistResource(descriptor);
-					} else {
-						throw new SystemException("There already has a non-xa resource exists.");
-					}
-				}
+				return this.enlistNativeResource(descriptor);
 			}
 		} else {
 			throw new IllegalStateException();
 		}
 
+	}
+
+	public synchronized boolean enlistNativeResource(XAResourceDescriptor descriptor) throws RollbackException,
+			IllegalStateException, SystemException {
+		if (descriptor.isSupportsXA()) {
+			return this.nativeTerminator.enlistResource(descriptor);
+		} else if (this.transactionContext.isNonxaResourceAllowed()) {
+			boolean remoteSupportsXA = false;
+			try {
+				remoteSupportsXA = this.remoteTerminator.xaSupports();
+			} catch (RemoteSystemException rsex) {
+				// logger.warning("Error occurred in enlist resource.");
+				throw new SystemException("There already has a non-xa resource exists.");
+			}
+			if (remoteSupportsXA) {
+				boolean enlisted = this.nativeTerminator.enlistResource(descriptor);
+				this.transactionContext.setOptimized(true);
+				this.transactionContext.setNonxaResourceAllowed(false);
+				this.firstTerminator = this.remoteTerminator;
+				this.lastTerminator = this.nativeTerminator;
+				return enlisted;
+			} else {
+				throw new SystemException("There already has a non-xa resource exists.");
+			}
+		} else {
+			throw new SystemException("Non-xa resource is not supported.");
+		}
+	}
+
+	public synchronized boolean enlistRemoteResource(XAResourceDescriptor descriptor) throws RollbackException,
+			IllegalStateException, SystemException {
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		if (descriptor.isSupportsXA()) {
+			return this.remoteTerminator.enlistResource(descriptor);
+		} else if (transactionConfigurator.isOptimizedEnabled()) {
+			boolean nativeSupportsXA = false;
+			try {
+				nativeSupportsXA = this.nativeTerminator.xaSupports();
+			} catch (RemoteSystemException rsex) {
+				// logger.warning("Error occurred in enlist resource.");
+				throw new SystemException("There already has a non-xa resource exists.");
+			}
+			if (nativeSupportsXA) {
+				boolean enlisted = this.remoteTerminator.enlistResource(descriptor);
+				this.transactionContext.setOptimized(true);
+				this.transactionContext.setNonxaResourceAllowed(false);
+				this.firstTerminator = this.nativeTerminator;
+				this.lastTerminator = this.remoteTerminator;
+				return enlisted;
+			} else {
+				throw new SystemException("There already has a non-xa resource exists.");
+			}
+		} else {
+			throw new SystemException("Non-xa resource is not supported.");
+		}
 	}
 
 	public int getStatus() /* throws SystemException */{
@@ -770,7 +787,7 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	protected void setRollbackOnlyQuietly() {
+	public void setRollbackOnlyQuietly() {
 		try {
 			this.setRollbackOnly();
 		} catch (Exception ignore) {

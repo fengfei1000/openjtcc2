@@ -43,7 +43,8 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 		long expiredTime = createdTime + (timeoutSeconds * 1000L);
 		transactionContext.setCreatedTime(createdTime);
 		transactionContext.setExpiredTime(expiredTime);
-		XidFactory xidFactory = TransactionConfigurator.getInstance().getXidFactory();
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		XidFactory xidFactory = transactionConfigurator.getXidFactory();
 		TransactionXid globalXid = xidFactory.createGlobalXid();
 		transactionContext.setCurrentXid(globalXid);
 
@@ -51,10 +52,43 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 
 		transaction.setThread(Thread.currentThread());
 		this.associateds.put(Thread.currentThread(), transaction);
-		TransactionRepository transactionRepository = TransactionConfigurator.getInstance().getTransactionRepository();
+		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
 		transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
 		// this.transactionStatistic.fireBeginTransaction(transaction);
 
+	}
+
+	public void propagationBegin(TransactionContext transactionContext) throws NotSupportedException, SystemException {
+
+		if (this.getTransaction() != null) {
+			throw new NotSupportedException();
+		}
+
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
+
+		TransactionXid propagationXid = transactionContext.getCurrentXid();
+		TransactionXid globalXid = propagationXid.getGlobalXid();
+		TransactionImpl transaction = transactionRepository.getTransaction(globalXid);
+		if (transaction == null) {
+			transaction = new TransactionImpl(transactionContext);
+
+			// long createdTime = transactionContext.getCreatedTime();
+			// long expiredTime = transactionContext.getExpiredTime();
+			// transactionContext.setCreatedTime(createdTime);
+			// transactionContext.setExpiredTime(expiredTime);
+
+			transaction.setThread(Thread.currentThread());
+			transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
+		}
+
+		this.associateds.put(Thread.currentThread(), transaction);
+		// this.transactionStatistic.fireBeginTransaction(transaction);
+
+	}
+
+	public void propagationFinish(TransactionContext transactionContext) throws SystemException {
+		this.associateds.remove(Thread.currentThread());
 	}
 
 	public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
