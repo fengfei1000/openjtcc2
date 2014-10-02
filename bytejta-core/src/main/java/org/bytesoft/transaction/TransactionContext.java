@@ -17,30 +17,41 @@ package org.bytesoft.transaction;
 
 import java.io.Serializable;
 
+import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.transaction.xa.TransactionXid;
 
 public class TransactionContext implements Serializable, Cloneable {
 	private static final long serialVersionUID = 1L;
 
-	private boolean optimized;
+	private transient boolean optimized;
 	private transient boolean coordinator;
 	private transient boolean recovery;
 	private transient int prepareVote = -1;
 
 	private TransactionXid currentXid;
+	private Object propagated;
 	private long createdTime;
 	private long expiredTime;
 	private boolean compensable;
+	private boolean nonxaResourceAllowed;
 
 	public TransactionContext() {
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		this.nonxaResourceAllowed = transactionConfigurator.isOptimizedEnabled();
+	}
+
+	public TransactionContext(boolean nonxaResourceAllowed) {
+		this.nonxaResourceAllowed = nonxaResourceAllowed;
 	}
 
 	public TransactionContext clone() {
 		TransactionContext that = new TransactionContext();
 		that.currentXid = this.currentXid;
+		that.propagated = this.propagated;
 		that.createdTime = System.currentTimeMillis();
 		that.expiredTime = this.getExpiredTime();
 		that.compensable = this.compensable;
+		that.nonxaResourceAllowed = this.nonxaResourceAllowed;
 		return that;
 	}
 
@@ -114,6 +125,22 @@ public class TransactionContext implements Serializable, Cloneable {
 
 	public void setPrepareVote(int prepareVote) {
 		this.prepareVote = prepareVote;
+	}
+
+	public Object getPropagated() {
+		return propagated;
+	}
+
+	public void setPropagated(Object propagated) {
+		this.propagated = propagated;
+	}
+
+	public boolean isNonxaResourceAllowed() {
+		return nonxaResourceAllowed;
+	}
+
+	public void setNonxaResourceAllowed(boolean nonxaResourceAllowed) {
+		this.nonxaResourceAllowed = nonxaResourceAllowed;
 	}
 
 }

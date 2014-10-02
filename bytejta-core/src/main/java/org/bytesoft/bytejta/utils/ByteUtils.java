@@ -30,7 +30,7 @@ public class ByteUtils {
 
 	public static long byteArrayToLong(final byte[] buf, final int start) {
 		if (start < 0 || start + 7 >= buf.length) {
-			throw new IllegalArgumentException("参数长度不正确!");
+			throw new IllegalArgumentException();
 		}
 
 		long value = ((long) buf[start] & 0xff) << 56;
@@ -59,7 +59,7 @@ public class ByteUtils {
 
 	public static int byteArrayToInt(final byte[] buf, final int start) {
 		if (start < 0 || start + 3 >= buf.length) {
-			throw new IllegalArgumentException("参数长度不正确!");
+			throw new IllegalArgumentException();
 		}
 		int value = (buf[start] & 0xff) << 24;
 		value |= (buf[start + 1] & 0xff) << 16;
@@ -79,7 +79,7 @@ public class ByteUtils {
 
 	public static short byteArrayToShort(final byte[] buf, final int start) {
 		if (start < 0 || start + 1 >= buf.length) {
-			throw new IllegalArgumentException("参数长度不正确!");
+			throw new IllegalArgumentException();
 		}
 		int value = (buf[start] & 0xff) << 8;
 		value = value | (buf[start + 1] & 0xff);
@@ -97,8 +97,8 @@ public class ByteUtils {
 		StringBuilder ber = new StringBuilder();
 		for (int i = startIndex, j = 0; j < len; i++, j++) {
 			byte b = bytes[i];
-			ber.append(chars[(b & 0xf0) >> 4]);
-			ber.append(chars[(b & 0x0f)]);
+			ber.append(CHARS[(b & 0xf0) >> 4]);
+			ber.append(CHARS[(b & 0x0f)]);
 		}
 		return ber.toString();
 	}
@@ -144,7 +144,7 @@ public class ByteUtils {
 	static final char LETTER_END = 'f';
 	static final char UPPER_LETTER_START = 'A';
 	static final char UPPER_LETTER_END = 'F';
-	static final char[] chars = new char[] {
+	static final char[] CHARS = new char[] {
 			//
 			'0', '1', '2', '3', '4', '5', '6', '7',//
 			'8', '9', 'a', 'b', 'c', 'd', 'e', 'f' //

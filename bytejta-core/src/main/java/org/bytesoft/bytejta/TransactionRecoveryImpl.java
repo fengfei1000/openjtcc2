@@ -27,51 +27,64 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 		List<TransactionImpl> transactions = transactionRepository.getErrorTransactionList();
 		for (int i = 0; i < transactions.size(); i++) {
 			TransactionImpl transaction = transactions.get(i);
-			TransactionContext transactionContext = transaction.getTransactionContext();
-			boolean coordinator = transactionContext.isCoordinator();
-			if (coordinator) {
-				int status = transaction.getStatus();
-				switch (status) {
-				case Status.STATUS_ACTIVE:
-				case Status.STATUS_MARKED_ROLLBACK:
-				case Status.STATUS_PREPARING:
-				case Status.STATUS_ROLLING_BACK:
-				case Status.STATUS_UNKNOWN:
-					try {
-						transaction.recoveryRollback();
-						TransactionXid globalXid = transactionContext.getGlobalXid();
-						transactionRepository.removeErrorTransaction(globalXid);
-						transactionRepository.removeTransaction(globalXid);
-
-						this.deleteRecoveryTransaction(transaction);
-					} catch (RollbackRequiredException ex) {
-						// TODO
-					} catch (SystemException ex) {
-						// TODO
-					}
-				case Status.STATUS_PREPARED:
-				case Status.STATUS_COMMITTING:
-					try {
-						transaction.recoveryCommit();
-						TransactionXid globalXid = transactionContext.getGlobalXid();
-						transactionRepository.removeErrorTransaction(globalXid);
-						transactionRepository.removeTransaction(globalXid);
-
-						this.deleteRecoveryTransaction(transaction);
-					} catch (HeuristicMixedException ex) {
-						// TODO
-					} catch (CommitRequiredException ex) {
-						// TODO
-					} catch (SystemException ex) {
-						// TODO
-					}
-				case Status.STATUS_COMMITTED:
-				case Status.STATUS_ROLLEDBACK:
-				default:
-					// ignore
-				}
-			}// end-if (coordinator)
+			this.recoverTransaction(transaction);
 		}
+	}
+
+	public synchronized void forgetTransaction(TransactionImpl transaction) {
+		// TODO
+	}
+
+	public synchronized void recoverTransaction(TransactionImpl transaction) {
+
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
+
+		TransactionContext transactionContext = transaction.getTransactionContext();
+		boolean coordinator = transactionContext.isCoordinator();
+		if (coordinator) {
+			int status = transaction.getStatus();
+			switch (status) {
+			case Status.STATUS_ACTIVE:
+			case Status.STATUS_MARKED_ROLLBACK:
+			case Status.STATUS_PREPARING:
+			case Status.STATUS_ROLLING_BACK:
+			case Status.STATUS_UNKNOWN:
+				try {
+					transaction.recoveryRollback();
+					TransactionXid globalXid = transactionContext.getGlobalXid();
+					transactionRepository.removeErrorTransaction(globalXid);
+					transactionRepository.removeTransaction(globalXid);
+
+					this.deleteRecoveryTransaction(transaction);
+				} catch (RollbackRequiredException ex) {
+					// TODO
+				} catch (SystemException ex) {
+					// TODO
+				}
+			case Status.STATUS_PREPARED:
+			case Status.STATUS_COMMITTING:
+				try {
+					transaction.recoveryCommit();
+					TransactionXid globalXid = transactionContext.getGlobalXid();
+					transactionRepository.removeErrorTransaction(globalXid);
+					transactionRepository.removeTransaction(globalXid);
+
+					this.deleteRecoveryTransaction(transaction);
+				} catch (HeuristicMixedException ex) {
+					// TODO
+				} catch (CommitRequiredException ex) {
+					// TODO
+				} catch (SystemException ex) {
+					// TODO
+				}
+			case Status.STATUS_COMMITTED:
+			case Status.STATUS_ROLLEDBACK:
+			default:
+				// ignore
+			}
+		}// end-if (coordinator)
+
 	}
 
 	public synchronized void startupRecover() {
@@ -95,7 +108,7 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 	}
 
 	private TransactionImpl reconstructTransaction(TransactionArchive archive) throws IllegalStateException {
-		TransactionContext transactionContext = new TransactionContext();
+		TransactionContext transactionContext = new TransactionContext(/* TODO nonxaResourceAllowed */);
 		transactionContext.setCurrentXid((TransactionXid) archive.getXid());
 		transactionContext.setRecovery(true);
 		transactionContext.setOptimized(archive.isOptimized());
@@ -113,23 +126,11 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 		List<XAResourceArchive> remoteResources = archive.getRemoteResources();
 		remoteTerminator.initializeForRecovery(remoteResources);
 
-		this.analysisTransaction(transaction, archive.getVote());
-
-		return transaction;
-	}
-
-	private void analysisTransaction(TransactionImpl transaction, int transactionVote) throws IllegalStateException {
-		if (transactionVote == XAResource.XA_RDONLY) {
+		if (archive.getVote() == XAResource.XA_RDONLY) {
 			throw new IllegalStateException();
 		}
-		// else if (transactionVote == -1) {
-		// // rollback.
-		// } else {
-		// List<XAResourceArchive> nativeResources = transaction.getNativeTerminator().getResourceArchives();
-		// for (int i = 0; i < nativeResources.size(); i++) {
-		// XAResourceArchive archive = nativeResources.get(i);
-		// }
-		// }
+
+		return transaction;
 	}
 
 	private void deleteRecoveryTransaction(TransactionImpl transaction) {

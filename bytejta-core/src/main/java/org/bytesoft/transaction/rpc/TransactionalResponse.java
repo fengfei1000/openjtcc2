@@ -15,10 +15,14 @@
  */
 package org.bytesoft.transaction.rpc;
 
+import org.bytesoft.transaction.TransactionContext;
+
 public interface TransactionalResponse {
 
-	public Object getTransactionContext();
+	public TransactionalResource getTransactionalResource();
 
-	public void setTransactionContext(Object transactionContext);
+	public TransactionContext getTransactionContext();
+
+	public void setTransactionContext(TransactionContext transactionContext);
 
 }

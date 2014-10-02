@@ -38,7 +38,6 @@
 	<bean id="transactionStorage" class="org.bytesoft.bytejta.logger.store.SimpleTransactionStorageManager"
 		init-method="initialize">
 		<constructor-arg value="bytejta/bytejta.dat" />
-		<!-- <constructor-arg value="D:/temp/bytejta.dat" /> -->
 	</bean>
 
 	<bean id="transactionRepository" class="org.bytesoft.bytejta.common.TransactionRepository" />

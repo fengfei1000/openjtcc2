@@ -16,6 +16,7 @@ public class XAResourceArchive implements XAResource {
 	private boolean committed;
 	private boolean rolledback;
 	private transient boolean heuristic;
+	private boolean nonxaResourceExists;
 
 	public void commit(Xid ignore, boolean onePhase) throws XAException {
 		if (this.readonly) {
@@ -158,6 +159,14 @@ public class XAResourceArchive implements XAResource {
 
 	public void setHeuristic(boolean heuristic) {
 		this.heuristic = heuristic;
+	}
+
+	public boolean isNonxaResourceExists() {
+		return nonxaResourceExists;
+	}
+
+	public void setNonxaResourceExists(boolean nonxaResourceExists) {
+		this.nonxaResourceExists = nonxaResourceExists;
 	}
 
 }
