@@ -163,7 +163,7 @@ public class TransactionImpl implements Transaction {
 		try {
 			if (this.currentOpcNecessary()) {
 				this.opcCommit();
-			} else if (transactionConfigurator.isOptimizedEnabled()) {
+			} else if (transactionConfigurator.isOptimizeEnabled()) {
 				// analysis
 				this.analysisTerminator();
 				this.optimizeCommit();
@@ -176,8 +176,8 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	private void opcCommit() throws HeuristicRollbackException, HeuristicMixedException, CommitRequiredException,
-			SystemException {
+	public synchronized void opcCommit() throws HeuristicRollbackException, HeuristicMixedException,
+			CommitRequiredException, SystemException {
 		TransactionXid xid = this.transactionContext.getGlobalXid();
 		try {
 			lastTerminator.commit(xid, true);
@@ -202,8 +202,8 @@ public class TransactionImpl implements Transaction {
 		}
 	}
 
-	private void regularCommit() throws HeuristicRollbackException, HeuristicMixedException, CommitRequiredException,
-			SystemException {
+	public synchronized void regularCommit() throws HeuristicRollbackException, HeuristicMixedException,
+			CommitRequiredException, SystemException {
 		TransactionXid xid = this.transactionContext.getGlobalXid();
 
 		TransactionArchive archive = this.getTransactionArchive();// new TransactionArchive();
@@ -318,8 +318,8 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	private void optimizeCommit() throws HeuristicRollbackException, HeuristicMixedException, CommitRequiredException,
-			SystemException {
+	public synchronized void optimizeCommit() throws HeuristicRollbackException, HeuristicMixedException,
+			CommitRequiredException, SystemException {
 		TransactionXid xid = this.transactionContext.getGlobalXid();
 
 		TransactionArchive archive = this.getTransactionArchive();// new TransactionArchive();
@@ -495,7 +495,7 @@ public class TransactionImpl implements Transaction {
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		if (descriptor.isSupportsXA()) {
 			return this.remoteTerminator.enlistResource(descriptor);
-		} else if (transactionConfigurator.isOptimizedEnabled()) {
+		} else if (transactionConfigurator.isOptimizeEnabled()) {
 			boolean nativeSupportsXA = false;
 			try {
 				nativeSupportsXA = this.nativeTerminator.xaSupports();

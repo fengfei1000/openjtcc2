@@ -13,13 +13,13 @@
 
 	<description>The bytejta transaction manager module</description>
 
-	<bean class="org.bytesoft.transaction.supports.spring.resource.ManagedConnectionFactoryProcessor" />
+	<bean class="org.bytesoft.transaction.supports.spring.ManagedConnectionFactoryProcessor" />
 
 	<bean id="xidFactory" class="org.bytesoft.bytejta.xa.XidFactoryImpl" />
 
 	<bean id="bytejtaTransactionManager" class="org.bytesoft.bytejta.TransactionManagerImpl" />
 
-	<bean id="userTransaction" class="org.bytesoft.bytetcc.UserTransactionImpl">
+	<bean id="userTransaction" class="org.bytesoft.bytejta.UserTransactionImpl">
 		<property name="transactionManager" ref="bytejtaTransactionManager" />
 	</bean>
 
@@ -41,12 +41,14 @@
 	</bean>
 
 	<bean id="transactionRepository" class="org.bytesoft.bytejta.common.TransactionRepository" />
-	<bean id="transactionConfigurator" class="org.bytesoft.bytejta.common.TransactionConfigurator">
+	<bean id="transactionInterceptor" class="org.bytesoft.transaction.supports.rpc.TransactionInterceptorImpl" />
+	<bean id="transactionConfigurator" class="org.bytesoft.bytejta.common.TransactionConfigurator" factory-method="getInstance">
 		<property name="xidFactory" ref="xidFactory" />
 		<property name="transactionManager" ref="bytejtaTransactionManager" />
 		<property name="transactionRepository" ref="transactionRepository" />
 		<property name="transactionTimer" ref="bytejtaTransactionManager" />
 		<property name="transactionLogger" ref="transactionLogger" />
+		<property name="transactionInterceptor" ref="transactionInterceptor" />
 	</bean>
 
 </beans>

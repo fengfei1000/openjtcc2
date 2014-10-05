@@ -4,17 +4,19 @@ import org.bytesoft.bytejta.TransactionManagerImpl;
 import org.bytesoft.transaction.TransactionTimer;
 import org.bytesoft.transaction.logger.TransactionLogger;
 import org.bytesoft.transaction.logger.TransactionLoggerProxy;
+import org.bytesoft.transaction.rpc.TransactionInterceptor;
 import org.bytesoft.transaction.xa.XidFactory;
 
 public final class TransactionConfigurator {
 	private static TransactionConfigurator instance;
 
-	private boolean optimizedEnabled = true;
+	private boolean optimizeEnabled = true;
 	private TransactionManagerImpl transactionManager;
 	private XidFactory xidFactory;
 	private TransactionTimer transactionTimer;
 	private final TransactionLoggerProxy transactionLogger = new TransactionLoggerProxy();
 	private TransactionRepository transactionRepository;
+	private TransactionInterceptor transactionInterceptor;
 
 	private TransactionConfigurator() throws IllegalStateException {
 		if (instance == null) {
@@ -94,12 +96,20 @@ public final class TransactionConfigurator {
 		this.transactionTimer = transactionTimer;
 	}
 
-	public boolean isOptimizedEnabled() {
-		return optimizedEnabled;
+	public boolean isOptimizeEnabled() {
+		return optimizeEnabled;
 	}
 
-	public void setOptimizedEnabled(boolean optimizedEnabled) {
-		this.optimizedEnabled = optimizedEnabled;
+	public void setOptimizeEnabled(boolean optimizeEnabled) {
+		this.optimizeEnabled = optimizeEnabled;
+	}
+
+	public TransactionInterceptor getTransactionInterceptor() {
+		return transactionInterceptor;
+	}
+
+	public void setTransactionInterceptor(TransactionInterceptor transactionInterceptor) {
+		this.transactionInterceptor = transactionInterceptor;
 	}
 
 }

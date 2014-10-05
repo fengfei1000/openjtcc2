@@ -1,4 +1,4 @@
-package org.bytesoft.transaction.supports.spring.resource;
+package org.bytesoft.transaction.supports.spring;
 
 import java.lang.reflect.Proxy;
 

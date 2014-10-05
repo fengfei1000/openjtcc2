@@ -38,7 +38,13 @@ public class XidFactoryImpl implements XidFactory {
 			InetAddress inetAddress = InetAddress.getLocalHost();
 			NetworkInterface networkInterface = NetworkInterface.getByInetAddress(inetAddress);
 			byte[] hardwareByteArray = networkInterface.getHardwareAddress();
-			System.arraycopy(hardwareByteArray, 0, this.hardwareAddress, 0, this.hardwareAddress.length);
+			int fromLen = hardwareByteArray.length;
+			int distLen = this.hardwareAddress.length;
+			if (fromLen >= distLen) {
+				System.arraycopy(hardwareByteArray, 0, this.hardwareAddress, 0, distLen);
+			} else {
+				System.arraycopy(hardwareByteArray, 0, this.hardwareAddress, 0, fromLen);
+			}
 		} catch (UnknownHostException ex) {
 			throw new IllegalStateException(ex);
 		} catch (SocketException ex) {

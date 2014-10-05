@@ -37,7 +37,7 @@ public class TransactionContext implements Serializable, Cloneable {
 
 	public TransactionContext() {
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
-		this.nonxaResourceAllowed = transactionConfigurator.isOptimizedEnabled();
+		this.nonxaResourceAllowed = transactionConfigurator.isOptimizeEnabled();
 	}
 
 	public TransactionContext(boolean nonxaResourceAllowed) {

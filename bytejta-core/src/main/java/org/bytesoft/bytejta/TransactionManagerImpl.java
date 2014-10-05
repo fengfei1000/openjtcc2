@@ -78,7 +78,7 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 			// transactionContext.setCreatedTime(createdTime);
 			// transactionContext.setExpiredTime(expiredTime);
 
-			transaction.setThread(Thread.currentThread());
+			// transaction.setThread(Thread.currentThread());
 			transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
 		}
 
@@ -88,7 +88,9 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 	}
 
 	public void propagationFinish(TransactionContext transactionContext) throws SystemException {
+		// TransactionImpl transaction =
 		this.associateds.remove(Thread.currentThread());
+		// transaction.setThread(null);
 	}
 
 	public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
