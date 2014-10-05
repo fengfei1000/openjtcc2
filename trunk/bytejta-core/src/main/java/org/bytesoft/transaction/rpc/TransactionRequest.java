@@ -17,9 +17,9 @@ package org.bytesoft.transaction.rpc;
 
 import org.bytesoft.transaction.TransactionContext;
 
-public interface TransactionalResponse {
+public interface TransactionRequest {
 
-	public TransactionalResource getTransactionalResource();
+	public TransactionResource getTransactionResource();
 
 	public TransactionContext getTransactionContext();
 

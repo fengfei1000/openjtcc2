@@ -15,14 +15,14 @@
  */
 package org.bytesoft.transaction.rpc;
 
-import org.bytesoft.transaction.TransactionContext;
+public interface TransactionInterceptor {
 
-public interface TransactionalRequest {
+	public void beforeSendRequest(TransactionRequest request) throws IllegalStateException;
 
-	public TransactionalResource getTransactionalResource();
+	public void beforeSendResponse(TransactionResponse response) throws IllegalStateException;
 
-	public TransactionContext getTransactionContext();
+	public void afterReceiveRequest(TransactionRequest request) throws IllegalStateException;
 
-	public void setTransactionContext(TransactionContext transactionContext);
+	public void afterReceiveResponse(TransactionResponse response) throws IllegalStateException;
 
 }

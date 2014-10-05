@@ -21,19 +21,19 @@ import org.bytesoft.bytetcc.TransactionImpl;
 import org.bytesoft.bytetcc.TransactionManagerImpl;
 import org.bytesoft.bytetcc.supports.serialize.TerminatorMarshaller;
 import org.bytesoft.transaction.TransactionContext;
-import org.bytesoft.transaction.rpc.TransactionalInterceptor;
-import org.bytesoft.transaction.rpc.TransactionalRequest;
-import org.bytesoft.transaction.rpc.TransactionalResponse;
+import org.bytesoft.transaction.rpc.TransactionInterceptor;
+import org.bytesoft.transaction.rpc.TransactionRequest;
+import org.bytesoft.transaction.rpc.TransactionResponse;
 import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XidFactory;
 
-public class TransactionalInterceptorImpl implements TransactionalInterceptor {
+public class TransactionInterceptorImpl implements TransactionInterceptor {
 	private static final Logger logger = Logger.getLogger("bytetcc");
 
 	private TerminatorMarshaller terminatorMarshaller;
 	private TransactionManagerImpl transactionManager;
 
-	public void beforeSendRequest(TransactionalRequest request) throws IllegalStateException {
+	public void beforeSendRequest(TransactionRequest request) throws IllegalStateException {
 		TransactionImpl transaction = this.getCurrentTransaction();
 		if (transaction != null) {
 			TransactionContext transactionContext = transaction.getTransactionContext();
@@ -50,7 +50,7 @@ public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 		}
 	}
 
-	public void afterReceiveResponse(TransactionalResponse response) throws IllegalStateException {
+	public void afterReceiveResponse(TransactionResponse response) throws IllegalStateException {
 		TransactionContext propagationContext = (TransactionContext) response.getTransactionContext();
 		if (propagationContext != null && propagationContext.isCompensable()) {
 			logger.info(String.format("[%15s] method: %s", "after-recv-res", response));
@@ -83,7 +83,7 @@ public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 		}
 	}
 
-	public void afterReceiveRequest(TransactionalRequest request) throws IllegalStateException {
+	public void afterReceiveRequest(TransactionRequest request) throws IllegalStateException {
 		TransactionContext propagationContext = (TransactionContext) request.getTransactionContext();
 //		if (propagationContext != null) {
 //			logger.info(String.format("[%15s] method: %s", "after-recv-req", request));
@@ -104,7 +104,7 @@ public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 //		}
 	}
 
-	public void beforeSendResponse(TransactionalResponse response) throws IllegalStateException {
+	public void beforeSendResponse(TransactionResponse response) throws IllegalStateException {
 		TransactionImpl transaction = this.getCurrentTransaction();
 //		if (transaction != null) {
 //			TransactionContext transactionContext = transaction.getTransactionContext();

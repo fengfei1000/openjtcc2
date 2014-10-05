@@ -11,17 +11,17 @@ import org.bytesoft.bytejta.TransactionImpl;
 import org.bytesoft.bytejta.TransactionManagerImpl;
 import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.transaction.TransactionContext;
-import org.bytesoft.transaction.rpc.TransactionalInterceptor;
-import org.bytesoft.transaction.rpc.TransactionalRequest;
-import org.bytesoft.transaction.rpc.TransactionalResource;
-import org.bytesoft.transaction.rpc.TransactionalResponse;
+import org.bytesoft.transaction.rpc.TransactionInterceptor;
+import org.bytesoft.transaction.rpc.TransactionRequest;
+import org.bytesoft.transaction.rpc.TransactionResource;
+import org.bytesoft.transaction.rpc.TransactionResponse;
 import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
 
-public class TransactionalInterceptorImpl implements TransactionalInterceptor {
-	static final Logger logger = Logger.getLogger(TransactionalInterceptorImpl.class.getSimpleName());
+public class TransactionInterceptorImpl implements TransactionInterceptor {
+	static final Logger logger = Logger.getLogger(TransactionInterceptorImpl.class.getSimpleName());
 
-	public void beforeSendRequest(TransactionalRequest request) throws IllegalStateException {
+	public void beforeSendRequest(TransactionRequest request) throws IllegalStateException {
 		TransactionImpl transaction = this.getCurrentTransaction();
 		if (transaction != null) {
 			TransactionContext srcTransactionContext = transaction.getTransactionContext();
@@ -30,33 +30,33 @@ public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 			TransactionXid globalXid = currentXid.getGlobalXid();
 			transactionContext.setCurrentXid(globalXid);
 			byte[] bytes = currentXid.getBranchQualifier();
-			TransactionalCredential credential = new TransactionalCredential(bytes);
+			TransactionCredential credential = new TransactionCredential(bytes);
 			transactionContext.setPropagated(credential);
 			request.setTransactionContext(transactionContext);
 
 			try {
-				TransactionalResource resource = request.getTransactionalResource();
+				TransactionResource resource = request.getTransactionResource();
 				boolean nonxaResourceExists = transactionContext.isNonxaResourceAllowed() == false;
 				XAResourceDescriptor descriptor = this.createResourceDescriptor(resource, nonxaResourceExists);
 				transaction.enlistResource(descriptor);
 			} catch (IllegalStateException ex) {
-				logger.throwing(TransactionalInterceptorImpl.class.getName(),
-						"beforeSendRequest(TransactionalRequest)", ex);
+				logger.throwing(TransactionInterceptorImpl.class.getName(),
+						"beforeSendRequest(TransactionRequest)", ex);
 				throw ex;
 			} catch (RollbackException ex) {
 				transaction.setRollbackOnlyQuietly();
-				logger.throwing(TransactionalInterceptorImpl.class.getName(),
-						"beforeSendRequest(TransactionalRequest)", ex);
+				logger.throwing(TransactionInterceptorImpl.class.getName(),
+						"beforeSendRequest(TransactionRequest)", ex);
 				throw new IllegalStateException(ex);
 			} catch (SystemException ex) {
-				logger.throwing(TransactionalInterceptorImpl.class.getName(),
-						"beforeSendRequest(TransactionalRequest)", ex);
+				logger.throwing(TransactionInterceptorImpl.class.getName(),
+						"beforeSendRequest(TransactionRequest)", ex);
 				throw new IllegalStateException(ex);
 			}
 		}
 	}
 
-	public void beforeSendResponse(TransactionalResponse response) throws IllegalStateException {
+	public void beforeSendResponse(TransactionResponse response) throws IllegalStateException {
 		TransactionImpl transaction = this.getCurrentTransaction();
 		if (transaction != null) {
 			TransactionContext srcTransactionContext = transaction.getTransactionContext();
@@ -65,7 +65,7 @@ public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 		}
 	}
 
-	public void afterReceiveRequest(TransactionalRequest request) throws IllegalStateException {
+	public void afterReceiveRequest(TransactionRequest request) throws IllegalStateException {
 
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		TransactionManagerImpl transactionManager = transactionConfigurator.getTransactionManager();
@@ -87,7 +87,7 @@ public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 		}
 	}
 
-	public void afterReceiveResponse(TransactionalResponse response) throws IllegalStateException {
+	public void afterReceiveResponse(TransactionResponse response) throws IllegalStateException {
 
 		TransactionImpl transaction = this.getCurrentTransaction();
 		if (transaction != null) {
@@ -97,12 +97,12 @@ public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 
 				TransactionXid currentXid = nativeTransactionContext.getCurrentXid();
 				byte[] bytes = currentXid.getBranchQualifier();
-				Object nativeCredential = new TransactionalCredential(bytes);
+				Object nativeCredential = new TransactionCredential(bytes);
 				Object remoteCredential = remoteTransactionContext.getPropagated();
 
 				if (nativeCredential.equals(remoteCredential)) {
 					try {
-						TransactionalResource resource = response.getTransactionalResource();
+						TransactionResource resource = response.getTransactionResource();
 						boolean nativeAllowedNonxaResource = nativeTransactionContext.isNonxaResourceAllowed();
 						boolean remoteAllowedNonxaResource = remoteTransactionContext.isNonxaResourceAllowed();
 						if (nativeAllowedNonxaResource && remoteAllowedNonxaResource == false) {
@@ -112,12 +112,12 @@ public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 								remoteAllowedNonxaResource);
 						transaction.delistResource(descriptor, XAResource.TMSUCCESS);
 					} catch (IllegalStateException ex) {
-						logger.throwing(TransactionalInterceptorImpl.class.getName(),
-								"afterReceiveResponse(TransactionalRequest)", ex);
+						logger.throwing(TransactionInterceptorImpl.class.getName(),
+								"afterReceiveResponse(TransactionRequest)", ex);
 						throw ex;
 					} catch (SystemException ex) {
-						logger.throwing(TransactionalInterceptorImpl.class.getName(),
-								"afterReceiveResponse(TransactionalRequest)", ex);
+						logger.throwing(TransactionInterceptorImpl.class.getName(),
+								"afterReceiveResponse(TransactionRequest)", ex);
 						throw new IllegalStateException(ex);
 					}
 				}
@@ -137,7 +137,7 @@ public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 		}
 	}
 
-	private XAResourceDescriptor createResourceDescriptor(TransactionalResource resource, boolean nonxaResourceExists) {
+	private XAResourceDescriptor createResourceDescriptor(TransactionResource resource, boolean nonxaResourceExists) {
 		XAResourceDescriptor descriptor = new XAResourceDescriptor();
 		descriptor.setDelegate(resource);
 		descriptor.setIdentifier(resource.getIdentifier());

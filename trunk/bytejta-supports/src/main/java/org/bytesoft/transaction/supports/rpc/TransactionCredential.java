@@ -3,12 +3,12 @@ package org.bytesoft.transaction.supports.rpc;
 import java.io.Serializable;
 import java.util.Arrays;
 
-public class TransactionalCredential implements Serializable {
+public class TransactionCredential implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private final byte[] credential;
 
-	public TransactionalCredential(byte[] bytes) {
+	public TransactionCredential(byte[] bytes) {
 		this.credential = bytes;
 	}
 
@@ -27,10 +27,10 @@ public class TransactionalCredential implements Serializable {
 	public boolean equals(Object obj) {
 		if (obj == null) {
 			return false;
-		} else if (TransactionalCredential.class.isInstance(obj) == false) {
+		} else if (TransactionCredential.class.isInstance(obj) == false) {
 			return false;
 		}
-		TransactionalCredential that = (TransactionalCredential) obj;
+		TransactionCredential that = (TransactionCredential) obj;
 		byte[] thisCredential = this.credential;
 		byte[] thatCredential = that.credential;
 		if (thisCredential == null && thatCredential == null) {
