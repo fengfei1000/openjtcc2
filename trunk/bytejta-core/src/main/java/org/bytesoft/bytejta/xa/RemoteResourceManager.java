@@ -9,7 +9,7 @@ import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.bytejta.common.TransactionRepository;
 import org.bytesoft.transaction.xa.TransactionXid;
 
-public class TransactionSkeleton implements XAResource {
+public class RemoteResourceManager implements XAResource {
 
 	public void commit(Xid xid, boolean onePhase) throws XAException {
 

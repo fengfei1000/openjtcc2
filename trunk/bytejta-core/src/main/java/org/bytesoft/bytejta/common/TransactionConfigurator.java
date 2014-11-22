@@ -8,7 +8,7 @@ import org.bytesoft.transaction.rpc.TransactionInterceptor;
 import org.bytesoft.transaction.xa.XidFactory;
 
 public final class TransactionConfigurator {
-	private static TransactionConfigurator instance;
+	private static final TransactionConfigurator instance = new TransactionConfigurator();
 
 	private boolean optimizeEnabled = true;
 	private TransactionManagerImpl transactionManager;
@@ -18,98 +18,64 @@ public final class TransactionConfigurator {
 	private TransactionRepository transactionRepository;
 	private TransactionInterceptor transactionInterceptor;
 
-	private TransactionConfigurator() throws IllegalStateException {
-		if (instance == null) {
-			initialize(this);
-		} else {
-			throw new IllegalStateException();
-		}
-	}
-
-	private static synchronized void initialize(TransactionConfigurator inst) throws IllegalStateException {
-		if (instance == null) {
-			instance = inst;
-		} else {
-			throw new IllegalStateException();
-		}
-	}
-
 	public static TransactionConfigurator getInstance() {
-		return getInstance(true);
-	}
-
-	public static TransactionConfigurator getInstance(boolean create) {
-		if (create) {
-			initializeIfRequired();
-		}
-		return instance;
-	}
-
-	private static TransactionConfigurator initializeIfRequired() {
-		if (instance == null) {
-			try {
-				return new TransactionConfigurator();
-			} catch (IllegalStateException ex) {
-				return instance;
-			}
-		}
 		return instance;
 	}
 
 	public void setTransactionLogger(TransactionLogger transactionLogger) {
-		this.transactionLogger.setDelegate(transactionLogger);
+		instance.transactionLogger.setDelegate(transactionLogger);
 	}
 
 	public TransactionManagerImpl getTransactionManager() {
-		return transactionManager;
+		return instance.transactionManager;
 	}
 
 	public void setTransactionManager(TransactionManagerImpl transactionManager) {
-		this.transactionManager = transactionManager;
+		instance.transactionManager = transactionManager;
 	}
 
 	public XidFactory getXidFactory() {
-		return xidFactory;
+		return instance.xidFactory;
 	}
 
 	public void setXidFactory(XidFactory xidFactory) {
-		this.xidFactory = xidFactory;
+		instance.xidFactory = xidFactory;
 	}
 
 	public TransactionLogger getTransactionLogger() {
-		return transactionLogger;
+		return instance.transactionLogger;
 	}
 
 	public TransactionRepository getTransactionRepository() {
-		return transactionRepository;
+		return instance.transactionRepository;
 	}
 
 	public void setTransactionRepository(TransactionRepository transactionRepository) {
-		this.transactionRepository = transactionRepository;
+		instance.transactionRepository = transactionRepository;
 	}
 
 	public TransactionTimer getTransactionTimer() {
-		return transactionTimer;
+		return instance.transactionTimer;
 	}
 
 	public void setTransactionTimer(TransactionTimer transactionTimer) {
-		this.transactionTimer = transactionTimer;
+		instance.transactionTimer = transactionTimer;
 	}
 
 	public boolean isOptimizeEnabled() {
-		return optimizeEnabled;
+		return instance.optimizeEnabled;
 	}
 
 	public void setOptimizeEnabled(boolean optimizeEnabled) {
-		this.optimizeEnabled = optimizeEnabled;
+		instance.optimizeEnabled = optimizeEnabled;
 	}
 
 	public TransactionInterceptor getTransactionInterceptor() {
-		return transactionInterceptor;
+		return instance.transactionInterceptor;
 	}
 
 	public void setTransactionInterceptor(TransactionInterceptor transactionInterceptor) {
-		this.transactionInterceptor = transactionInterceptor;
+		instance.transactionInterceptor = transactionInterceptor;
 	}
 
 }

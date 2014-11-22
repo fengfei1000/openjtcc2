@@ -13,6 +13,7 @@
 
 	<description>The bytejta transaction manager module</description>
 
+	<bean class="org.bytesoft.transaction.supports.spring.ApplicationContextUtils" />
 	<bean class="org.bytesoft.transaction.supports.spring.ManagedConnectionFactoryProcessor" />
 
 	<bean id="xidFactory" class="org.bytesoft.bytejta.xa.XidFactoryImpl" />

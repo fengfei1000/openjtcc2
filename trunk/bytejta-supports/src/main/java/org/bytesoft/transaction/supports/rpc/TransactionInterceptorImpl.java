@@ -40,17 +40,14 @@ public class TransactionInterceptorImpl implements TransactionInterceptor {
 				XAResourceDescriptor descriptor = this.createResourceDescriptor(resource, nonxaResourceExists);
 				transaction.enlistResource(descriptor);
 			} catch (IllegalStateException ex) {
-				logger.throwing(TransactionInterceptorImpl.class.getName(),
-						"beforeSendRequest(TransactionRequest)", ex);
+				logger.throwing(TransactionInterceptorImpl.class.getName(), "beforeSendRequest(TransactionRequest)", ex);
 				throw ex;
 			} catch (RollbackException ex) {
 				transaction.setRollbackOnlyQuietly();
-				logger.throwing(TransactionInterceptorImpl.class.getName(),
-						"beforeSendRequest(TransactionRequest)", ex);
+				logger.throwing(TransactionInterceptorImpl.class.getName(), "beforeSendRequest(TransactionRequest)", ex);
 				throw new IllegalStateException(ex);
 			} catch (SystemException ex) {
-				logger.throwing(TransactionInterceptorImpl.class.getName(),
-						"beforeSendRequest(TransactionRequest)", ex);
+				logger.throwing(TransactionInterceptorImpl.class.getName(), "beforeSendRequest(TransactionRequest)", ex);
 				throw new IllegalStateException(ex);
 			}
 		}
@@ -142,7 +139,8 @@ public class TransactionInterceptorImpl implements TransactionInterceptor {
 		descriptor.setDelegate(resource);
 		descriptor.setIdentifier(resource.getIdentifier());
 		descriptor.setRemote(true);
-		descriptor.setSupportsXA(nonxaResourceExists);
+		// TODO descriptor.setSupportsXA(nonxaResourceExists);
+		descriptor.setSupportsXA(true);
 		return descriptor;
 	}
 }
