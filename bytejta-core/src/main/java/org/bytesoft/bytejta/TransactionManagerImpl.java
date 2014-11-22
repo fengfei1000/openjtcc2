@@ -50,7 +50,7 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 
 		TransactionImpl transaction = new TransactionImpl(transactionContext);
 
-		transaction.setThread(Thread.currentThread());
+		// transaction.setThread(Thread.currentThread());
 		this.associateds.put(Thread.currentThread(), transaction);
 		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
 		transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
@@ -152,7 +152,7 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 		}
 
 		TransactionImpl transaction = (TransactionImpl) tobj;
-		transaction.setThread(Thread.currentThread());
+		// transaction.setThread(Thread.currentThread());
 		transaction.resume();
 		this.associateds.put(Thread.currentThread(), transaction);
 

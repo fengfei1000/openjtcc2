@@ -17,6 +17,7 @@ import javax.transaction.xa.XAResource;
 import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.bytejta.utils.ByteUtils;
 import org.bytesoft.bytejta.utils.CommonUtils;
+import org.bytesoft.bytejta.xa.TransactionSkeleton;
 import org.bytesoft.bytejta.xa.XATerminatorImpl;
 import org.bytesoft.transaction.CommitRequiredException;
 import org.bytesoft.transaction.RemoteSystemException;
@@ -34,7 +35,6 @@ import org.bytesoft.transaction.xa.XATerminator;
 public class TransactionImpl implements Transaction {
 	static final Logger logger = Logger.getLogger(TransactionImpl.class.getSimpleName());
 
-	private transient Thread thread;
 	private transient boolean timing = true;
 
 	private transient XATerminator firstTerminator;
@@ -44,6 +44,8 @@ public class TransactionImpl implements Transaction {
 	private final TransactionContext transactionContext;
 	private final XATerminatorImpl nativeTerminator;
 	private final XATerminatorImpl remoteTerminator;
+
+	private final TransactionSkeleton skeleton = new TransactionSkeleton(this);
 
 	private final List<SynchronizationImpl> synchronizations = new ArrayList<SynchronizationImpl>();
 
@@ -123,6 +125,14 @@ public class TransactionImpl implements Transaction {
 
 		}
 
+	}
+
+	public synchronized void participantPrepare() throws RollbackException, CommitRequiredException {
+	}
+
+	public synchronized void participantCommit() throws RollbackException, HeuristicMixedException,
+			HeuristicRollbackException, SecurityException, IllegalStateException, CommitRequiredException,
+			SystemException {
 	}
 
 	public synchronized void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
@@ -1051,20 +1061,16 @@ public class TransactionImpl implements Transaction {
 		return remoteTerminator;
 	}
 
+	public TransactionSkeleton getSkeleton() {
+		return skeleton;
+	}
+
 	public boolean isTiming() {
 		return timing;
 	}
 
 	public void setTiming(boolean timing) {
 		this.timing = timing;
-	}
-
-	public Thread getThread() {
-		return thread;
-	}
-
-	public void setThread(Thread thread) {
-		this.thread = thread;
 	}
 
 	public int getTransactionStatus() {
