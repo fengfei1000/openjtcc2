@@ -17,8 +17,8 @@
 	<dependencies>
 		<dependency>
 			<groupId>javax.transaction</groupId>
-			<artifactId>javax.transaction-api</artifactId>
-			<version>1.2</version>
+			<artifactId>transaction-api</artifactId>
+			<version>1.1</version>
 		</dependency>
 
 		<dependency>

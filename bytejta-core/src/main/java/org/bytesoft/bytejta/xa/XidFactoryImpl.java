@@ -19,6 +19,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bytesoft.bytejta.common.TransactionCommonXid;
@@ -28,6 +29,7 @@ import org.bytesoft.transaction.xa.XidFactory;
 
 public class XidFactoryImpl implements XidFactory {
 
+	private final Random random = new Random();
 	private final AtomicLong atomic = new AtomicLong();
 	private final byte[] hardwareAddress = new byte[6];
 	private String application = "default";
@@ -147,6 +149,21 @@ public class XidFactoryImpl implements XidFactory {
 		System.arraycopy(globalXid.getGlobalTransactionId(), 0, global, 0, global.length);
 
 		return new TransactionCommonXid(global, branchQualifier);
+	}
+
+	public byte[] generateUniqueKey() {
+		byte[] currentByteArray = ByteUtils.longToByteArray(System.currentTimeMillis());
+
+		byte[] randomByteArray = new byte[4];
+		random.nextBytes(randomByteArray);
+
+		byte[] uniqueKey = new byte[16];
+		int timeLen = 6;
+		System.arraycopy(currentByteArray, currentByteArray.length - timeLen, uniqueKey, 0, timeLen);
+		System.arraycopy(randomByteArray, 0, uniqueKey, timeLen, randomByteArray.length);
+		System.arraycopy(hardwareAddress, 0, uniqueKey, randomByteArray.length + timeLen, hardwareAddress.length);
+
+		return uniqueKey;
 	}
 
 }
