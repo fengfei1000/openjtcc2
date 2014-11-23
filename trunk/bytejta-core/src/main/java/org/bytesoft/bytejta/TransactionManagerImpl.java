@@ -119,12 +119,21 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 		} catch (CommitRequiredException crex) {
 			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
-		} catch (HeuristicMixedException hmex) {// TODO
+			throw crex;
+		} catch (HeuristicMixedException hmex) {
+			transactionDone = false;// TODO
+			transactionRepository.putErrorTransaction(globalXid, transaction);
+			throw hmex;
+		} catch (SystemException ex) {
 			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
+			throw ex;
 		} catch (RuntimeException rrex) {
 			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
+			SystemException ex = new SystemException();
+			ex.initCause(rrex);
+			throw ex;
 		} finally {
 			if (transactionDone) {
 				transactionRepository.removeErrorTransaction(globalXid);
@@ -178,9 +187,17 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 		} catch (RollbackRequiredException rrex) {
 			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
+			throw rrex;
+		} catch (SystemException ex) {
+			transactionDone = false;
+			transactionRepository.putErrorTransaction(globalXid, transaction);
+			throw ex;
 		} catch (RuntimeException rrex) {
 			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
+			SystemException ex = new SystemException();
+			ex.initCause(rrex);
+			throw ex;
 		} finally {
 			if (transactionDone) {
 				transactionRepository.removeErrorTransaction(globalXid);
