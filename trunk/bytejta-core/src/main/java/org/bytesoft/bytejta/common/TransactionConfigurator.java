@@ -23,59 +23,115 @@ public final class TransactionConfigurator {
 	}
 
 	public void setTransactionLogger(TransactionLogger transactionLogger) {
-		instance.transactionLogger.setDelegate(transactionLogger);
+		if (this == instance) {
+			this.transactionLogger.setDelegate(transactionLogger);
+		} else {
+			instance.setTransactionLogger(transactionLogger);
+		}
 	}
 
 	public TransactionManagerImpl getTransactionManager() {
-		return instance.transactionManager;
+		if (this == instance) {
+			return this.transactionManager;
+		} else {
+			return instance.getTransactionManager();
+		}
 	}
 
 	public void setTransactionManager(TransactionManagerImpl transactionManager) {
-		instance.transactionManager = transactionManager;
+		if (this == instance) {
+			this.transactionManager = transactionManager;
+		} else {
+			instance.setTransactionManager(transactionManager);
+		}
 	}
 
 	public XidFactory getXidFactory() {
-		return instance.xidFactory;
+		if (this == instance) {
+			return this.xidFactory;
+		} else {
+			return instance.getXidFactory();
+		}
 	}
 
 	public void setXidFactory(XidFactory xidFactory) {
-		instance.xidFactory = xidFactory;
+		if (this == instance) {
+			this.xidFactory = xidFactory;
+		} else {
+			instance.setXidFactory(xidFactory);
+		}
 	}
 
 	public TransactionLogger getTransactionLogger() {
-		return instance.transactionLogger;
+		if (this == instance) {
+			return this.transactionLogger;
+		} else {
+			return instance.getTransactionLogger();
+		}
 	}
 
 	public TransactionRepository getTransactionRepository() {
-		return instance.transactionRepository;
+		if (this == instance) {
+			return this.transactionRepository;
+		} else {
+			return instance.getTransactionRepository();
+		}
 	}
 
 	public void setTransactionRepository(TransactionRepository transactionRepository) {
-		instance.transactionRepository = transactionRepository;
+		if (this == instance) {
+			this.transactionRepository = transactionRepository;
+		} else {
+			instance.setTransactionRepository(transactionRepository);
+		}
 	}
 
 	public TransactionTimer getTransactionTimer() {
-		return instance.transactionTimer;
+		if (this == instance) {
+			return this.transactionTimer;
+		} else {
+			return instance.getTransactionTimer();
+		}
 	}
 
 	public void setTransactionTimer(TransactionTimer transactionTimer) {
-		instance.transactionTimer = transactionTimer;
+		if (this == instance) {
+			this.transactionTimer = transactionTimer;
+		} else {
+			instance.setTransactionTimer(transactionTimer);
+		}
 	}
 
 	public boolean isOptimizeEnabled() {
-		return instance.optimizeEnabled;
+		if (this == instance) {
+			return this.optimizeEnabled;
+		} else {
+			return instance.isOptimizeEnabled();
+		}
 	}
 
 	public void setOptimizeEnabled(boolean optimizeEnabled) {
-		instance.optimizeEnabled = optimizeEnabled;
+		if (this == instance) {
+			this.optimizeEnabled = optimizeEnabled;
+		} else {
+			instance.setOptimizeEnabled(optimizeEnabled);
+		}
 	}
 
 	public TransactionInterceptor getTransactionInterceptor() {
-		return instance.transactionInterceptor;
+		if (this == instance) {
+			return this.transactionInterceptor;
+		} else {
+			return instance.getTransactionInterceptor();
+		}
 	}
 
 	public void setTransactionInterceptor(TransactionInterceptor transactionInterceptor) {
-		instance.transactionInterceptor = transactionInterceptor;
+		if (this == instance) {
+			this.transactionInterceptor = transactionInterceptor;
+		} else {
+			instance.setTransactionInterceptor(transactionInterceptor);
+		}
 	}
 
 }

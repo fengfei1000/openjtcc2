@@ -89,6 +89,10 @@ public class XAResourceArchive implements XAResource {
 		descriptor.start(xid, flags);
 	}
 
+	public String toString() {
+		return String.valueOf(this.descriptor);
+	}
+
 	public XAResourceDescriptor getDescriptor() {
 		return descriptor;
 	}

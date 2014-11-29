@@ -3,7 +3,6 @@ package org.bytesoft.bytejta.xa;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.RollbackException;
-import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
