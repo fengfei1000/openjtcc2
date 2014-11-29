@@ -36,8 +36,8 @@ public class TransactionInterceptorImpl implements TransactionInterceptor {
 
 			try {
 				TransactionResource resource = request.getTransactionResource();
-				boolean nonxaResourceExists = transactionContext.isNonxaResourceAllowed() == false;
-				XAResourceDescriptor descriptor = this.createResourceDescriptor(resource, nonxaResourceExists);
+				boolean supportXA = transactionContext.isNonxaResourceAllowed();
+				XAResourceDescriptor descriptor = this.createResourceDescriptor(resource, supportXA);
 				transaction.enlistResource(descriptor);
 			} catch (IllegalStateException ex) {
 				logger.throwing(TransactionInterceptorImpl.class.getName(), "beforeSendRequest(TransactionRequest)", ex);
@@ -105,8 +105,8 @@ public class TransactionInterceptorImpl implements TransactionInterceptor {
 						if (nativeAllowedNonxaResource && remoteAllowedNonxaResource == false) {
 							nativeTransactionContext.setNonxaResourceAllowed(false);
 						}
-						XAResourceDescriptor descriptor = this.createResourceDescriptor(resource,
-								remoteAllowedNonxaResource);
+						boolean supportXA = remoteAllowedNonxaResource;
+						XAResourceDescriptor descriptor = this.createResourceDescriptor(resource, supportXA);
 						transaction.delistResource(descriptor, XAResource.TMSUCCESS);
 					} catch (IllegalStateException ex) {
 						logger.throwing(TransactionInterceptorImpl.class.getName(),
@@ -134,13 +134,12 @@ public class TransactionInterceptorImpl implements TransactionInterceptor {
 		}
 	}
 
-	private XAResourceDescriptor createResourceDescriptor(TransactionResource resource, boolean nonxaResourceExists) {
+	private XAResourceDescriptor createResourceDescriptor(TransactionResource resource, boolean supportXA) {
 		XAResourceDescriptor descriptor = new XAResourceDescriptor();
 		descriptor.setDelegate(resource);
 		descriptor.setIdentifier(resource.getIdentifier());
 		descriptor.setRemote(true);
-		// TODO descriptor.setSupportsXA(nonxaResourceExists);
-		descriptor.setSupportsXA(true);
+		descriptor.setSupportsXA(supportXA);
 		return descriptor;
 	}
 }

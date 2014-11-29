@@ -90,7 +90,7 @@ public class XAResourceArchive implements XAResource {
 	}
 
 	public String toString() {
-		return String.valueOf(this.descriptor);
+		return String.format("xa-archive[descriptor: %s, non-xa-exists: %s]", this.descriptor, this.nonxaResourceExists);
 	}
 
 	public XAResourceDescriptor getDescriptor() {

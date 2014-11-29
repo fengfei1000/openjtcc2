@@ -41,6 +41,7 @@
 		<constructor-arg value="bytejta/bytejta.dat" />
 	</bean>
 
+	<bean id="transactionRecovery" class="org.bytesoft.bytejta.TransactionRecoveryImpl" />
 	<bean id="transactionRepository" class="org.bytesoft.bytejta.common.TransactionRepository" />
 	<bean id="transactionInterceptor" class="org.bytesoft.transaction.supports.rpc.TransactionInterceptorImpl" />
 	<bean id="transactionConfigurator" class="org.bytesoft.bytejta.common.TransactionConfigurator" factory-method="getInstance">
@@ -50,6 +51,7 @@
 		<property name="transactionTimer" ref="bytejtaTransactionManager" />
 		<property name="transactionLogger" ref="transactionLogger" />
 		<property name="transactionInterceptor" ref="transactionInterceptor" />
+		<property name="transactionRecovery" ref="transactionRecovery" />
 	</bean>
 
 </beans>

@@ -71,7 +71,13 @@ public class XATerminatorImpl implements XATerminator {
 		for (int i = 0; i < length; i++) {
 			XAResourceArchive archive = this.resources.get(i);
 			XAResourceDescriptor descriptor = archive.getDescriptor();
-			if (descriptor.isSupportsXA() == false) {
+			boolean supportXA = false;
+			if (descriptor.isRemote()) {
+				supportXA = archive.isNonxaResourceExists() == false;
+			} else {
+				supportXA = descriptor.isSupportsXA();
+			}
+			if (supportXA == false) {
 				lastResourceIdx = i;
 			}
 		}
@@ -648,7 +654,13 @@ public class XATerminatorImpl implements XATerminator {
 		for (int i = 0; i < length; i++) {
 			XAResourceArchive archive = this.resources.get(i);
 			XAResourceDescriptor descriptor = archive.getDescriptor();
-			if (descriptor.isSupportsXA() == false) {
+			boolean supportXA = false;
+			if (descriptor.isRemote()) {
+				supportXA = archive.isNonxaResourceExists() == false;
+			} else {
+				supportXA = descriptor.isSupportsXA();
+			}
+			if (supportXA == false) {
 				return false;
 			}
 		}
@@ -663,11 +675,7 @@ public class XATerminatorImpl implements XATerminator {
 			throw new SystemException();
 		}
 
-		XAResourceDescriptor originDescriptor = archive.getDescriptor();
-		boolean typeMatched = originDescriptor.isRemote() && descriptor.isRemote();
-		boolean propChanged = originDescriptor.isSupportsXA() && descriptor.isSupportsXA() == false;
-
-		if (typeMatched && propChanged) {
+		if (descriptor.isRemote() && descriptor.isSupportsXA() == false) {
 			archive.setNonxaResourceExists(true);
 		}
 
@@ -679,11 +687,10 @@ public class XATerminatorImpl implements XATerminator {
 			RollbackRequiredException {
 		try {
 			Xid branchXid = archive.getXid();
-			logger.info(String.format("\t[%s] delist: xares= %s, flags= %s",
-					ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), archive, flag));
-
 			archive.end(branchXid, flag);
 			archive.setDelisted(true);
+			logger.info(String.format("\t[%s] delist: xares= %s, flags= %s",
+					ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), archive, flag));
 		} catch (XAException xae) {
 			logger.throwing(XATerminatorImpl.class.getName(), "delistResource(XAResourceArchive, int)", xae);
 
@@ -739,6 +746,10 @@ public class XATerminatorImpl implements XATerminator {
 			flags = XAResource.TMJOIN;
 		}
 
+		if (descriptor.isRemote() && descriptor.isSupportsXA() == false) {
+			archive.setNonxaResourceExists(true);
+			archive.getDescriptor().setSupportsXA(true);
+		}
 		return this.enlistResource(archive, flags);
 	}
 

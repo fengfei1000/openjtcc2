@@ -4,6 +4,7 @@ import org.bytesoft.bytejta.TransactionManagerImpl;
 import org.bytesoft.transaction.TransactionTimer;
 import org.bytesoft.transaction.logger.TransactionLogger;
 import org.bytesoft.transaction.logger.TransactionLoggerProxy;
+import org.bytesoft.transaction.recovery.TransactionRecovery;
 import org.bytesoft.transaction.rpc.TransactionInterceptor;
 import org.bytesoft.transaction.xa.XidFactory;
 
@@ -17,6 +18,7 @@ public final class TransactionConfigurator {
 	private final TransactionLoggerProxy transactionLogger = new TransactionLoggerProxy();
 	private TransactionRepository transactionRepository;
 	private TransactionInterceptor transactionInterceptor;
+	private TransactionRecovery transactionRecovery;
 
 	public static TransactionConfigurator getInstance() {
 		return instance;
@@ -131,6 +133,22 @@ public final class TransactionConfigurator {
 			this.transactionInterceptor = transactionInterceptor;
 		} else {
 			instance.setTransactionInterceptor(transactionInterceptor);
+		}
+	}
+
+	public TransactionRecovery getTransactionRecovery() {
+		if (this == instance) {
+			return transactionRecovery;
+		} else {
+			return instance.getTransactionRecovery();
+		}
+	}
+
+	public void setTransactionRecovery(TransactionRecovery transactionRecovery) {
+		if (this == instance) {
+			this.transactionRecovery = transactionRecovery;
+		} else {
+			instance.setTransactionRecovery(transactionRecovery);
 		}
 	}
 
