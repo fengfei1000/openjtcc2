@@ -346,8 +346,8 @@ public class TransactionImpl implements Transaction {
 			if (this.currentOpcNecessary()) {
 				this.opcCommit();
 			} else {
-				this.analysisTerminator();
 				if (transactionConfigurator.isOptimizeEnabled()) {
+					this.analysisTerminator();
 					this.optimizeCommit();
 				} else {
 					this.regularCommit();
@@ -363,7 +363,11 @@ public class TransactionImpl implements Transaction {
 			CommitRequiredException, SystemException {
 		TransactionXid xid = this.transactionContext.getGlobalXid();
 		try {
-			lastTerminator.commit(xid, true);
+			if (this.nativeTerminator.getResourceArchives().size() > 0) {
+				this.nativeTerminator.commit(xid, true);
+			} else {
+				this.remoteTerminator.commit(xid, true);
+			}
 		} catch (XAInternalException xaex) {
 			CommitRequiredException ex = new CommitRequiredException();
 			ex.initCause(xaex);
@@ -399,7 +403,7 @@ public class TransactionImpl implements Transaction {
 			archive.setStatus(this.transactionStatus);
 			transactionLogger.createTransaction(archive);
 
-			firstVote = this.firstTerminator.prepare(xid);
+			firstVote = this.nativeTerminator.prepare(xid);
 		} catch (XAException xaex) {
 			this.rollback();
 			throw new HeuristicRollbackException();
@@ -410,7 +414,7 @@ public class TransactionImpl implements Transaction {
 
 		int lastVote = XAResource.XA_RDONLY;
 		try {
-			lastVote = this.lastTerminator.prepare(xid);
+			lastVote = this.remoteTerminator.prepare(xid);
 		} catch (XAException xaex) {
 			this.rollback();
 			throw new HeuristicRollbackException();
@@ -430,7 +434,7 @@ public class TransactionImpl implements Transaction {
 			boolean mixedExists = false;
 			boolean unFinishExists = false;
 			try {
-				firstTerminator.commit(xid, false);
+				this.nativeTerminator.commit(xid, false);
 			} catch (XAException xaex) {
 				unFinishExists = XAInternalException.class.isInstance(xaex);
 
@@ -450,7 +454,7 @@ public class TransactionImpl implements Transaction {
 
 			boolean transactionCompleted = false;
 			try {
-				lastTerminator.commit(xid, false);
+				this.remoteTerminator.commit(xid, false);
 				if (unFinishExists == false) {
 					transactionCompleted = true;
 				}
@@ -784,9 +788,9 @@ public class TransactionImpl implements Transaction {
 		TransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
 		transactionLogger.createTransaction(archive);
 
-		// rollback the first-resource
+		// rollback the native-resource
 		try {
-			firstTerminator.rollback(xid);
+			this.nativeTerminator.rollback(xid);
 		} catch (XAException xaex) {
 			unFinishExists = XAInternalException.class.isInstance(xaex);
 
@@ -804,9 +808,9 @@ public class TransactionImpl implements Transaction {
 			}
 		}
 
-		// rollback the last-resource
+		// rollback the remote-resource
 		try {
-			lastTerminator.rollback(xid);
+			this.remoteTerminator.rollback(xid);
 			if (unFinishExists == false) {
 				transactionCompleted = true;
 			}

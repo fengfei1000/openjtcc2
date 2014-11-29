@@ -2,6 +2,7 @@ package org.bytesoft.transaction.work;
 
 import javax.resource.spi.work.Work;
 
+import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.transaction.TransactionTimer;
 import org.bytesoft.transaction.recovery.TransactionRecovery;
 
@@ -11,22 +12,24 @@ public class TransactionWork implements Work {
 	private long delayOfStoping = SECOND_MILLIS * 15;
 	private long recoveryInterval = SECOND_MILLIS * 60;
 
-	private TransactionTimer transactionTimer;
-	private TransactionRecovery transactionRecovery;
-
 	public void run() {
 		long nextExecutionTime = 0;
 		long nextRecoveryTime = 0;
 		while (this.currentActive()) {
+
+			TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+			TransactionTimer transactionTimer = configurator.getTransactionTimer();
+			TransactionRecovery transactionRecovery = configurator.getTransactionRecovery();
+
 			long current = System.currentTimeMillis();
 			if (current >= nextExecutionTime) {
 				nextExecutionTime = current + SECOND_MILLIS;
-				this.transactionTimer.timingExecution();
+				transactionTimer.timingExecution();
 			}
 
 			if (current >= nextRecoveryTime) {
 				nextRecoveryTime = current + this.recoveryInterval;
-				this.transactionRecovery.timingRecover();
+				transactionRecovery.timingRecover();
 			}
 
 			this.waitForMillis(100L);
@@ -56,22 +59,6 @@ public class TransactionWork implements Work {
 
 	public void setDelayOfStoping(long delayOfStoping) {
 		this.delayOfStoping = delayOfStoping;
-	}
-
-	public TransactionTimer getTransactionTimer() {
-		return transactionTimer;
-	}
-
-	public void setTransactionTimer(TransactionTimer transactionTimer) {
-		this.transactionTimer = transactionTimer;
-	}
-
-	public TransactionRecovery getTransactionRecovery() {
-		return transactionRecovery;
-	}
-
-	public void setTransactionRecovery(TransactionRecovery transactionRecovery) {
-		this.transactionRecovery = transactionRecovery;
 	}
 
 }

@@ -6,7 +6,7 @@ import javax.transaction.xa.Xid;
 
 public class XAResourceDescriptor implements XAResource {
 	private boolean remote;
-	private boolean supportsXA;
+	private transient boolean supportsXA;
 	private XAResource delegate;
 	private String identifier;
 	private int descriptorId;
@@ -57,7 +57,7 @@ public class XAResourceDescriptor implements XAResource {
 	}
 
 	public String toString() {
-		return String.format("xa-res[identifier= %s, descriptor= %s, support-xa= %s, remote-res= %s]"//
+		return String.format("xa-res(identifier= %s, descriptor= %s, support-xa= %s, remote-res= %s)"//
 				, this.identifier, this.descriptorId, this.supportsXA, this.remote);
 	}
 
