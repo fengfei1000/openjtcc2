@@ -56,6 +56,11 @@ public class XAResourceDescriptor implements XAResource {
 		delegate.start(arg0, arg1);
 	}
 
+	public String toString() {
+		return String.format("xa-res[identifier= %s, descriptor= %s, support-xa= %s, remote-res= %s]"//
+				, this.identifier, this.descriptorId, this.supportsXA, this.remote);
+	}
+
 	public boolean isRemote() {
 		return remote;
 	}

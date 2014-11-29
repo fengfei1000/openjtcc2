@@ -58,6 +58,8 @@ public class XATerminatorImpl implements XATerminator {
 				} else {
 					globalVote = XAResource.XA_OK;
 				}
+				logger.info(String.format("\t[%s] prepare: xares= %s, vote= %s",
+						ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), archive, branchVote));
 			}
 		}
 		return globalVote;
@@ -89,6 +91,8 @@ public class XATerminatorImpl implements XATerminator {
 		try {
 			this.invokePrepare(true);
 		} catch (XAException xaex) {
+			logger.info(String.format("[%s] Error occurred while preparing transaction.",
+					ByteUtils.byteArrayToString(xid.getGlobalTransactionId())));
 			try {
 				this.rollback(xid);
 				throw new XAException(XAException.XA_HEURRB);
@@ -131,12 +135,18 @@ public class XATerminatorImpl implements XATerminator {
 						commitExists = true;
 						archive.setCommitted(true);
 						archive.setCompleted(true);
+
+						logger.info(String.format("\t[%s] commit: xares= %s, onePhaseCommit= %s",
+								ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), archive, true));
 					} else {
 						currentOpc = false;
 						archive.commit(branchXid, false);
 						commitExists = true;
 						archive.setCommitted(true);
 						archive.setCompleted(true);
+
+						logger.info(String.format("\t[%s] commit: xares= %s, onePhaseCommit= %s",
+								ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), archive, false));
 					}// end-else
 				} catch (XAException xaex) {
 					if (commitExists) {
@@ -309,6 +319,8 @@ public class XATerminatorImpl implements XATerminator {
 					commitExists = true;
 					archive.setCommitted(true);
 					archive.setCompleted(true);
+					logger.info(String.format("\t[%s] commit: xares= %s, onePhaseCommit= %s",
+							ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), archive, false));
 				}
 			} catch (XAException xaex) {
 				if (commitExists) {
@@ -459,6 +471,8 @@ public class XATerminatorImpl implements XATerminator {
 					rollbackExists = true;
 					archive.setRolledback(true);
 					archive.setCompleted(true);
+					logger.info(String.format("\t[%s] rollback: xares= %s",
+							ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), archive));
 				}
 			} catch (XAException xaex) {
 				// * @exception XAException An error has occurred. Possible XAExceptions are
