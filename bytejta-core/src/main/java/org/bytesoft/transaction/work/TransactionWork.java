@@ -13,13 +13,15 @@ public class TransactionWork implements Work {
 	private long recoveryInterval = SECOND_MILLIS * 60;
 
 	public void run() {
+
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		TransactionTimer transactionTimer = configurator.getTransactionTimer();
+		TransactionRecovery transactionRecovery = configurator.getTransactionRecovery();
+		transactionRecovery.startupRecover();
+
 		long nextExecutionTime = 0;
 		long nextRecoveryTime = 0;
 		while (this.currentActive()) {
-
-			TransactionConfigurator configurator = TransactionConfigurator.getInstance();
-			TransactionTimer transactionTimer = configurator.getTransactionTimer();
-			TransactionRecovery transactionRecovery = configurator.getTransactionRecovery();
 
 			long current = System.currentTimeMillis();
 			if (current >= nextExecutionTime) {

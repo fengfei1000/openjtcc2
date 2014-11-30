@@ -26,6 +26,8 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 	protected static final int SIZE_SECTION_HEADER = 1024;
 	protected static final int SIZE_SECTION_RESOURCES = 1024 * 3;
 	protected static final int SIZE_UNIT_TRANSACTION = 256;
+	protected static final int SIZE_UNIT_TRANSACTION_FLAG = 1;
+	protected static final int SIZE_UNIT_TRANSACTION_DATA = SIZE_UNIT_TRANSACTION - SIZE_UNIT_TRANSACTION_FLAG;
 	protected static final int SIZE_UNIT_RESOURCE = 32;
 
 	protected static final byte[] IDENTIFIER = "org.bytesoft.bytejta.storage.simple".getBytes();
@@ -139,8 +141,12 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 			tp.setBuffer(buffer);
 			byte[] contentByteArray = new byte[SIZE_UNIT_TRANSACTION];
 			buffer.get(contentByteArray);
-			SimpleTransactionStorageObject object = new SimpleTransactionStorageObject(contentByteArray);
-			if (object.isEnabled()) {
+			byte[] transactionByteArray = new byte[SIZE_UNIT_TRANSACTION_DATA];
+			System.arraycopy(contentByteArray, SIZE_UNIT_TRANSACTION_FLAG, transactionByteArray, 0,
+					SIZE_UNIT_TRANSACTION_DATA);
+			SimpleTransactionStorageObject object = new SimpleTransactionStorageObject(transactionByteArray);
+			byte flagByte = contentByteArray[0];
+			if (flagByte != 0) {
 				TransactionStorageKey key = object.getStorageKey();
 				tp.setKey(key);
 				tp.setEnabled(true);
@@ -310,8 +316,8 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 			SimpleTransactionStorageObject storageObject = null;
 			synchronized (position) {
 				MappedByteBuffer buffer = position.getBuffer();
-				byte[] bytes = new byte[SIZE_UNIT_TRANSACTION];
-				buffer.position(0);
+				byte[] bytes = new byte[SIZE_UNIT_TRANSACTION_DATA];
+				buffer.position(SIZE_UNIT_TRANSACTION_FLAG);
 				buffer.get(bytes);
 				storageObject = new SimpleTransactionStorageObject(bytes);
 			}// end-synchronized
@@ -330,6 +336,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 				position.setKey(storageKey);
 
 				buffer.position(0);
+				buffer.put((byte) 1);// enable
 				buffer.put(storageObject.getContentByteArray());
 				buffer.force();
 			}
@@ -348,7 +355,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 		} else {
 			MappedByteBuffer buffer = position.getBuffer();
 			synchronized (position) {
-				buffer.position(0);
+				buffer.position(SIZE_UNIT_TRANSACTION_FLAG);
 				buffer.put(storageObject.getContentByteArray());
 				buffer.force();
 			}
@@ -367,6 +374,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 				position.setKey(null);
 
 				buffer.position(0);
+				buffer.put((byte) 0);// disable
 				buffer.put(storageObject.getContentByteArray());
 				buffer.force();
 			}
