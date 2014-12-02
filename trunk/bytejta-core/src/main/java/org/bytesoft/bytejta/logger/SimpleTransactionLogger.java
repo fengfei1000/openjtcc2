@@ -123,13 +123,13 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 		buffer.put((byte) nativeNumber);
 		buffer.put((byte) remoteNumber);
 
-		for (int i = 0; i < nativeResources.size(); i++) {
+		for (int i = 0; i < nativeNumber; i++) {
 			XAResourceArchive resourceArchive = nativeResources.get(i);
 			this.serializeXAResourceArchive(buffer, resourceArchive);
 		}
 
-		for (int i = 0; i < nativeResources.size(); i++) {
-			XAResourceArchive resourceArchive = nativeResources.get(i);
+		for (int i = 0; i < remoteNumber; i++) {
+			XAResourceArchive resourceArchive = remoteResources.get(i);
 			this.serializeXAResourceArchive(buffer, resourceArchive);
 		}
 

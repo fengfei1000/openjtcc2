@@ -17,8 +17,13 @@ public class XAResourceSerializerImpl implements XAResourceSerializer, Applicati
 	private ApplicationContext applicationContext;
 
 	public XAResourceDescriptor deserialize(String identifier) throws IOException {
-		Object bean = this.applicationContext.getBean(identifier);
-		if (bean != null) {
+		Object bean = null;
+		try {
+			bean = this.applicationContext.getBean(identifier);
+		} catch (BeansException bex) {
+			throw new IllegalStateException(bex);
+		}
+		if (bean != null && XADataSource.class.isInstance(bean)) {
 			try {
 				XADataSource xaDataSource = (XADataSource) bean;
 				XAConnection xaConnection = xaDataSource.getXAConnection();
@@ -29,14 +34,11 @@ public class XAResourceSerializerImpl implements XAResourceSerializer, Applicati
 				descriptor.setRemote(false);
 				descriptor.setSupportsXA(true);
 				return descriptor;
-			} catch (RuntimeException ex) {
-				// throw new IOException(ex);
-				return null;
 			} catch (SQLException ex) {
 				throw new IOException(ex);
 			}
 		}
-		return null;
+		throw new IllegalStateException();
 	}
 
 	public String serialize(XAResourceDescriptor descriptor) throws IOException {
