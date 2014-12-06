@@ -27,7 +27,7 @@ import org.bytesoft.transaction.xa.XidFactory;
 
 public class TransactionManagerImpl implements TransactionManager, TransactionTimer {
 
-	private int transactionTimeout = 5 * 60;
+	private int timeoutSeconds = 5 * 60;
 	private final Map<Thread, TransactionImpl> associateds = new ConcurrentHashMap<Thread, TransactionImpl>();
 
 	public void begin() throws NotSupportedException, SystemException {
@@ -35,7 +35,7 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 			throw new NotSupportedException();
 		}
 
-		int timeoutSeconds = this.transactionTimeout;
+		int timeoutSeconds = this.timeoutSeconds;
 
 		TransactionContext transactionContext = new TransactionContext();
 		transactionContext.setCoordinator(true);
@@ -259,11 +259,8 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 		Iterator<TransactionImpl> expiredItr = expiredTransactions.iterator();
 		while (activeItr.hasNext()) {
 			TransactionImpl transaction = expiredItr.next();
-			if (transaction.getStatus() == Status.STATUS_ROLLEDBACK) {
-				// ignore
-			} else if (transaction.getStatus() == Status.STATUS_COMMITTED) {
-				// ignore
-			} else {
+			if (transaction.getStatus() == Status.STATUS_ACTIVE
+					|| transaction.getStatus() == Status.STATUS_MARKED_ROLLBACK) {
 				TransactionContext transactionContext = transaction.getTransactionContext();
 				TransactionXid globalXid = transactionContext.getGlobalXid();
 				TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
@@ -287,6 +284,14 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 		synchronized (transaction) {
 			transaction.setTiming(false);
 		}
+	}
+
+	public int getTimeoutSeconds() {
+		return timeoutSeconds;
+	}
+
+	public void setTimeoutSeconds(int timeoutSeconds) {
+		this.timeoutSeconds = timeoutSeconds;
 	}
 
 }

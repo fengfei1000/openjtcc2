@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.bytesoft</groupId>
-	<artifactId>tcc-common</artifactId>
+	<artifactId>bytetcc-common</artifactId>
 	<version>0.1.2</version>
 	<packaging>jar</packaging>
 
-	<name>tcc-common</name>
+	<name>bytetcc-common</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>

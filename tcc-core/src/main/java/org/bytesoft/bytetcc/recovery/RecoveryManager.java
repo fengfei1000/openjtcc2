@@ -15,24 +15,14 @@
  */
 package org.bytesoft.bytetcc.recovery;
 
-import java.util.Iterator;
-import java.util.Set;
-
 import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.RollbackException;
-import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 
-import org.bytesoft.bytetcc.TransactionImpl;
-import org.bytesoft.bytetcc.TransactionManagerImpl;
+import org.bytesoft.bytetcc.CompensableTransaction;
+import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.bytetcc.archive.TransactionArchive;
-import org.bytesoft.bytetcc.supports.TransactionLogger;
-import org.bytesoft.bytetcc.supports.TransactionRepository;
-import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionStatistic;
-import org.bytesoft.transaction.TransactionStatus;
 import org.bytesoft.transaction.xa.TransactionXid;
 
 public class RecoveryManager {
@@ -41,63 +31,63 @@ public class RecoveryManager {
 	private TransactionStatistic transactionStatistic;
 
 	public void reconstruct() {
-		TransactionRepository repository = this.getTransactionRepository();
-		TransactionLogger transactionLogger = repository.getTransactionLogger();
-		Set<TransactionArchive> transactions = transactionLogger.getLoggedTransactionSet();
-		Iterator<TransactionArchive> itr = transactions.iterator();
-		while (itr.hasNext()) {
-			TransactionArchive archive = itr.next();
-			RecoveredTransactionImpl transaction = this.reconstructTransaction(archive);
-
-			TransactionContext transactionContext = null;// TODO transaction.getTransactionContext();
-			TransactionXid globalXid = transactionContext.getGlobalXid();
-
-			repository.putTransaction(globalXid, transaction);
-			repository.putErrorTransaction(globalXid, transaction);
-
-			// this.transactionStatistic.fireRecoverTransaction(transaction);
-		}
+		// TransactionRepository repository = this.getTransactionRepository();
+		// TransactionLogger transactionLogger = repository.getTransactionLogger();
+		// Set<TransactionArchive> transactions = transactionLogger.getLoggedTransactionSet();
+		// Iterator<TransactionArchive> itr = transactions.iterator();
+		// while (itr.hasNext()) {
+		// TransactionArchive archive = itr.next();
+		// RecoveredTransactionImpl transaction = this.reconstructTransaction(archive);
+		//
+		// TransactionContext transactionContext = null;// TODO transaction.getTransactionContext();
+		// TransactionXid globalXid = transactionContext.getGlobalXid();
+		//
+		// repository.putTransaction(globalXid, transaction);
+		// repository.putErrorTransaction(globalXid, transaction);
+		//
+		// // this.transactionStatistic.fireRecoverTransaction(transaction);
+		// }
 	}
 
 	public RecoveredTransactionImpl reconstructTransaction(TransactionArchive archive) {
-		TransactionRepository repository = this.getTransactionRepository();
-		TransactionManagerImpl txManager = (TransactionManagerImpl) this.transactionManager;
+		// TransactionRepository repository = this.getTransactionRepository();
+		// CompensableTransactionManager txManager = (CompensableTransactionManager) this.transactionManager;
 
 		RecoveredTransactionImpl transaction = new RecoveredTransactionImpl();
-		// transaction.setTransactionStatistic(txManager.getTransactionStatistic());
-
-		TransactionContext transactionContext = null;// TODO archive.getTransactionContext();
-		// transaction.setTransactionRecovery(true);
-
-		TransactionStatus transactionStatus = archive.getTransactionStatus();
-
-		transaction.setTransactionContext(transactionContext);
-		transaction.setTransactionStatus(transactionStatus);
-		transaction.setTransactionManager(txManager);
-		transaction.setTransactionLogger(repository.getTransactionLogger());
-
-		// transaction.getCompensableArchiveMap().putAll(archive.getCompensableArchiveMap());
-		// TODO
-		// transaction.getAppToTerminatorMap().putAll(archive.getAppToTerminatorMap());
-
-		if (transactionStatus.isActive()) {
-			transaction.setRecoveryRollbackOnly(true);
-		} else if (transactionStatus.isMarkedRollbackOnly()) {
-			transaction.setRecoveryRollbackOnly(true);
-		} else if (transactionStatus.isPreparing()) {
-			this.confirmPreparedTerminator(transaction);
-			if (transaction.isRecoveryRollbackOnly()) {
-				// ignore
-			} else {
-				this.confirmPreparedLaunchService(transaction);
-			}
-		} else if (transactionStatus.isPrepared()) {
-			this.confirmPreparedLaunchService(transaction);
-		} else if (transactionStatus.isRollingBack()) {
-			transaction.setRecoveryRollbackOnly(true);
-		} else if (transactionStatus.isRolledBack()) {
-			transaction.setRecoveryRollbackOnly(true);
-		}
+		// // transaction.setTransactionStatistic(txManager.getTransactionStatistic());
+		//
+		// TransactionContext transactionContext = null;// TODO archive.getTransactionContext();
+		// // transaction.setTransactionRecovery(true);
+		//
+		// TransactionStatus transactionStatus = archive.getTransactionStatus();
+		//
+		// transaction.setTransactionContext(transactionContext);
+		// transaction.setTransactionStatus(transactionStatus);
+		// transaction.setTransactionManager(txManager);
+		// transaction.setTransactionLogger(repository.getTransactionLogger());
+		//
+		// // transaction.getCompensableArchiveMap().putAll(archive.getCompensableArchiveMap());
+		// // TODO
+		// // transaction.getAppToTerminatorMap().putAll(archive.getAppToTerminatorMap());
+		//
+		// if (transactionStatus.isActive()) {
+		// transaction.setRecoveryRollbackOnly(true);
+		// } else if (transactionStatus.isMarkedRollbackOnly()) {
+		// transaction.setRecoveryRollbackOnly(true);
+		// } else if (transactionStatus.isPreparing()) {
+		// this.confirmPreparedTerminator(transaction);
+		// if (transaction.isRecoveryRollbackOnly()) {
+		// // ignore
+		// } else {
+		// this.confirmPreparedLaunchService(transaction);
+		// }
+		// } else if (transactionStatus.isPrepared()) {
+		// this.confirmPreparedLaunchService(transaction);
+		// } else if (transactionStatus.isRollingBack()) {
+		// transaction.setRecoveryRollbackOnly(true);
+		// } else if (transactionStatus.isRolledBack()) {
+		// transaction.setRecoveryRollbackOnly(true);
+		// }
 
 		return transaction;
 	}
@@ -152,7 +142,7 @@ public class RecoveryManager {
 	 * commit/rollback the uncompleted transactions.
 	 */
 	public void recover() {
-		TransactionRepository repository = this.getTransactionRepository();
+//		TransactionRepository repository = this.getTransactionRepository();
 		// Iterator<TransactionImpl> itr = repository.getErrorTransactionSet().iterator();
 		// while (itr.hasNext()) {
 		// TransactionImpl transaction = itr.next();
@@ -176,12 +166,12 @@ public class RecoveryManager {
 	 * @throws SystemException
 	 */
 	public void recoverTransaction(TransactionXid globalXid) throws HeuristicMixedException, SystemException {
-		TransactionRepository repository = this.getTransactionRepository();
+//		TransactionRepository repository = this.getTransactionRepository();
 		// TransactionImpl transaction = repository.getErrorTransaction(globalXid);
 		// this.recoverTransaction(transaction);
 	}
 
-	public void recoverTransaction(TransactionImpl transaction) throws HeuristicMixedException, SystemException {
+	public void recoverTransaction(CompensableTransaction transaction) throws HeuristicMixedException, SystemException {
 		// CompensableTransactionManager txManager = this.getTransactionManagerImpl();
 		// try {
 		// txManager.associateTransaction(transaction);
@@ -198,97 +188,98 @@ public class RecoveryManager {
 
 	private void recoveredTransactionRecovery(RecoveredTransactionImpl transaction) throws HeuristicMixedException,
 			SystemException {
-		TransactionContext transactionContext = transaction.getTransactionContext();
-		TransactionStatus transactionStatus = transaction.getTransactionStatus();
-		if (transactionContext.isCoordinator()) {
-			if (transaction.isRecoveryRollbackOnly()) {
-				transaction.rollback();
-			} else {
-				try {
-					transaction.commit();
-				} catch (SecurityException ex) {
-					// ignore
-				} catch (HeuristicRollbackException ex) {
-					// ignore
-				} catch (RollbackException ex) {
-					// ignore
-				}
-			}
-		} else if (transactionStatus.isActive() || transactionStatus.isMarkedRollbackOnly()) {
-			transaction.rollback();
-			// try {
-			// transaction.cleanup();
-			// } catch (Exception rex) {
-			// SystemException exception = new SystemException();
-			// exception.initCause(rex);
-			// throw exception;
-			// }
-		}
+//		TransactionContext transactionContext = transaction.getTransactionContext();
+//		TransactionStatus transactionStatus = transaction.getTransactionStatus();
+//		if (transactionContext.isCoordinator()) {
+//			if (transaction.isRecoveryRollbackOnly()) {
+//				transaction.rollback();
+//			} else {
+//				try {
+//					transaction.commit();
+//				} catch (SecurityException ex) {
+//					// ignore
+//				} catch (HeuristicRollbackException ex) {
+//					// ignore
+//				} catch (RollbackException ex) {
+//					// ignore
+//				}
+//			}
+//		} else if (transactionStatus.isActive() || transactionStatus.isMarkedRollbackOnly()) {
+//			transaction.rollback();
+//			// try {
+//			// transaction.cleanup();
+//			// } catch (Exception rex) {
+//			// SystemException exception = new SystemException();
+//			// exception.initCause(rex);
+//			// throw exception;
+//			// }
+//		}
 	}
 
-	private void activeTransactionRecovery(TransactionImpl transaction) throws HeuristicMixedException, SystemException {
-		TransactionContext transactionContext = transaction.getTransactionContext();
-		if (transactionContext.isCoordinator()) {
-			this.coordinateTransactionRecovery(transaction);
-		}
-	}
-
-	private void coordinateTransactionRecovery(TransactionImpl transaction) throws HeuristicMixedException,
+	private void activeTransactionRecovery(CompensableTransaction transaction) throws HeuristicMixedException,
 			SystemException {
-		TransactionStatus status = transaction.getTransactionStatus();
-
-		switch (status.getTransactionStatus()) {
-		case Status.STATUS_ACTIVE:
-		case Status.STATUS_MARKED_ROLLBACK:
-			transaction.rollback();
-			break;
-		case Status.STATUS_PREPARING:
-			transaction.rollback();
-			break;
-		case Status.STATUS_PREPARED:
-		case Status.STATUS_COMMITTING:
-			try {
-				transaction.commit();
-			} catch (SecurityException ex) {
-				// ignore
-			} catch (HeuristicRollbackException ex) {
-				// ignore
-			} catch (RollbackException ex) {
-				// ignore
-			}
-			break;
-		case Status.STATUS_ROLLING_BACK:
-			transaction.rollback();
-			break;
-		case Status.STATUS_COMMITTED:
-		case Status.STATUS_ROLLEDBACK:
-			// try {
-			// transaction.cleanup();
-			// } catch (RemoteException rex) {
-			// SystemException exception = new SystemException();
-			// exception.initCause(rex);
-			// throw exception;
-			// } catch (RuntimeException rex) {
-			// SystemException exception = new SystemException();
-			// exception.initCause(rex);
-			// throw exception;
-			// }
-			break;
-		case Status.STATUS_UNKNOWN:
-			// should be processed manually.
-			throw new SystemException();
-		default:
-			throw new SystemException();
-		}
+//		TransactionContext transactionContext = transaction.getTransactionContext();
+//		if (transactionContext.isCoordinator()) {
+//			this.coordinateTransactionRecovery(transaction);
+//		}
 	}
 
-	public TransactionRepository getTransactionRepository() {
-		TransactionManagerImpl txm = (TransactionManagerImpl) this.transactionManager;
-		return txm.getTransactionRepository();
+	private void coordinateTransactionRecovery(CompensableTransaction transaction) throws HeuristicMixedException,
+			SystemException {
+//		TransactionStatus status = transaction.getTransactionStatus();
+//
+//		switch (status.getTransactionStatus()) {
+//		case Status.STATUS_ACTIVE:
+//		case Status.STATUS_MARKED_ROLLBACK:
+//			transaction.rollback();
+//			break;
+//		case Status.STATUS_PREPARING:
+//			transaction.rollback();
+//			break;
+//		case Status.STATUS_PREPARED:
+//		case Status.STATUS_COMMITTING:
+//			try {
+//				transaction.commit();
+//			} catch (SecurityException ex) {
+//				// ignore
+//			} catch (HeuristicRollbackException ex) {
+//				// ignore
+//			} catch (RollbackException ex) {
+//				// ignore
+//			}
+//			break;
+//		case Status.STATUS_ROLLING_BACK:
+//			transaction.rollback();
+//			break;
+//		case Status.STATUS_COMMITTED:
+//		case Status.STATUS_ROLLEDBACK:
+//			// try {
+//			// transaction.cleanup();
+//			// } catch (RemoteException rex) {
+//			// SystemException exception = new SystemException();
+//			// exception.initCause(rex);
+//			// throw exception;
+//			// } catch (RuntimeException rex) {
+//			// SystemException exception = new SystemException();
+//			// exception.initCause(rex);
+//			// throw exception;
+//			// }
+//			break;
+//		case Status.STATUS_UNKNOWN:
+//			// should be processed manually.
+//			throw new SystemException();
+//		default:
+//			throw new SystemException();
+//		}
 	}
 
-	public TransactionManagerImpl getTransactionManagerImpl() {
-		return (TransactionManagerImpl) transactionManager;
+//	public TransactionRepository getTransactionRepository() {
+//		CompensableTransactionManager txm = (CompensableTransactionManager) this.transactionManager;
+//		return txm.getTransactionRepository();
+//	}
+
+	public CompensableTransactionManager getTransactionManagerImpl() {
+		return (CompensableTransactionManager) transactionManager;
 	}
 
 	public TransactionManager getTransactionManager() {

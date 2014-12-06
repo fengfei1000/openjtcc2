@@ -62,6 +62,7 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 				} catch (SystemException ex) {
 					// TODO
 				}
+				break;
 			case Status.STATUS_PREPARED:
 			case Status.STATUS_COMMITTING:
 				try {
@@ -78,6 +79,7 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 				} catch (SystemException ex) {
 					// TODO
 				}
+				break;
 			case Status.STATUS_COMMITTED:
 			case Status.STATUS_ROLLEDBACK:
 			default:
@@ -140,6 +142,10 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 		TransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
 		transactionLogger.deleteTransaction(archive);
 
-	}
+		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
+		TransactionXid globalXid = transaction.getTransactionContext().getGlobalXid();
+		transactionRepository.removeTransaction(globalXid);
+		transactionRepository.removeErrorTransaction(globalXid);
 
+	}
 }

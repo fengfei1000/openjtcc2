@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.bytesoft</groupId>
-	<artifactId>tcc-supports</artifactId>
+	<artifactId>bytetcc-supports</artifactId>
 	<version>0.1.2</version>
 	<packaging>jar</packaging>
 
-	<name>tcc-supports</name>
+	<name>bytetcc-supports</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>
@@ -17,12 +17,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.bytesoft</groupId>
-			<artifactId>tcc-common</artifactId>
-			<version>0.1.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.bytesoft</groupId>
-			<artifactId>tcc-core</artifactId>
+			<artifactId>bytetcc-core</artifactId>
 			<version>0.1.2</version>
 		</dependency>
 		<dependency>

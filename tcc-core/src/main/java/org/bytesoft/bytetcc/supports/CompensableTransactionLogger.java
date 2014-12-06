@@ -22,11 +22,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bytesoft.bytetcc.archive.CompensableArchive;
-import org.bytesoft.bytetcc.archive.TransactionArchive;
 import org.bytesoft.transaction.TransactionContext;
+import org.bytesoft.transaction.logger.TransactionLogger;
 
-public interface TransactionLogger {
-	public static final String NULL = "(null)";
+public interface CompensableTransactionLogger extends TransactionLogger {
 
 	/* service */
 	public void enlistService(TransactionContext transactionContext, CompensableArchive holder);
@@ -43,25 +42,11 @@ public interface TransactionLogger {
 
 	public void rollbackService(TransactionContext transactionContext, CompensableArchive holder);
 
-	/* transaction */
-	public void beginTransaction(TransactionArchive transaction);
-
-	public void prepareTransaction(TransactionArchive transaction);
-
-	public void updateTransaction(TransactionArchive transaction);
-
-	public void completeTransaction(TransactionArchive transaction);
-
-	public void cleanupTransaction(TransactionArchive transaction);
-
-	public Set<TransactionArchive> getLoggedTransactionSet();
-
 	/* default transaction logger */
-	public static TransactionLogger defaultTransactionLogger = NullTransactionLoggerHanlder.getNullTransactionLogger();
+	public static CompensableTransactionLogger defaultTransactionLogger = NullTransactionLoggerHanlder
+			.getNullTransactionLogger();
 
 	public static class NullTransactionLoggerHanlder implements InvocationHandler {
-
-		// private static final Logger logger = Logger.getLogger("bytetcc");
 		private static final NullTransactionLoggerHanlder instance = new NullTransactionLoggerHanlder();
 
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -83,9 +68,10 @@ public interface TransactionLogger {
 			}
 		}
 
-		public static TransactionLogger getNullTransactionLogger() {
-			return (TransactionLogger) Proxy.newProxyInstance(TransactionLogger.class.getClassLoader(),
-					new Class[] { TransactionLogger.class }, instance);
+		public static CompensableTransactionLogger getNullTransactionLogger() {
+			return (CompensableTransactionLogger) Proxy.newProxyInstance(
+					CompensableTransactionLogger.class.getClassLoader(),
+					new Class[] { CompensableTransactionLogger.class }, instance);
 		}
 	}
 }
