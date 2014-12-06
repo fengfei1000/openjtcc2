@@ -8,10 +8,12 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.xa.XAResource;
 
+import org.bytesoft.bytejta.TransactionImpl;
 import org.bytesoft.transaction.TransactionContext;
 
 public class CompensableTransaction implements Transaction {
 
+	private TransactionImpl jtaTransaction;
 	private TransactionContext transactionContext;
 
 	public CompensableTransaction() {
@@ -61,6 +63,14 @@ public class CompensableTransaction implements Transaction {
 	public boolean isRollbackOnly() {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	public TransactionImpl getJtaTransaction() {
+		return jtaTransaction;
+	}
+
+	public void setJtaTransaction(TransactionImpl jtaTransaction) {
+		this.jtaTransaction = jtaTransaction;
 	}
 
 	public TransactionContext getTransactionContext() {

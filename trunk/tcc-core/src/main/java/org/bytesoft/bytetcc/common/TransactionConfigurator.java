@@ -1,8 +1,8 @@
 package org.bytesoft.bytetcc.common;
 
 import org.bytesoft.bytetcc.CompensableTransactionManager;
+import org.bytesoft.bytetcc.supports.CompensableTransactionLogger;
 import org.bytesoft.transaction.TransactionTimer;
-import org.bytesoft.transaction.logger.TransactionLogger;
 import org.bytesoft.transaction.logger.TransactionLoggerProxy;
 import org.bytesoft.transaction.recovery.TransactionRecovery;
 import org.bytesoft.transaction.rpc.TransactionInterceptor;
@@ -15,7 +15,7 @@ public final class TransactionConfigurator {
 	private CompensableTransactionManager transactionManager;
 	private XidFactory xidFactory;
 	private TransactionTimer transactionTimer;
-	private final TransactionLoggerProxy transactionLogger = new TransactionLoggerProxy();
+	private CompensableTransactionLogger transactionLogger = CompensableTransactionLogger.defaultTransactionLogger;
 	private TransactionRepository transactionRepository;
 	private TransactionInterceptor transactionInterceptor;
 	private TransactionRecovery transactionRecovery;
@@ -24,12 +24,8 @@ public final class TransactionConfigurator {
 		return instance;
 	}
 
-	public void setTransactionLogger(TransactionLogger transactionLogger) {
-		if (this == instance) {
-			this.transactionLogger.setDelegate(transactionLogger);
-		} else {
-			instance.setTransactionLogger(transactionLogger);
-		}
+	public void setTransactionLogger(CompensableTransactionLogger transactionLogger) {
+		this.transactionLogger = transactionLogger;
 	}
 
 	public CompensableTransactionManager getTransactionManager() {
@@ -64,12 +60,8 @@ public final class TransactionConfigurator {
 		}
 	}
 
-	public TransactionLogger getTransactionLogger() {
-		if (this == instance) {
-			return this.transactionLogger;
-		} else {
-			return instance.getTransactionLogger();
-		}
+	public CompensableTransactionLogger getTransactionLogger() {
+		return this.transactionLogger;
 	}
 
 	public TransactionRepository getTransactionRepository() {
