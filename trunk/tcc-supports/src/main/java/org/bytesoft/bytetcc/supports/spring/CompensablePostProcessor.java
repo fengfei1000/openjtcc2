@@ -55,26 +55,27 @@ public class CompensablePostProcessor implements BeanFactoryPostProcessor, BeanP
 					return bean;
 				}
 
-				Class<?> attemptClass = compensable.attempt();
-				Class<?> confirmClass = compensable.confirm();
-				Class<?> cancellClass = compensable.cancel();
+				Class<?> attemptClass = compensable.declaring();
+				String beanNameOfConfirm = compensable.instanceKeyOfConfirm();
+				String beanNameOfCancel = compensable.instanceKeyOfCancel();
 
 				if (attemptClass.isInterface() == false) {
 					throw new IllegalStateException("Compensable's attempt Class must be a interface.");
-				} else if (confirmClass.isInterface()) {
-					throw new IllegalStateException("Compensable's confirm Class cannot be a interface.");
-				} else if (cancellClass.isInterface()) {
-					throw new IllegalStateException("Compensable's cancel Class cannot be a interface.");
-				}
+				} /*
+				 * else if (confirmClass.isInterface()) { throw new
+				 * IllegalStateException("Compensable's confirm Class cannot be a interface."); } else if
+				 * (cancellClass.isInterface()) { throw new
+				 * IllegalStateException("Compensable's cancel Class cannot be a interface."); }
+				 */
 
 				handler.setTargetClass(targetClass);
 				handler.setAttemptClass(attemptClass);
-				if (Object.class.equals(confirmClass) == false) {
-					handler.setConfirmClass(confirmClass);
-				}
-				if (Object.class.equals(cancellClass) == false) {
-					handler.setCancellClass(cancellClass);
-				}
+				// if (Object.class.equals(confirmClass) == false) {
+				// handler.setConfirmClass(confirmClass);
+				// }
+				// if (Object.class.equals(cancellClass) == false) {
+				// handler.setCancellClass(cancellClass);
+				// }
 
 				pfb.setTarget(target);
 				pfb.setInterfaces(interfaces);

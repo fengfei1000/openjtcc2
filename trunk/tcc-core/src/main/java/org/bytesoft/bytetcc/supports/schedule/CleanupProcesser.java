@@ -15,10 +15,10 @@
  */
 package org.bytesoft.bytetcc.supports.schedule;
 
-import org.bytesoft.bytetcc.TransactionImpl;
+import org.bytesoft.bytetcc.CompensableTransaction;
 
 public interface CleanupProcesser {
 
-	public void registerTransaction(TransactionImpl transaction);
+	public void registerTransaction(CompensableTransaction transaction);
 
 }

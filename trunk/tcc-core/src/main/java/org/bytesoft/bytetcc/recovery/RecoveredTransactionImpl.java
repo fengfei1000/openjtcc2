@@ -15,9 +15,9 @@
  */
 package org.bytesoft.bytetcc.recovery;
 
-import org.bytesoft.bytetcc.TransactionImpl;
+import org.bytesoft.bytetcc.CompensableTransaction;
 
-public class RecoveredTransactionImpl extends TransactionImpl {
+public class RecoveredTransactionImpl extends CompensableTransaction {
 
 	private boolean recoveryRollbackOnly;
 

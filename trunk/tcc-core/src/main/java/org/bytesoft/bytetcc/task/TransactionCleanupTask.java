@@ -24,8 +24,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.bytesoft.bytetcc.TransactionImpl;
-import org.bytesoft.bytetcc.TransactionManagerImpl;
+import org.bytesoft.bytetcc.CompensableTransaction;
+import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.bytetcc.supports.schedule.CleanupProcesser;
 
 public class TransactionCleanupTask implements Runnable, CleanupProcesser {
@@ -34,7 +34,7 @@ public class TransactionCleanupTask implements Runnable, CleanupProcesser {
 	private boolean released;
 	private final Lock lock = new ReentrantLock();
 	private final Condition emptyCondition = this.lock.newCondition();
-	private final Set<TransactionImpl> transactions = new HashSet<TransactionImpl>();
+	private final Set<CompensableTransaction> transactions = new HashSet<CompensableTransaction>();
 
 	public void run() {
 		while (this.isActive()) {
@@ -42,7 +42,7 @@ public class TransactionCleanupTask implements Runnable, CleanupProcesser {
 		}
 	}
 
-	public void registerTransaction(TransactionImpl transaction) {
+	public void registerTransaction(CompensableTransaction transaction) {
 		try {
 			this.lock.lock();
 			this.transactions.add(transaction);
@@ -57,16 +57,16 @@ public class TransactionCleanupTask implements Runnable, CleanupProcesser {
 	}
 
 	private void processCleanup() {
-		Set<TransactionImpl> handles = new HashSet<TransactionImpl>();
+		Set<CompensableTransaction> handles = new HashSet<CompensableTransaction>();
 		try {
 			this.lock.lock();
 			while (this.isActive() && this.transactions.isEmpty()) {
 				this.await(SLEEP_UNIT_MILLIS);
 			}
 			if (this.isActive()) {
-				Iterator<TransactionImpl> itr = this.transactions.iterator();
+				Iterator<CompensableTransaction> itr = this.transactions.iterator();
 				for (int i = 0; i < 5000 && itr.hasNext(); i++) {
-					TransactionImpl tx = itr.next();
+					CompensableTransaction tx = itr.next();
 					itr.remove();
 					handles.add(tx);
 				}
@@ -80,7 +80,7 @@ public class TransactionCleanupTask implements Runnable, CleanupProcesser {
 		}
 	}
 
-	private void handleTransactionBatch(Set<TransactionImpl> handles) {
+	private void handleTransactionBatch(Set<CompensableTransaction> handles) {
 //		Iterator<CompensableTransaction> itr = handles.iterator();
 //		while (itr.hasNext()) {
 //			CompensableTransaction transaction = itr.next();

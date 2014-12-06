@@ -1,7 +1,4 @@
-package org.bytesoft.bytetcc.jta;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.bytesoft.bytetcc;
 
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -11,16 +8,18 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.xa.XAResource;
 
-import org.bytesoft.bytetcc.supports.TransactionLogger;
 import org.bytesoft.transaction.TransactionContext;
-import org.bytesoft.transaction.TransactionStatus;
 
-public class JtaTransaction implements Transaction {
-	protected TransactionLogger transactionLogger;
-	protected TransactionStatus transactionStatus;
-	protected TransactionContext transactionContext;
-	protected JtaTransactionManager transactionManager;
-	protected final List<JtaSynchronization> synchronizations = new ArrayList<JtaSynchronization>();
+public class CompensableTransaction implements Transaction {
+
+	private TransactionContext transactionContext;
+
+	public CompensableTransaction() {
+	}
+
+	public CompensableTransaction(TransactionContext txContext) {
+		this.transactionContext = txContext;
+	}
 
 	public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
 			SecurityException, IllegalStateException, SystemException {
@@ -43,9 +42,6 @@ public class JtaTransaction implements Transaction {
 		return 0;
 	}
 
-	public void afterInitialization(Object obj) {
-	}
-
 	public void registerSynchronization(Synchronization sync) throws RollbackException, IllegalStateException,
 			SystemException {
 		// TODO Auto-generated method stub
@@ -63,15 +59,8 @@ public class JtaTransaction implements Transaction {
 	}
 
 	public boolean isRollbackOnly() {
-		throw new IllegalStateException();
-	}
-
-	public TransactionStatus getTransactionStatus() {
-		return transactionStatus;
-	}
-
-	public void setTransactionStatus(TransactionStatus transactionStatus) {
-		this.transactionStatus = transactionStatus;
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	public TransactionContext getTransactionContext() {
@@ -80,22 +69,6 @@ public class JtaTransaction implements Transaction {
 
 	public void setTransactionContext(TransactionContext transactionContext) {
 		this.transactionContext = transactionContext;
-	}
-
-	public JtaTransactionManager getTransactionManager() {
-		return transactionManager;
-	}
-
-	public void setTransactionManager(JtaTransactionManager transactionManager) {
-		this.transactionManager = transactionManager;
-	}
-
-	public TransactionLogger getTransactionLogger() {
-		return transactionLogger;
-	}
-
-	public void setTransactionLogger(TransactionLogger transactionLogger) {
-		this.transactionLogger = transactionLogger;
 	}
 
 }
