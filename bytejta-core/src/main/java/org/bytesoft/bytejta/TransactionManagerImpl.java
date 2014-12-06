@@ -58,6 +58,24 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 
 	}
 
+	public void begin(TransactionContext transactionContext) throws NotSupportedException, SystemException {
+		if (this.getTransaction() != null) {
+			throw new NotSupportedException();
+		}
+
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
+
+		TransactionImpl transaction = new TransactionImpl(transactionContext);
+
+		// transaction.setThread(Thread.currentThread());
+		this.associateds.put(Thread.currentThread(), transaction);
+
+		transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
+		// this.transactionStatistic.fireBeginTransaction(transaction);
+
+	}
+
 	public void propagationBegin(TransactionContext transactionContext) throws NotSupportedException, SystemException {
 
 		if (this.getTransaction() != null) {
