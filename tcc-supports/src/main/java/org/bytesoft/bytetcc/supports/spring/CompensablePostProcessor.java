@@ -55,9 +55,9 @@ public class CompensablePostProcessor implements BeanFactoryPostProcessor, BeanP
 					return bean;
 				}
 
-				Class<?> attemptClass = compensable.declaring();
-				String beanNameOfConfirm = compensable.instanceKeyOfConfirm();
-				String beanNameOfCancel = compensable.instanceKeyOfCancel();
+				Class<?> attemptClass = compensable.interfaceClass();
+				// String confirmableKey = compensable.confirmableKey();
+				// String cancellableKey = compensable.cancellableKey();
 
 				if (attemptClass.isInterface() == false) {
 					throw new IllegalStateException("Compensable's attempt Class must be a interface.");

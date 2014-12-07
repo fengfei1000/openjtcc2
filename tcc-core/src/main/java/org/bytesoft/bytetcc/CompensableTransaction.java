@@ -1,20 +1,16 @@
 package org.bytesoft.bytetcc;
 
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.RollbackException;
-import javax.transaction.Synchronization;
-import javax.transaction.SystemException;
 import javax.transaction.Transaction;
-import javax.transaction.xa.XAResource;
 
 import org.bytesoft.bytejta.TransactionImpl;
+import org.bytesoft.bytejta.utils.CommonUtils;
 import org.bytesoft.transaction.TransactionContext;
+import org.bytesoft.transaction.xa.TransactionXid;
 
-public class CompensableTransaction implements Transaction {
-
-	private TransactionImpl jtaTransaction;
-	private TransactionContext transactionContext;
+public abstract class CompensableTransaction implements Transaction {
+	protected TransactionImpl jtaTransaction;
+	protected TransactionContext transactionContext;
+	private CompensableInvocation compensableObject;
 
 	public CompensableTransaction() {
 	}
@@ -23,46 +19,32 @@ public class CompensableTransaction implements Transaction {
 		this.transactionContext = txContext;
 	}
 
-	public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
-			SecurityException, IllegalStateException, SystemException {
-		// TODO Auto-generated method stub
-
+	public void setRollbackOnlyQuietly() {
+		try {
+			this.setRollbackOnly();
+		} catch (Exception ignore) {
+			// ignore
+		}
 	}
 
-	public boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException, SystemException {
-		// TODO Auto-generated method stub
-		return false;
+	public int hashCode() {
+		TransactionXid transactionXid = this.transactionContext == null ? null : this.transactionContext.getGlobalXid();
+		int hash = transactionXid == null ? 0 : transactionXid.hashCode();
+		return hash;
 	}
 
-	public boolean enlistResource(XAResource xaRes) throws RollbackException, IllegalStateException, SystemException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public int getStatus() throws SystemException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	public void registerSynchronization(Synchronization sync) throws RollbackException, IllegalStateException,
-			SystemException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void rollback() throws IllegalStateException, SystemException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setRollbackOnly() throws IllegalStateException, SystemException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public boolean isRollbackOnly() {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		} else if (CompensableTransaction.class.isAssignableFrom(obj.getClass()) == false) {
+			return false;
+		}
+		CompensableTransaction that = (CompensableTransaction) obj;
+		TransactionContext thisContext = this.transactionContext;
+		TransactionContext thatContext = that.transactionContext;
+		TransactionXid thisXid = thisContext == null ? null : thisContext.getGlobalXid();
+		TransactionXid thatXid = thatContext == null ? null : thatContext.getGlobalXid();
+		return CommonUtils.equals(thisXid, thatXid);
 	}
 
 	public TransactionImpl getJtaTransaction() {
@@ -71,6 +53,14 @@ public class CompensableTransaction implements Transaction {
 
 	public void setJtaTransaction(TransactionImpl jtaTransaction) {
 		this.jtaTransaction = jtaTransaction;
+	}
+
+	public CompensableInvocation getCompensableObject() {
+		return compensableObject;
+	}
+
+	public void setCompensableObject(CompensableInvocation compensableObject) {
+		this.compensableObject = compensableObject;
 	}
 
 	public TransactionContext getTransactionContext() {

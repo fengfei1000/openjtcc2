@@ -15,11 +15,16 @@
  */
 package org.bytesoft.bytetcc.recovery;
 
-import org.bytesoft.bytetcc.CompensableTransaction;
+import org.bytesoft.bytetcc.CompensableTccTransaction;
+import org.bytesoft.transaction.TransactionContext;
 
-public class RecoveredTransactionImpl extends CompensableTransaction {
+public class RecoveredTransactionImpl extends CompensableTccTransaction {
 
 	private boolean recoveryRollbackOnly;
+
+	public RecoveredTransactionImpl(TransactionContext transactionContext) {
+		super(transactionContext);
+	}
 
 	public boolean isRecoveryRollbackOnly() {
 		return recoveryRollbackOnly;

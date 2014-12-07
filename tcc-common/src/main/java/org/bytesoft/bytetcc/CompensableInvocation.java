@@ -8,8 +8,8 @@ public interface CompensableInvocation {
 
 	public Object[] getArgs();
 
-	public Object getConfirmableObject();
+	public String getConfirmableKey();
 
-	public Object getCancellableObject();
+	public String getCancellableKey();
 
 }
