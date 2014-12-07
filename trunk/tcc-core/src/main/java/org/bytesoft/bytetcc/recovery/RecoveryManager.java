@@ -53,7 +53,7 @@ public class RecoveryManager {
 		// TransactionRepository repository = this.getTransactionRepository();
 		// CompensableTransactionManager txManager = (CompensableTransactionManager) this.transactionManager;
 
-		RecoveredTransactionImpl transaction = new RecoveredTransactionImpl();
+		RecoveredTransactionImpl transaction = new RecoveredTransactionImpl(archive.getTransactionContext());
 		// // transaction.setTransactionStatistic(txManager.getTransactionStatistic());
 		//
 		// TransactionContext transactionContext = null;// TODO archive.getTransactionContext();

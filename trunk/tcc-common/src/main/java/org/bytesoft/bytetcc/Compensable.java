@@ -24,10 +24,10 @@ import java.lang.annotation.Target;
 @Target({ ElementType.TYPE })
 public @interface Compensable {
 
-	public Class<?> declaring();
+	public Class<?> interfaceClass();
 
-	public String instanceKeyOfConfirm() default "";
+	public String confirmableKey() default "";
 
-	public String instanceKeyOfCancel() default "";
+	public String cancellableKey() default "";
 
 }

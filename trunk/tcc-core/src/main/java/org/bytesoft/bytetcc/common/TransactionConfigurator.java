@@ -1,9 +1,9 @@
 package org.bytesoft.bytetcc.common;
 
+import org.bytesoft.bytetcc.CompensableInvocationExecutor;
 import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.bytetcc.supports.CompensableTransactionLogger;
 import org.bytesoft.transaction.TransactionTimer;
-import org.bytesoft.transaction.logger.TransactionLoggerProxy;
 import org.bytesoft.transaction.recovery.TransactionRecovery;
 import org.bytesoft.transaction.rpc.TransactionInterceptor;
 import org.bytesoft.transaction.xa.XidFactory;
@@ -19,6 +19,7 @@ public final class TransactionConfigurator {
 	private TransactionRepository transactionRepository;
 	private TransactionInterceptor transactionInterceptor;
 	private TransactionRecovery transactionRecovery;
+	private CompensableInvocationExecutor compensableInvocationExecutor;
 
 	public static TransactionConfigurator getInstance() {
 		return instance;
@@ -130,7 +131,7 @@ public final class TransactionConfigurator {
 
 	public TransactionRecovery getTransactionRecovery() {
 		if (this == instance) {
-			return transactionRecovery;
+			return this.transactionRecovery;
 		} else {
 			return instance.getTransactionRecovery();
 		}
@@ -141,6 +142,22 @@ public final class TransactionConfigurator {
 			this.transactionRecovery = transactionRecovery;
 		} else {
 			instance.setTransactionRecovery(transactionRecovery);
+		}
+	}
+
+	public CompensableInvocationExecutor getCompensableInvocationExecutor() {
+		if (this == instance) {
+			return this.compensableInvocationExecutor;
+		} else {
+			return instance.getCompensableInvocationExecutor();
+		}
+	}
+
+	public void setCompensableInvocationExecutor(CompensableInvocationExecutor compensableInvocationExecutor) {
+		if (this == instance) {
+			this.compensableInvocationExecutor = compensableInvocationExecutor;
+		} else {
+			instance.setCompensableInvocationExecutor(compensableInvocationExecutor);
 		}
 	}
 

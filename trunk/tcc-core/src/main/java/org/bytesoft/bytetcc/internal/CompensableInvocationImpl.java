@@ -7,7 +7,7 @@ import javax.transaction.SystemException;
 
 import org.bytesoft.bytetcc.CompensableContext;
 import org.bytesoft.bytetcc.CompensableInvocation;
-import org.bytesoft.bytetcc.CompensableTransaction;
+import org.bytesoft.bytetcc.CompensableTccTransaction;
 import org.bytesoft.bytetcc.supports.CompensableSynchronization;
 import org.bytesoft.transaction.xa.TransactionXid;
 
@@ -16,10 +16,10 @@ public class CompensableInvocationImpl extends CompensableSynchronization implem
 
 	private transient Method method;
 	private Object[] args;
-	private transient Object confirmableObject;
-	private transient Object cancellableObject;
+	private transient String confirmableKey;
+	private transient String cancellableKey;
 	private Serializable variable;
-	private transient CompensableTransaction transaction;
+	private transient CompensableTccTransaction transaction;
 
 	public void suspend() {
 	}
@@ -84,27 +84,27 @@ public class CompensableInvocationImpl extends CompensableSynchronization implem
 		this.args = args;
 	}
 
-	public Object getConfirmableObject() {
-		return confirmableObject;
+	public String getConfirmableKey() {
+		return confirmableKey;
 	}
 
-	public void setConfirmableObject(Object confirmableObject) {
-		this.confirmableObject = confirmableObject;
+	public void setConfirmableKey(String confirmableKey) {
+		this.confirmableKey = confirmableKey;
 	}
 
-	public Object getCancellableObject() {
-		return cancellableObject;
+	public String getCancellableKey() {
+		return cancellableKey;
 	}
 
-	public void setCancellableObject(Object cancellableObject) {
-		this.cancellableObject = cancellableObject;
+	public void setCancellableKey(String cancellableKey) {
+		this.cancellableKey = cancellableKey;
 	}
 
-	public CompensableTransaction getTransaction() {
+	public CompensableTccTransaction getTransaction() {
 		return transaction;
 	}
 
-	public void setTransaction(CompensableTransaction transaction) {
+	public void setTransaction(CompensableTccTransaction transaction) {
 		this.transaction = transaction;
 	}
 
