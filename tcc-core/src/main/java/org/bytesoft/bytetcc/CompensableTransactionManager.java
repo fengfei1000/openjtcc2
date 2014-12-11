@@ -130,15 +130,19 @@ public class CompensableTransactionManager implements TransactionManager {
 
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		XidFactory xidFactory = configurator.getXidFactory();
-		TransactionXid xid = xidFactory.createGlobalXid();
-		TransactionXid globalXid = xidFactory.createBranchXid(xid, xid.getGlobalTransactionId());
-		transactionContext.setCurrentXid(globalXid);
+		TransactionXid globalXid = xidFactory.createGlobalXid();
+		TransactionXid branchXid = xidFactory.createBranchXid(globalXid);
+		transactionContext.setCurrentXid(branchXid);
 
 		CompensableTransaction transaction = new CompensableTccTransaction(transactionContext);
 		TransactionRepository transactionRepository = configurator.getTransactionRepository();
 
-		this.jtaTransactionManager.begin(transactionContext);
+		TransactionContext jtaTransactionContext = transactionContext.clone();
+		jtaTransactionContext.setCoordinator(true);
 
+		TransactionXid jtaGlobalXid = xidFactory.createGlobalXid(branchXid.getBranchQualifier());
+		jtaTransactionContext.setCurrentXid(jtaGlobalXid);
+		this.jtaTransactionManager.begin(jtaTransactionContext);
 		this.associateds.put(Thread.currentThread(), transaction);
 		transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
 
@@ -150,14 +154,68 @@ public class CompensableTransactionManager implements TransactionManager {
 
 		this.initializeTransactionManagerIfRequired();
 
-		if (this.getTransaction() != null) {
+		if (this.getCurrentTransaction() != null) {
 			throw new NotSupportedException();
 		}
+
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
+
+		TransactionXid propagationXid = transactionContext.getCurrentXid();
+		TransactionXid globalXid = propagationXid.getGlobalXid();
+		CompensableTccTransaction transaction = (CompensableTccTransaction) transactionRepository
+				.getTransaction(globalXid);
+
+		TransactionContext jtaTransactionContext = transactionContext.clone();
+		this.jtaTransactionManager.begin(jtaTransactionContext);
+		if (transaction == null) {
+			transaction = new CompensableTccTransaction(transactionContext);
+
+			// long createdTime = transactionContext.getCreatedTime();
+			// long expiredTime = transactionContext.getExpiredTime();
+			// transactionContext.setCreatedTime(createdTime);
+			// transactionContext.setExpiredTime(expiredTime);
+
+			transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
+		} else {
+			// long createdTime = transactionContext.getCreatedTime();
+			// long expiredTime = transactionContext.getExpiredTime();
+			// transactionContext.setCreatedTime(createdTime);
+			// transactionContext.setExpiredTime(expiredTime);
+
+			transaction.propagationBegin(transactionContext);
+		}
+
+		this.associateds.put(Thread.currentThread(), transaction);
+		// this.transactionStatistic.fireBeginTransaction(transaction);
 
 	}
 
 	public void propagationFinish(TransactionContext transactionContext) throws SystemException {
-		// this.compensables.remove(Thread.currentThread());
+
+		CompensableTccTransaction transaction = (CompensableTccTransaction) this.getCurrentTransaction();
+		transaction.propagationFinish(transactionContext);
+		this.associateds.remove(Thread.currentThread());
+
+		try {
+			this.jtaTransactionManager.commit();
+		} catch (SecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (RollbackException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HeuristicMixedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HeuristicRollbackException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 
 	public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
@@ -243,8 +301,10 @@ public class CompensableTransactionManager implements TransactionManager {
 
 		// step3: confirm
 		try {
-			transaction.commit();
-		} catch (Throwable ex) {
+			transaction.confirm();
+		} catch (SystemException ex) {
+			// TODO
+		} catch (RuntimeException rex) {
 			// TODO
 		}
 

@@ -49,7 +49,7 @@ public class TransactionContext implements Serializable, Cloneable {
 		that.currentXid = this.currentXid;
 		that.propagated = this.propagated;
 		that.createdTime = System.currentTimeMillis();
-		that.expiredTime = this.getExpiredTime();
+		that.expiredTime = this.expiredTime;
 		that.compensable = this.compensable;
 		that.nonxaResourceAllowed = this.nonxaResourceAllowed;
 		return that;
