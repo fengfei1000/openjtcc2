@@ -15,25 +15,22 @@
  */
 package org.bytesoft.bytetcc.archive;
 
-import java.io.Serializable;
+import javax.transaction.xa.Xid;
 
 import org.bytesoft.bytejta.utils.CommonUtils;
-import org.bytesoft.transaction.xa.TransactionXid;
+import org.bytesoft.bytetcc.CompensableInvocation;
 
 public class CompensableArchive {
-	public boolean launchSvc;
-	public TransactionXid branchXid;
-	// public Compensable<Serializable> service;
-	public Serializable variable;
-	public boolean tryCommitted;
-	public boolean confirmed;
-	public boolean cancelled;
-	public boolean committed;
-	public boolean rolledback;
+	private Xid xid;
+	private CompensableInvocation compensable;
+	private boolean confirmed;
+	private boolean cancelled;
+	private boolean committed;
+	private boolean rolledback;
 
 	public int hashCode() {
 		int hash = 23;
-		hash += 29 * (this.branchXid == null ? 0 : this.branchXid.hashCode());
+		hash += 29 * (this.xid == null ? 0 : this.xid.hashCode());
 		return hash;
 	}
 
@@ -44,6 +41,55 @@ public class CompensableArchive {
 			return false;
 		}
 		CompensableArchive that = (CompensableArchive) obj;
-		return CommonUtils.equals(this.branchXid, that.branchXid);
+		return CommonUtils.equals(this.xid, that.xid);
 	}
+
+	public Xid getXid() {
+		return xid;
+	}
+
+	public void setXid(Xid xid) {
+		this.xid = xid;
+	}
+
+	public CompensableInvocation getCompensable() {
+		return compensable;
+	}
+
+	public void setCompensable(CompensableInvocation compensable) {
+		this.compensable = compensable;
+	}
+
+	public boolean isConfirmed() {
+		return confirmed;
+	}
+
+	public void setConfirmed(boolean confirmed) {
+		this.confirmed = confirmed;
+	}
+
+	public boolean isCancelled() {
+		return cancelled;
+	}
+
+	public void setCancelled(boolean cancelled) {
+		this.cancelled = cancelled;
+	}
+
+	public boolean isCommitted() {
+		return committed;
+	}
+
+	public void setCommitted(boolean committed) {
+		this.committed = committed;
+	}
+
+	public boolean isRolledback() {
+		return rolledback;
+	}
+
+	public void setRolledback(boolean rolledback) {
+		this.rolledback = rolledback;
+	}
+
 }
