@@ -24,6 +24,7 @@ import org.bytesoft.transaction.RemoteSystemException;
 import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.SynchronizationImpl;
 import org.bytesoft.transaction.TransactionContext;
+import org.bytesoft.transaction.TransactionListener;
 import org.bytesoft.transaction.TransactionTimer;
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.logger.TransactionLogger;
@@ -48,6 +49,7 @@ public class TransactionImpl implements Transaction {
 	private final TransactionSkeleton skeleton = new TransactionSkeleton(this);
 
 	private final List<SynchronizationImpl> synchronizations = new ArrayList<SynchronizationImpl>();
+	private final List<TransactionListener> listeners = new ArrayList<TransactionListener>();
 
 	public TransactionImpl(TransactionContext txContext) {
 		this.transactionContext = txContext;
@@ -181,6 +183,8 @@ public class TransactionImpl implements Transaction {
 			archive.setStatus(this.transactionStatus);
 			transactionLogger.createTransaction(archive);
 
+			this.firePrepareStart();
+
 			firstVote = this.firstTerminator.prepare(xid);
 		} catch (XAException xaex) {
 			this.transactionStatus = Status.STATUS_ROLLING_BACK;
@@ -195,24 +199,26 @@ public class TransactionImpl implements Transaction {
 			lastVote = this.lastTerminator.prepare(xid);
 		} catch (XAException xaex) {
 			this.transactionStatus = Status.STATUS_ROLLING_BACK;
+			this.firePrepareComplete(false);
 			throw new RollbackRequiredException();
 		} catch (RuntimeException xaex) {
 			this.transactionStatus = Status.STATUS_ROLLING_BACK;
+			this.firePrepareComplete(false);
 			throw new RollbackRequiredException();
 		}
 
+		this.transactionStatus = Status.STATUS_PREPARED;
+		archive.setStatus(this.transactionStatus);
+		this.firePrepareComplete(true);
+
 		if (firstVote == XAResource.XA_OK || lastVote == XAResource.XA_OK) {
-			this.transactionStatus = Status.STATUS_PREPARED;
 			this.transactionContext.setPrepareVote(XAResource.XA_OK);
 			archive.setVote(XAResource.XA_OK);
-			archive.setStatus(this.transactionStatus);
 			transactionLogger.updateTransaction(archive);
 			throw new CommitRequiredException();
 		} else {
-			this.transactionStatus = Status.STATUS_PREPARED;
 			this.transactionContext.setPrepareVote(XAResource.XA_RDONLY);
 			archive.setVote(XAResource.XA_RDONLY);
-			archive.setStatus(this.transactionStatus);
 			transactionLogger.deleteTransaction(archive);
 		}
 
@@ -245,6 +251,8 @@ public class TransactionImpl implements Transaction {
 		TransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
 
 		this.transactionStatus = Status.STATUS_COMMITTING;
+		this.fireCommitStart();
+
 		boolean mixedExists = false;
 		boolean unFinishExists = false;
 		try {
@@ -303,6 +311,7 @@ public class TransactionImpl implements Transaction {
 				archive.setStatus(this.transactionStatus);
 				transactionLogger.deleteTransaction(archive);
 			}
+			this.fireCommitComplete(transactionCompleted);
 		}
 
 	}
@@ -403,11 +412,15 @@ public class TransactionImpl implements Transaction {
 			archive.setStatus(this.transactionStatus);
 			transactionLogger.createTransaction(archive);
 
+			this.firePrepareStart();
+
 			firstVote = this.nativeTerminator.prepare(xid);
 		} catch (XAException xaex) {
+			this.firePrepareComplete(false);
 			this.rollback();
 			throw new HeuristicRollbackException();
 		} catch (RuntimeException xaex) {
+			this.firePrepareComplete(false);
 			this.rollback();
 			throw new HeuristicRollbackException();
 		}
@@ -415,10 +428,13 @@ public class TransactionImpl implements Transaction {
 		int lastVote = XAResource.XA_RDONLY;
 		try {
 			lastVote = this.remoteTerminator.prepare(xid);
+			this.firePrepareComplete(true);
 		} catch (XAException xaex) {
+			this.firePrepareComplete(false);
 			this.rollback();
 			throw new HeuristicRollbackException();
 		} catch (RuntimeException xaex) {
+			this.firePrepareComplete(false);
 			this.rollback();
 			throw new HeuristicRollbackException();
 		}
@@ -431,6 +447,8 @@ public class TransactionImpl implements Transaction {
 			transactionLogger.updateTransaction(archive);
 
 			this.transactionStatus = Status.STATUS_COMMITTING;// .setStatusCommiting();
+			this.fireCommitStart();
+
 			boolean mixedExists = false;
 			boolean unFinishExists = false;
 			try {
@@ -494,6 +512,7 @@ public class TransactionImpl implements Transaction {
 					archive.setStatus(this.transactionStatus);
 					transactionLogger.deleteTransaction(archive);
 				}
+				this.fireCommitComplete(transactionCompleted);
 			}
 		} else {
 			this.transactionStatus = Status.STATUS_PREPARED;// .setStatusPrepared();
@@ -501,6 +520,7 @@ public class TransactionImpl implements Transaction {
 			archive.setVote(XAResource.XA_RDONLY);
 			archive.setStatus(this.transactionStatus);
 			transactionLogger.deleteTransaction(archive);
+			this.fireCommitComplete(true);
 		}
 
 	}
@@ -517,12 +537,15 @@ public class TransactionImpl implements Transaction {
 			this.transactionStatus = Status.STATUS_PREPARING;
 			archive.setStatus(this.transactionStatus);
 			transactionLogger.createTransaction(archive);
+			this.firePrepareStart();
 
 			this.firstTerminator.prepare(xid);
 		} catch (XAException xaex) {
+			this.firePrepareComplete(false);
 			this.rollback();
 			throw new HeuristicRollbackException();
 		} catch (RuntimeException xaex) {
+			this.firePrepareComplete(false);
 			this.rollback();
 			throw new HeuristicRollbackException();
 		}
@@ -553,6 +576,8 @@ public class TransactionImpl implements Transaction {
 		archive.setVote(XAResource.XA_OK);
 		this.transactionContext.setPrepareVote(XAResource.XA_OK);
 		transactionLogger.updateTransaction(archive);
+
+		this.fireCommitStart();
 
 		boolean transactionCompleted = false;
 		try {
@@ -592,6 +617,7 @@ public class TransactionImpl implements Transaction {
 				archive.setStatus(this.transactionStatus);
 				transactionLogger.deleteTransaction(archive);
 			}
+			this.fireCommitComplete(transactionCompleted);
 		}
 
 	}
@@ -784,6 +810,8 @@ public class TransactionImpl implements Transaction {
 		this.transactionStatus = Status.STATUS_ROLLING_BACK;
 		archive.setStatus(this.transactionStatus);
 
+		this.fireRollbackStart();
+
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		TransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
 		transactionLogger.createTransaction(archive);
@@ -859,10 +887,11 @@ public class TransactionImpl implements Transaction {
 			}
 		} finally {
 			if (transactionCompleted) {
-				this.transactionStatus = Status.STATUS_COMMITTED;// .setStatusCommitted();
+				this.transactionStatus = Status.STATUS_ROLLEDBACK;// .setStatusCommitted();
 				archive.setStatus(this.transactionStatus);
 				transactionLogger.deleteTransaction(archive);
 			}
+			this.fireRollbackComplete(transactionCompleted);
 		}
 
 	}
@@ -1017,6 +1046,8 @@ public class TransactionImpl implements Transaction {
 		boolean rolledbackExists = false;
 		this.transactionStatus = Status.STATUS_ROLLING_BACK;
 
+		this.fireRollbackStart();
+
 		boolean unFinishExists = false;
 		boolean transactionCompleted = false;
 		try {
@@ -1097,10 +1128,12 @@ public class TransactionImpl implements Transaction {
 				TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 				TransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
 
-				this.transactionStatus = Status.STATUS_COMMITTED;
+				this.transactionStatus = Status.STATUS_ROLLEDBACK;
 				archive.setStatus(this.transactionStatus);
 				transactionLogger.deleteTransaction(archive);
 			}
+
+			this.fireRollbackComplete(transactionCompleted);
 
 		}
 
@@ -1115,6 +1148,8 @@ public class TransactionImpl implements Transaction {
 		// boolean remoteReadOnly = this.remoteTerminator.checkReadOnlyForRecovery();
 		boolean committedExists = this.transactionContext.isOptimized();
 		boolean rolledbackExists = false;
+
+		this.fireCommitStart();
 
 		boolean unFinishExists = false;
 		boolean transactionCompleted = false;
@@ -1188,6 +1223,7 @@ public class TransactionImpl implements Transaction {
 				archive.setStatus(this.transactionStatus);
 				transactionLogger.deleteTransaction(archive);
 			}
+			this.fireCommitComplete(transactionCompleted);
 
 		}
 
@@ -1204,6 +1240,72 @@ public class TransactionImpl implements Transaction {
 		transactionArchive.getRemoteResources().addAll(this.remoteTerminator.getResourceArchives());
 		transactionArchive.setStatus(this.transactionStatus);
 		return transactionArchive;
+	}
+
+	public void firePrepareStart() {
+		for (int i = 0; i < this.listeners.size(); i++) {
+			try {
+				TransactionListener listener = this.listeners.get(i);
+				listener.prepareStart();
+			} catch (RuntimeException rex) {
+				// ignore
+			}
+		}
+	}
+
+	public void firePrepareComplete(boolean success) {
+		for (int i = 0; i < this.listeners.size(); i++) {
+			try {
+				TransactionListener listener = this.listeners.get(i);
+				listener.prepareComplete(success);
+			} catch (RuntimeException rex) {
+				// ignore
+			}
+		}
+	}
+
+	public void fireCommitStart() {
+		for (int i = 0; i < this.listeners.size(); i++) {
+			try {
+				TransactionListener listener = this.listeners.get(i);
+				listener.commitStart();
+			} catch (RuntimeException rex) {
+				// ignore
+			}
+		}
+	}
+
+	public void fireCommitComplete(boolean success) {
+		for (int i = 0; i < this.listeners.size(); i++) {
+			try {
+				TransactionListener listener = this.listeners.get(i);
+				listener.commitComplete(success);
+			} catch (RuntimeException rex) {
+				// ignore
+			}
+		}
+	}
+
+	public void fireRollbackStart() {
+		for (int i = 0; i < this.listeners.size(); i++) {
+			try {
+				TransactionListener listener = this.listeners.get(i);
+				listener.rollbackStart();
+			} catch (RuntimeException rex) {
+				// ignore
+			}
+		}
+	}
+
+	public void fireRollbackComplete(boolean success) {
+		for (int i = 0; i < this.listeners.size(); i++) {
+			try {
+				TransactionListener listener = this.listeners.get(i);
+				listener.rollbackComplete(success);
+			} catch (RuntimeException rex) {
+				// ignore
+			}
+		}
 	}
 
 	public int hashCode() {
@@ -1224,6 +1326,10 @@ public class TransactionImpl implements Transaction {
 		TransactionXid thisXid = thisContext == null ? null : thisContext.getGlobalXid();
 		TransactionXid thatXid = thatContext == null ? null : thatContext.getGlobalXid();
 		return CommonUtils.equals(thisXid, thatXid);
+	}
+
+	public void registerTransactionListener(TransactionListener listener) {
+		this.listeners.add(listener);
 	}
 
 	public TransactionContext getTransactionContext() {

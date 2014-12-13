@@ -42,6 +42,24 @@ public class CompensableJtaTransaction extends CompensableTransaction {
 		this.jtaTransaction.rollback();
 	}
 
+	public void prepareStart() {
+	}
+
+	public void prepareComplete(boolean success) {
+	}
+
+	public void commitStart() {
+	}
+
+	public void commitComplete(boolean success) {
+	}
+
+	public void rollbackStart() {
+	}
+
+	public void rollbackComplete(boolean success) {
+	}
+
 	public void setRollbackOnly() throws IllegalStateException, SystemException {
 		this.jtaTransaction.setRollbackOnly();
 	}

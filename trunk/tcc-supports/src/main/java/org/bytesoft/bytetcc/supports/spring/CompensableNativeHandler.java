@@ -3,22 +3,28 @@ package org.bytesoft.bytetcc.supports.spring;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
-import org.bytesoft.bytetcc.internal.CompensableInvocationRegistryImpl;
+import org.bytesoft.bytetcc.CompensableTransactionManager;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 public class CompensableNativeHandler implements java.lang.reflect.InvocationHandler,
-		net.sf.cglib.proxy.InvocationHandler, org.springframework.cglib.proxy.InvocationHandler {
+		net.sf.cglib.proxy.InvocationHandler, org.springframework.cglib.proxy.InvocationHandler,
+		ApplicationContextAware {
 
 	private Object delegate;
 	private String beanName;
 	private Class<?> targetClass;
-	private Class<?> attemptClass;
-	private Class<?> confirmClass;
-	private Class<?> cancellClass;
+	private Class<?> interfaceClass;
+	private String confirmableKey;
+	private String cancellableKey;
+
+	// private transient ApplicationContext applicationContext;
+	private transient CompensableTransactionManager transactionManager;
 
 	private void checkIsCurrentCompensable(Object proxy, Method method, Object[] args) throws IllegalAccessException {
 
 		Class<?> declaringClass = method.getDeclaringClass();
-		if (declaringClass.equals(this.attemptClass)) {
+		if (declaringClass.equals(this.interfaceClass)) {
 			// ignore
 		} else {
 			throw new IllegalAccessException();
@@ -54,15 +60,15 @@ public class CompensableNativeHandler implements java.lang.reflect.InvocationHan
 		SpringCompensableInvocation invocation = new SpringCompensableInvocation();
 		invocation.setMethod(method);
 		invocation.setArgs(args);
-		invocation.setConfirmClass(this.confirmClass);
-		invocation.setCancellClass(this.cancellClass);
+		invocation.setConfirmableKey(this.confirmableKey);
+		invocation.setCancellableKey(this.cancellableKey);
+		invocation.setInterfaceClass(this.interfaceClass);
 
-		CompensableInvocationRegistryImpl registry = CompensableInvocationRegistryImpl.getInstance();
 		try {
-			registry.registerCompensableInvocation(invocation);
+			this.transactionManager.beforeCompensableExecution(invocation);
 			return this.handleInvocation(proxy, method, args);
 		} finally {
-			registry.unregisterCompensableInvocation(invocation);
+			this.transactionManager.afterCompensableCompletion(invocation);
 		}
 
 	}
@@ -95,28 +101,28 @@ public class CompensableNativeHandler implements java.lang.reflect.InvocationHan
 		this.beanName = beanName;
 	}
 
-	public Class<?> getAttemptClass() {
-		return attemptClass;
+	public Class<?> getInterfaceClass() {
+		return interfaceClass;
 	}
 
-	public void setAttemptClass(Class<?> attemptClass) {
-		this.attemptClass = attemptClass;
+	public void setInterfaceClass(Class<?> interfaceClass) {
+		this.interfaceClass = interfaceClass;
 	}
 
-	public Class<?> getConfirmClass() {
-		return confirmClass;
+	public String getConfirmableKey() {
+		return confirmableKey;
 	}
 
-	public void setConfirmClass(Class<?> confirmClass) {
-		this.confirmClass = confirmClass;
+	public void setConfirmableKey(String confirmableKey) {
+		this.confirmableKey = confirmableKey;
 	}
 
-	public Class<?> getCancellClass() {
-		return cancellClass;
+	public String getCancellableKey() {
+		return cancellableKey;
 	}
 
-	public void setCancellClass(Class<?> cancellClass) {
-		this.cancellClass = cancellClass;
+	public void setCancellableKey(String cancellableKey) {
+		this.cancellableKey = cancellableKey;
 	}
 
 	public Class<?> getTargetClass() {
@@ -125,6 +131,22 @@ public class CompensableNativeHandler implements java.lang.reflect.InvocationHan
 
 	public void setTargetClass(Class<?> targetClass) {
 		this.targetClass = targetClass;
+	}
+
+	// public ApplicationContext getApplicationContext() {
+	// return applicationContext;
+	// }
+
+	public void setApplicationContext(ApplicationContext applicationContext) {
+		// this.applicationContext = applicationContext;
+	}
+
+	public CompensableTransactionManager getTransactionManager() {
+		return transactionManager;
+	}
+
+	public void setTransactionManager(CompensableTransactionManager transactionManager) {
+		this.transactionManager = transactionManager;
 	}
 
 }

@@ -5,9 +5,10 @@ import javax.transaction.Transaction;
 import org.bytesoft.bytejta.TransactionImpl;
 import org.bytesoft.bytejta.utils.CommonUtils;
 import org.bytesoft.transaction.TransactionContext;
+import org.bytesoft.transaction.TransactionListener;
 import org.bytesoft.transaction.xa.TransactionXid;
 
-public abstract class CompensableTransaction implements Transaction {
+public abstract class CompensableTransaction implements Transaction, TransactionListener {
 	protected TransactionImpl jtaTransaction;
 	protected TransactionContext transactionContext;
 	private CompensableInvocation compensableObject;

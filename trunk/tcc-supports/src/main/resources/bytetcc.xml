@@ -15,6 +15,35 @@
 
 	<import resource="classpath:bytejta.xml" />
 
-	<bean class="org.bytesoft.bytetcc.supports.spring.CompensablePostProcessor" />
+	<bean id="compensableInvocationExecutor" class="org.bytesoft.bytetcc.supports.spring.CompensableInvocationExecutorImpl" />
+	<bean class="org.bytesoft.bytetcc.supports.spring.CompensablePostProcessor">
+		<property name="transactionManager" ref="bytetccTransactionManager" />
+	</bean>
+
+	<bean id="bytetccTransactionManager" class="org.bytesoft.bytetcc.CompensableTransactionManager">
+		<property name="jtaTransactionManager" ref="bytejtaTransactionManager" />
+	</bean>
+
+	<bean id="bytetccUserTransaction" class="org.bytesoft.bytejta.UserTransactionImpl">
+		<property name="transactionManager" ref="bytetccTransactionManager" />
+	</bean>
+
+	<bean id="transactionManager" class="org.springframework.transaction.jta.JtaTransactionManager">
+		<property name="userTransaction" ref="bytetccUserTransaction" />
+		<property name="transactionManager" ref="bytetccTransactionManager" />
+	</bean>
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<bean id="bytetccTransactionRepository" class="org.bytesoft.bytetcc.common.TransactionRepository" />
+	<bean id="bytetccTransactionConfigurator" class="org.bytesoft.bytetcc.common.TransactionConfigurator"
+		factory-method="getInstance">
+		<property name="xidFactory" ref="bytejtaXidFactory" />
+		<property name="transactionManager" ref="bytetccTransactionManager" />
+		<property name="transactionRepository" ref="bytetccTransactionRepository" />
+		<property name="transactionTimer" ref="bytetccTransactionManager" />
+		<property name="compensableInvocationExecutor" ref="compensableInvocationExecutor" />
+		<!-- <property name="transactionLogger" ref="bytetccTransactionLogger" /> <property name="transactionInterceptor" ref="bytetccTransactionInterceptor" 
+			/> <property name="transactionRecovery" ref="bytetccTransactionRecovery" /> -->
+	</bean>
 
 </beans>

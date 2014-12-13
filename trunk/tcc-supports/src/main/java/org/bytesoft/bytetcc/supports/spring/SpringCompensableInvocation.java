@@ -8,16 +8,18 @@ import org.springframework.context.ApplicationContextAware;
 
 public class SpringCompensableInvocation extends CompensableInvocationImpl implements ApplicationContextAware {
 	private static final Logger logger = Logger.getLogger("bytetcc");
-	private transient Class<?> confirmClass;
-	private transient Class<?> cancellClass;
-	// private transient String confirmBeanName;
-	// private transient String concallBeanName;
+	private Class<?> interfaceClass;
 	private ApplicationContext applicationContext;
 
 	public Object getCancellableObject() {
-		if (this.confirmClass != null) {
+		String cancellableKey = this.getCancellableKey();
+		if (cancellableKey != null) {
 			try {
-				return this.applicationContext.getBean(this.cancellClass);
+				Object cancellableObject = this.applicationContext.getBean(cancellableKey);
+				if (this.interfaceClass.isInstance(cancellableObject)) {
+					return cancellableObject;
+				}
+				throw new IllegalStateException();
 			} catch (RuntimeException rex) {
 				logger.warning("Get the cancel-object failed.");
 				return null;
@@ -28,9 +30,14 @@ public class SpringCompensableInvocation extends CompensableInvocationImpl imple
 	}
 
 	public Object getConfirmableObject() {
-		if (this.confirmClass != null) {
+		String confirmableKey = this.getConfirmableKey();
+		if (confirmableKey != null) {
 			try {
-				return this.applicationContext.getBean(this.confirmClass);
+				Object confirmableObject = this.applicationContext.getBean(confirmableKey);
+				if (this.interfaceClass.isInstance(confirmableObject)) {
+					return confirmableObject;
+				}
+				throw new IllegalStateException();
 			} catch (RuntimeException rex) {
 				logger.warning("Get the confirm-object failed.");
 				return null;
@@ -48,36 +55,12 @@ public class SpringCompensableInvocation extends CompensableInvocationImpl imple
 		this.applicationContext = applicationContext;
 	}
 
-	public Class<?> getConfirmClass() {
-		return confirmClass;
+	public Class<?> getInterfaceClass() {
+		return interfaceClass;
 	}
 
-	public void setConfirmClass(Class<?> confirmClass) {
-		this.confirmClass = confirmClass;
+	public void setInterfaceClass(Class<?> interfaceClass) {
+		this.interfaceClass = interfaceClass;
 	}
-
-	public Class<?> getCancellClass() {
-		return cancellClass;
-	}
-
-	public void setCancellClass(Class<?> cancellClass) {
-		this.cancellClass = cancellClass;
-	}
-
-	// public String getConfirmBeanName() {
-	// return confirmBeanName;
-	// }
-	//
-	// public void setConfirmBeanName(String confirmBeanName) {
-	// this.confirmBeanName = confirmBeanName;
-	// }
-	//
-	// public String getConcallBeanName() {
-	// return concallBeanName;
-	// }
-	//
-	// public void setConcallBeanName(String concallBeanName) {
-	// this.concallBeanName = concallBeanName;
-	// }
 
 }

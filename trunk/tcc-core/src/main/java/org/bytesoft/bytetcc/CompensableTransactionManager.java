@@ -19,10 +19,11 @@ import org.bytesoft.bytetcc.common.TransactionConfigurator;
 import org.bytesoft.bytetcc.common.TransactionRepository;
 import org.bytesoft.transaction.CommitRequiredException;
 import org.bytesoft.transaction.TransactionContext;
+import org.bytesoft.transaction.TransactionTimer;
 import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XidFactory;
 
-public class CompensableTransactionManager implements TransactionManager {
+public class CompensableTransactionManager implements TransactionManager, TransactionTimer {
 
 	private boolean transactionManagerInitialized = false;
 	private TransactionManagerImpl jtaTransactionManager;
@@ -40,8 +41,10 @@ public class CompensableTransactionManager implements TransactionManager {
 	public void afterCompensableCompletion(CompensableInvocation original) {
 
 		try {
-			CompensableTccTransaction transaction = (CompensableTccTransaction) this.getCurrentTransaction();
-			this.delistCompensableInvocationIfRequired(transaction);
+			CompensableTransaction transaction = (CompensableTransaction) this.getCurrentTransaction();
+			if (CompensableTccTransaction.class.isInstance(transaction)) {
+				this.delistCompensableInvocationIfRequired((CompensableTccTransaction) transaction);
+			}
 		} finally {
 			this.compensables.set(original);
 		}
@@ -463,6 +466,12 @@ public class CompensableTransactionManager implements TransactionManager {
 		this.compensables.remove();
 		transaction.setCompensableObject(compensableObject);
 		return transaction;
+	}
+
+	public void timingExecution() {
+	}
+
+	public void stopTiming(Transaction tx) {
 	}
 
 	public int getTimeoutSeconds() {

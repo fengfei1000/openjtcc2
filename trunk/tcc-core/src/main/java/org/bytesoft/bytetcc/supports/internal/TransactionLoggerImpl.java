@@ -37,11 +37,11 @@ public class TransactionLoggerImpl /* implements TransactionLogger */{
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			delegate.enlistService(transactionContext, holder);
-		} else if (object.xidToNativeSvrMap.containsKey(holder.branchXid)) {
+		} else if (object.xidToNativeSvrMap.containsKey(holder.getXid())) {
 			// ignore
 		} else {
 			delegate.enlistService(transactionContext, holder);
-			object.xidToNativeSvrMap.put(holder.branchXid, holder);
+			object.xidToNativeSvrMap.put((TransactionXid) holder.getXid(), holder);
 		}
 	}
 
@@ -50,7 +50,7 @@ public class TransactionLoggerImpl /* implements TransactionLogger */{
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
-		} else if (object.xidToNativeSvrMap.containsKey(holder.branchXid)) {
+		} else if (object.xidToNativeSvrMap.containsKey(holder.getXid())) {
 			// ignore
 		} else {
 			this.enlistService(transactionContext, holder);
@@ -63,7 +63,7 @@ public class TransactionLoggerImpl /* implements TransactionLogger */{
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
-		} else if (object.xidToNativeSvrMap.containsKey(holder.branchXid)) {
+		} else if (object.xidToNativeSvrMap.containsKey(holder.getXid())) {
 			// ignore
 		} else {
 			this.enlistService(transactionContext, holder);
@@ -76,7 +76,7 @@ public class TransactionLoggerImpl /* implements TransactionLogger */{
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
-		} else if (object.xidToNativeSvrMap.containsKey(holder.branchXid)) {
+		} else if (object.xidToNativeSvrMap.containsKey(holder.getXid())) {
 			// ignore
 		} else {
 			this.enlistService(transactionContext, holder);
@@ -89,7 +89,7 @@ public class TransactionLoggerImpl /* implements TransactionLogger */{
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
-		} else if (object.xidToNativeSvrMap.containsKey(holder.branchXid)) {
+		} else if (object.xidToNativeSvrMap.containsKey(holder.getXid())) {
 			// ignore
 		} else {
 			this.enlistService(transactionContext, holder);
@@ -102,7 +102,7 @@ public class TransactionLoggerImpl /* implements TransactionLogger */{
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
-		} else if (object.xidToNativeSvrMap.containsKey(holder.branchXid)) {
+		} else if (object.xidToNativeSvrMap.containsKey(holder.getXid())) {
 			// ignore
 		} else {
 			this.enlistService(transactionContext, holder);
@@ -115,7 +115,7 @@ public class TransactionLoggerImpl /* implements TransactionLogger */{
 		ArchiveObject object = this.xidToRecMap.get(globalXid);
 		if (object == null) {
 			// ignore
-		} else if (object.xidToNativeSvrMap.containsKey(holder.branchXid)) {
+		} else if (object.xidToNativeSvrMap.containsKey(holder.getXid())) {
 			// ignore
 		} else {
 			this.enlistService(transactionContext, holder);
