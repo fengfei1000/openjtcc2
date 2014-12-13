@@ -1,11 +1,11 @@
 package org.bytesoft.bytetcc.supports.spring;
 
-import javax.transaction.TransactionManager;
-
 import org.bytesoft.bytetcc.Compensable;
+import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.springframework.aop.TargetClassAware;
 import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.FatalBeanException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -15,9 +15,18 @@ import org.springframework.context.ApplicationContextAware;
 public class CompensablePostProcessor implements BeanFactoryPostProcessor, BeanPostProcessor, ApplicationContextAware {
 
 	private ApplicationContext applicationContext;
-	private TransactionManager transactionManager;
+	private CompensableTransactionManager transactionManager;
+
+	// private final Set<CompensableNativeHandler> compensables = new HashSet<CompensableNativeHandler>();
 
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+		// Iterator<CompensableNativeHandler> itr = this.compensables.iterator();
+		// while (itr.hasNext()) {
+		// CompensableNativeHandler compensable = itr.next();
+		// itr.remove();
+		// compensable.setApplicationContext(this.applicationContext);
+		// compensable.setTransactionManager(this.transactionManager);
+		// }
 	}
 
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -25,7 +34,13 @@ public class CompensablePostProcessor implements BeanFactoryPostProcessor, BeanP
 	}
 
 	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-		if (TargetClassAware.class.isInstance(bean)) {
+		if (CompensableTransactionManager.class.isInstance(bean)) {
+			if (this.transactionManager != null) {
+				throw new FatalBeanException("There already has a compensable-transaction-manager exists!");
+			}
+			this.transactionManager = (CompensableTransactionManager) bean;
+			return bean;
+		} else if (TargetClassAware.class.isInstance(bean)) {
 			TargetClassAware tca = (TargetClassAware) bean;
 			Class<?> targetClass = tca.getTargetClass();
 			Compensable compensable = targetClass.getAnnotation(Compensable.class);
@@ -55,27 +70,20 @@ public class CompensablePostProcessor implements BeanFactoryPostProcessor, BeanP
 					return bean;
 				}
 
-				Class<?> attemptClass = compensable.interfaceClass();
-				// String confirmableKey = compensable.confirmableKey();
-				// String cancellableKey = compensable.cancellableKey();
+				Class<?> interfaceClass = compensable.interfaceClass();
+				String confirmableKey = compensable.confirmableKey();
+				String cancellableKey = compensable.cancellableKey();
 
-				if (attemptClass.isInterface() == false) {
-					throw new IllegalStateException("Compensable's attempt Class must be a interface.");
-				} /*
-				 * else if (confirmClass.isInterface()) { throw new
-				 * IllegalStateException("Compensable's confirm Class cannot be a interface."); } else if
-				 * (cancellClass.isInterface()) { throw new
-				 * IllegalStateException("Compensable's cancel Class cannot be a interface."); }
-				 */
+				if (interfaceClass.isInterface() == false) {
+					throw new IllegalStateException("Compensable's interfaceClass must be a interface.");
+				}
 
 				handler.setTargetClass(targetClass);
-				handler.setAttemptClass(attemptClass);
-				// if (Object.class.equals(confirmClass) == false) {
-				// handler.setConfirmClass(confirmClass);
-				// }
-				// if (Object.class.equals(cancellClass) == false) {
-				// handler.setCancellClass(cancellClass);
-				// }
+				handler.setInterfaceClass(interfaceClass);
+				handler.setConfirmableKey(confirmableKey);
+				handler.setCancellableKey(cancellableKey);
+				// handler.setApplicationContext(this.applicationContext);
+				handler.setTransactionManager(this.transactionManager);
 
 				pfb.setTarget(target);
 				pfb.setInterfaces(interfaces);
@@ -99,11 +107,11 @@ public class CompensablePostProcessor implements BeanFactoryPostProcessor, BeanP
 		this.applicationContext = applicationContext;
 	}
 
-	public TransactionManager getTransactionManager() {
+	public CompensableTransactionManager getTransactionManager() {
 		return transactionManager;
 	}
 
-	public void setTransactionManager(TransactionManager transactionManager) {
+	public void setTransactionManager(CompensableTransactionManager transactionManager) {
 		this.transactionManager = transactionManager;
 	}
 

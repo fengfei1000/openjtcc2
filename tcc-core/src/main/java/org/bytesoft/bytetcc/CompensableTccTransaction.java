@@ -1,6 +1,7 @@
 package org.bytesoft.bytetcc;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,37 +15,50 @@ import javax.transaction.SystemException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.bytetcc.common.TransactionConfigurator;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.archive.XAResourceArchive;
+import org.bytesoft.transaction.xa.TransactionXid;
 
 public class CompensableTccTransaction extends CompensableTransaction {
 	private int transactionStatus;
-	private final List<CompensableInvocation> compensables = new ArrayList<CompensableInvocation>();
-	// private final Map<Xid, List<CompensableArchive>> compensableArchives = new ConcurrentHashMap<Xid,
-	// List<CompensableArchive>>();
+	private final List<CompensableArchive> coordinatorArchives = new ArrayList<CompensableArchive>();
+	private final List<CompensableArchive> participantArchives = new ArrayList<CompensableArchive>();
 	private final Map<Xid, XAResourceArchive> resourceArchives = new ConcurrentHashMap<Xid, XAResourceArchive>();
-	private ThreadLocal<TransactionContext> transients = new ThreadLocal<TransactionContext>();
+	private ThreadLocal<TransactionContext> transientContexts = new ThreadLocal<TransactionContext>();
 
 	public CompensableTccTransaction(TransactionContext transactionContext) {
 		super(transactionContext);
 	}
 
 	public synchronized void propagationBegin(TransactionContext lastestTransactionContext) {
-		this.transients.set(this.transactionContext);
+		this.transientContexts.set(this.transactionContext);
 		this.transactionContext = lastestTransactionContext;
 	}
 
 	public synchronized void propagationFinish(TransactionContext lastestTransactionContext) {
-		TransactionContext originalTransactionContext = this.transients.get();
-		this.transients.remove();
+		TransactionContext originalTransactionContext = this.transientContexts.get();
+		this.transientContexts.remove();
 		if (originalTransactionContext != null) {
 			this.transactionContext = originalTransactionContext;
 		}
 	}
 
-	public void delistCompensableInvocation(CompensableInvocation compensable) {
-		this.compensables.add(compensable);
+	public synchronized void delistCompensableInvocation(CompensableInvocation compensable) {
+		TransactionXid currentXid = this.transactionContext.getCurrentXid();
+		if (this.transactionContext.isCoordinator()) {
+			CompensableArchive archive = new CompensableArchive();
+			archive.setXid(currentXid);
+			archive.setCompensable(compensable);
+			this.coordinatorArchives.add(archive);
+		} else {
+			CompensableArchive archive = new CompensableArchive();
+			archive.setXid(currentXid);
+			archive.setCompensable(compensable);
+			this.participantArchives.add(archive);
+		}
+
 	}
 
 	public synchronized void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
@@ -56,7 +70,22 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		CompensableInvocationExecutor executor = configurator.getCompensableInvocationExecutor();
 		if (executor != null) {
 			try {
-				executor.confirm(this.compensables);
+				List<CompensableInvocation> compensables = new ArrayList<CompensableInvocation>();
+				if (this.transactionContext.isCoordinator()) {
+					Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
+					while (coordinatorItr.hasNext()) {
+						CompensableArchive archive = coordinatorItr.next();
+						compensables.add(archive.getCompensable());
+					}
+				}
+
+				Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
+				while (participantItr.hasNext()) {
+					CompensableArchive archive = participantItr.next();
+					compensables.add(archive.getCompensable());
+				}
+				executor.confirm(compensables);
+
 			} catch (Throwable thrown) {
 				SystemException ex = new SystemException();
 				ex.initCause(thrown);
@@ -65,12 +94,14 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		}
 	}
 
-	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException, SystemException {
+	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException,
+			SystemException {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	public synchronized boolean enlistResource(XAResource xaRes) throws RollbackException, IllegalStateException, SystemException {
+	public synchronized boolean enlistResource(XAResource xaRes) throws RollbackException, IllegalStateException,
+			SystemException {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -79,8 +110,8 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		return this.transactionStatus;
 	}
 
-	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException, IllegalStateException,
-			SystemException {
+	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException,
+			IllegalStateException, SystemException {
 		// TODO Auto-generated method stub
 
 	}
@@ -92,13 +123,13 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		CompensableInvocationExecutor executor = configurator.getCompensableInvocationExecutor();
 		if (executor != null) {
-			try {
-				executor.cancel(this.compensables);
-			} catch (Throwable thrown) {
-				SystemException ex = new SystemException();
-				ex.initCause(thrown);
-				throw ex;
-			}
+			// try {
+			// executor.cancel(this.compensables);
+			// } catch (Throwable thrown) {
+			// SystemException ex = new SystemException();
+			// ex.initCause(thrown);
+			// throw ex;
+			// }
 		}
 	}
 
@@ -113,4 +144,23 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	public boolean isRollbackOnly() {
 		return this.transactionStatus == Status.STATUS_MARKED_ROLLBACK;
 	}
+
+	public void prepareStart() {
+	}
+
+	public void prepareComplete(boolean success) {
+	}
+
+	public void commitStart() {
+	}
+
+	public void commitComplete(boolean success) {
+	}
+
+	public void rollbackStart() {
+	}
+
+	public void rollbackComplete(boolean success) {
+	}
+
 }
