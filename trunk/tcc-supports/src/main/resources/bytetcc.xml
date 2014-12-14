@@ -40,7 +40,7 @@
 		<property name="xidFactory" ref="bytejtaXidFactory" />
 		<property name="transactionManager" ref="bytetccTransactionManager" />
 		<property name="transactionRepository" ref="bytetccTransactionRepository" />
-		<property name="transactionTimer" ref="bytetccTransactionManager" />
+		<!-- <property name="transactionTimer" ref="bytetccTransactionManager" /> -->
 		<property name="compensableInvocationExecutor" ref="compensableInvocationExecutor" />
 		<!-- <property name="transactionLogger" ref="bytetccTransactionLogger" /> <property name="transactionInterceptor" ref="bytetccTransactionInterceptor" 
 			/> <property name="transactionRecovery" ref="bytetccTransactionRecovery" /> -->

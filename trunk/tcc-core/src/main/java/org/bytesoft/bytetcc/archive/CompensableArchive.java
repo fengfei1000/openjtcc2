@@ -21,6 +21,7 @@ import org.bytesoft.bytejta.utils.CommonUtils;
 import org.bytesoft.bytetcc.CompensableInvocation;
 
 public class CompensableArchive {
+
 	private Xid xid;
 	private CompensableInvocation compensable;
 	private boolean confirmed;
