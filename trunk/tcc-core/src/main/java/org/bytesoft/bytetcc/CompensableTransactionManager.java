@@ -106,12 +106,16 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		CompensableJtaTransaction transaction = new CompensableJtaTransaction(transactionContext);
 		TransactionRepository transactionRepository = configurator.getTransactionRepository();
 
-		this.jtaTransactionManager.begin(transactionContext);
 		try {
+			this.jtaTransactionManager.begin(transactionContext);
 			TransactionImpl jtaTransaction = this.jtaTransactionManager.getTransaction();
 			transaction.setJtaTransaction(jtaTransaction);
 		} catch (SystemException ex) {
-			this.jtaTransactionManager.rollback();
+			try {
+				this.jtaTransactionManager.rollback();
+			} catch (Exception ignore) {
+				// ignore
+			}
 			throw ex;
 		}
 

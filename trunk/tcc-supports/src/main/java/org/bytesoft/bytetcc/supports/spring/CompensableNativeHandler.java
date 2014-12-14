@@ -3,6 +3,7 @@ package org.bytesoft.bytetcc.supports.spring;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
+import org.bytesoft.bytetcc.CompensableInvocation;
 import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -64,11 +65,12 @@ public class CompensableNativeHandler implements java.lang.reflect.InvocationHan
 		invocation.setCancellableKey(this.cancellableKey);
 		invocation.setInterfaceClass(this.interfaceClass);
 
+		CompensableInvocation original = null;
 		try {
-			this.transactionManager.beforeCompensableExecution(invocation);
+			original = this.transactionManager.beforeCompensableExecution(invocation);
 			return this.handleInvocation(proxy, method, args);
 		} finally {
-			this.transactionManager.afterCompensableCompletion(invocation);
+			this.transactionManager.afterCompensableCompletion(original);
 		}
 
 	}
