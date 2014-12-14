@@ -12,4 +12,8 @@ public interface CompensableInvocation {
 
 	public String getCancellableKey();
 
+	public Object getIdentifier();
+
+	public void setIdentifier(Object identifier);
+
 }

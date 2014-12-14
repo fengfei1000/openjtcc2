@@ -12,6 +12,8 @@ import org.bytesoft.transaction.TransactionContext;
 
 public class CompensableJtaTransaction extends CompensableTransaction {
 
+	private CompensableTccTransaction compensableTccTransaction;
+
 	public CompensableJtaTransaction(TransactionContext transactionContext) {
 		super(transactionContext);
 	}
@@ -43,21 +45,39 @@ public class CompensableJtaTransaction extends CompensableTransaction {
 	}
 
 	public void prepareStart() {
+		if (this.compensableTccTransaction != null) {
+			this.compensableTccTransaction.prepareStart();
+		}
 	}
 
 	public void prepareComplete(boolean success) {
+		if (this.compensableTccTransaction != null) {
+			this.compensableTccTransaction.prepareComplete(success);
+		}
 	}
 
 	public void commitStart() {
+		if (this.compensableTccTransaction != null) {
+			this.compensableTccTransaction.commitStart();
+		}
 	}
 
 	public void commitComplete(boolean success) {
+		if (this.compensableTccTransaction != null) {
+			this.compensableTccTransaction.commitComplete(success);
+		}
 	}
 
 	public void rollbackStart() {
+		if (this.compensableTccTransaction != null) {
+			this.compensableTccTransaction.rollbackStart();
+		}
 	}
 
 	public void rollbackComplete(boolean success) {
+		if (this.compensableTccTransaction != null) {
+			this.compensableTccTransaction.rollbackComplete(success);
+		}
 	}
 
 	public void setRollbackOnly() throws IllegalStateException, SystemException {
@@ -70,6 +90,14 @@ public class CompensableJtaTransaction extends CompensableTransaction {
 
 	public void setJtaTransaction(TransactionImpl jtaTransaction) {
 		this.jtaTransaction = jtaTransaction;
+	}
+
+	public CompensableTccTransaction getCompensableTccTransaction() {
+		return compensableTccTransaction;
+	}
+
+	public void setCompensableTccTransaction(CompensableTccTransaction compensableTccTransaction) {
+		this.compensableTccTransaction = compensableTccTransaction;
 	}
 
 }

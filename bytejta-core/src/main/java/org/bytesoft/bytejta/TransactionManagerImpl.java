@@ -131,23 +131,20 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 		TransactionXid globalXid = transactionContext.getGlobalXid();
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
-		boolean transactionDone = true;
+		boolean transactionDone = false;
 		try {
 			transaction.commit();
+			transactionDone = true;
 		} catch (CommitRequiredException crex) {
-			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
 			throw crex;
 		} catch (HeuristicMixedException hmex) {
-			transactionDone = false;// TODO
-			transactionRepository.putErrorTransaction(globalXid, transaction);
+			transactionRepository.putErrorTransaction(globalXid, transaction);// TODO
 			throw hmex;
 		} catch (SystemException ex) {
-			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
 			throw ex;
 		} catch (RuntimeException rrex) {
-			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
 			SystemException ex = new SystemException();
 			ex.initCause(rrex);
@@ -164,6 +161,14 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 	public int getStatus() throws SystemException {
 		Transaction transaction = this.getTransaction();
 		return transaction == null ? Status.STATUS_NO_TRANSACTION : transaction.getStatus();
+	}
+
+	public TransactionImpl getCurrentTransaction() {
+		try {
+			return this.getTransaction();
+		} catch (Exception ex) {
+			return null;
+		}
 	}
 
 	public TransactionImpl getTransaction() throws SystemException {
@@ -199,19 +204,17 @@ public class TransactionManagerImpl implements TransactionManager, TransactionTi
 		TransactionXid globalXid = transactionContext.getGlobalXid();
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
-		boolean transactionDone = true;
+		boolean transactionDone = false;
 		try {
 			transaction.rollback();
+			transactionDone = true;
 		} catch (RollbackRequiredException rrex) {
-			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
 			throw rrex;
 		} catch (SystemException ex) {
-			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
 			throw ex;
 		} catch (RuntimeException rrex) {
-			transactionDone = false;
 			transactionRepository.putErrorTransaction(globalXid, transaction);
 			SystemException ex = new SystemException();
 			ex.initCause(rrex);

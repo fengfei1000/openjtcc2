@@ -14,6 +14,7 @@ import org.bytesoft.transaction.xa.TransactionXid;
 public class CompensableInvocationImpl extends CompensableSynchronization implements CompensableContext,
 		CompensableInvocation {
 
+	private transient Object identifier;
 	private transient Method method;
 	private Object[] args;
 	private transient String confirmableKey;
@@ -106,6 +107,14 @@ public class CompensableInvocationImpl extends CompensableSynchronization implem
 
 	public void setTransaction(CompensableTccTransaction transaction) {
 		this.transaction = transaction;
+	}
+
+	public Object getIdentifier() {
+		return identifier;
+	}
+
+	public void setIdentifier(Object identifier) {
+		this.identifier = identifier;
 	}
 
 }

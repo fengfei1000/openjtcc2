@@ -3,7 +3,6 @@ package org.bytesoft.bytetcc.common;
 import org.bytesoft.bytetcc.CompensableInvocationExecutor;
 import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.bytetcc.supports.CompensableTransactionLogger;
-import org.bytesoft.transaction.TransactionTimer;
 import org.bytesoft.transaction.recovery.TransactionRecovery;
 import org.bytesoft.transaction.rpc.TransactionInterceptor;
 import org.bytesoft.transaction.xa.XidFactory;
@@ -14,7 +13,7 @@ public final class TransactionConfigurator {
 	private boolean optimizeEnabled = true;
 	private CompensableTransactionManager transactionManager;
 	private XidFactory xidFactory;
-	private TransactionTimer transactionTimer;
+	// private TransactionTimer transactionTimer;
 	private CompensableTransactionLogger transactionLogger = CompensableTransactionLogger.defaultTransactionLogger;
 	private TransactionRepository transactionRepository;
 	private TransactionInterceptor transactionInterceptor;
@@ -81,21 +80,21 @@ public final class TransactionConfigurator {
 		}
 	}
 
-	public TransactionTimer getTransactionTimer() {
-		if (this == instance) {
-			return this.transactionTimer;
-		} else {
-			return instance.getTransactionTimer();
-		}
-	}
-
-	public void setTransactionTimer(TransactionTimer transactionTimer) {
-		if (this == instance) {
-			this.transactionTimer = transactionTimer;
-		} else {
-			instance.setTransactionTimer(transactionTimer);
-		}
-	}
+	// public TransactionTimer getTransactionTimer() {
+	// if (this == instance) {
+	// return this.transactionTimer;
+	// } else {
+	// return instance.getTransactionTimer();
+	// }
+	// }
+	//
+	// public void setTransactionTimer(TransactionTimer transactionTimer) {
+	// if (this == instance) {
+	// this.transactionTimer = transactionTimer;
+	// } else {
+	// instance.setTransactionTimer(transactionTimer);
+	// }
+	// }
 
 	public boolean isOptimizeEnabled() {
 		if (this == instance) {

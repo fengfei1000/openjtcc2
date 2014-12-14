@@ -13,7 +13,7 @@ import org.springframework.context.ApplicationContextAware;
 public class CompensableInvocationExecutorImpl implements CompensableInvocationExecutor, ApplicationContextAware {
 	private ApplicationContext applicationContext;
 
-	public void confirm(List<CompensableInvocation> invocations) throws Throwable {
+	public void confirm(List<CompensableInvocation> invocations) throws RuntimeException {
 		Iterator<CompensableInvocation> itr = invocations.iterator();
 		while (itr.hasNext()) {
 			CompensableInvocation invocation = itr.next();
@@ -24,12 +24,14 @@ public class CompensableInvocationExecutorImpl implements CompensableInvocationE
 			try {
 				method.invoke(instance, args);
 			} catch (InvocationTargetException itex) {
-				throw itex.getTargetException();
+				throw new RuntimeException(itex.getTargetException());
+			} catch (Throwable throwable) {
+				throw new RuntimeException(throwable);
 			}
 		}
 	}
 
-	public void cancel(List<CompensableInvocation> invocations) throws Throwable {
+	public void cancel(List<CompensableInvocation> invocations) throws RuntimeException {
 		Iterator<CompensableInvocation> itr = invocations.iterator();
 		while (itr.hasNext()) {
 			CompensableInvocation invocation = itr.next();
@@ -40,7 +42,9 @@ public class CompensableInvocationExecutorImpl implements CompensableInvocationE
 			try {
 				method.invoke(instance, args);
 			} catch (InvocationTargetException itex) {
-				throw itex.getTargetException();
+				throw new RuntimeException(itex.getTargetException());
+			} catch (Throwable throwable) {
+				throw new RuntimeException(throwable);
 			}
 		}
 	}
