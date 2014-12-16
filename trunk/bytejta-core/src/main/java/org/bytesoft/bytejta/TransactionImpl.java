@@ -279,29 +279,39 @@ public class TransactionImpl implements Transaction {
 			lastTerminator.commit(xid, false);
 			if (unFinishExists == false) {
 				transactionCompleted = true;
+				this.fireCommitComplete(TransactionListener.OPT_SUCCESS);
+			} else {
+				this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 			}
 		} catch (XAInternalException xaex) {
+			this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 			CommitRequiredException ex = new CommitRequiredException();
 			ex.initCause(xaex);
 			throw ex;
 		} catch (XAException xaex) {
 			if (unFinishExists) {
+				this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 				CommitRequiredException ex = new CommitRequiredException();
 				ex.initCause(xaex);
 				throw ex;
 			} else if (mixedExists) {
+				this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 				transactionCompleted = true;
 				throw new HeuristicMixedException();
 			} else {
 				transactionCompleted = true;
 				switch (xaex.errorCode) {
 				case XAException.XA_HEURMIX:
+					this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 					throw new HeuristicMixedException();
 				case XAException.XA_HEURCOM:
+					this.fireCommitComplete(TransactionListener.OPT_SUCCESS);
 					break;
 				case XAException.XA_HEURRB:
+					this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 					throw new HeuristicMixedException();
 				default:
+					this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 					logger.warning("Unknown state in committing transaction phase.");
 				}
 			}
@@ -311,7 +321,6 @@ public class TransactionImpl implements Transaction {
 				archive.setStatus(this.transactionStatus);
 				transactionLogger.deleteTransaction(archive);
 			}
-			this.fireCommitComplete(transactionCompleted);
 		}
 
 	}
@@ -372,24 +381,32 @@ public class TransactionImpl implements Transaction {
 			CommitRequiredException, SystemException {
 		TransactionXid xid = this.transactionContext.getGlobalXid();
 		try {
+			this.fireCommitStart();
 			if (this.nativeTerminator.getResourceArchives().size() > 0) {
 				this.nativeTerminator.commit(xid, true);
 			} else {
 				this.remoteTerminator.commit(xid, true);
 			}
+			this.fireCommitComplete(TransactionListener.OPT_SUCCESS);
 		} catch (XAInternalException xaex) {
+			this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 			CommitRequiredException ex = new CommitRequiredException();
 			ex.initCause(xaex);
 			throw ex;
 		} catch (XAException xaex) {
 			switch (xaex.errorCode) {
 			case XAException.XA_HEURMIX:
+				this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 				throw new HeuristicMixedException();
 			case XAException.XA_HEURCOM:
+				this.fireCommitComplete(TransactionListener.OPT_SUCCESS);
 				return;
 			case XAException.XA_HEURRB:
+				this.fireRollbackStart();
+				this.fireRollbackComplete(TransactionListener.OPT_SUCCESS);
 				throw new HeuristicRollbackException();
 			default:
+				this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 				logger.warning("Unknown state in committing transaction phase.");
 				SystemException ex = new SystemException();
 				ex.initCause(xaex);
@@ -475,17 +492,23 @@ public class TransactionImpl implements Transaction {
 				this.remoteTerminator.commit(xid, false);
 				if (unFinishExists == false) {
 					transactionCompleted = true;
+					this.fireCommitComplete(TransactionListener.OPT_SUCCESS);
+				} else {
+					this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 				}
 			} catch (XAInternalException xaex) {
+				this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 				CommitRequiredException ex = new CommitRequiredException();
 				ex.initCause(xaex);
 				throw ex;
 			} catch (XAException xaex) {
 				if (unFinishExists) {
+					this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 					CommitRequiredException ex = new CommitRequiredException();
 					ex.initCause(xaex);
 					throw ex;
 				} else if (mixedExists) {
+					this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 					transactionCompleted = true;
 					throw new HeuristicMixedException();
 				} else {
@@ -493,16 +516,22 @@ public class TransactionImpl implements Transaction {
 
 					switch (xaex.errorCode) {
 					case XAException.XA_HEURMIX:
+						this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 						throw new HeuristicMixedException();
 					case XAException.XA_HEURCOM:
+						this.fireCommitComplete(TransactionListener.OPT_SUCCESS);
 						break;
 					case XAException.XA_HEURRB:
 						if (firstVote == XAResource.XA_RDONLY) {
+							this.fireRollbackStart();
+							this.fireRollbackComplete(TransactionListener.OPT_SUCCESS);
 							throw new HeuristicRollbackException();
 						} else {
+							this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 							throw new HeuristicMixedException();
 						}
 					default:
+						this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 						logger.warning("Unknown state in committing transaction phase.");
 					}
 				}
@@ -512,7 +541,6 @@ public class TransactionImpl implements Transaction {
 					archive.setStatus(this.transactionStatus);
 					transactionLogger.deleteTransaction(archive);
 				}
-				this.fireCommitComplete(transactionCompleted);
 			}
 		} else {
 			this.transactionStatus = Status.STATUS_PREPARED;// .setStatusPrepared();
@@ -520,7 +548,7 @@ public class TransactionImpl implements Transaction {
 			archive.setVote(XAResource.XA_RDONLY);
 			archive.setStatus(this.transactionStatus);
 			transactionLogger.deleteTransaction(archive);
-			this.fireCommitComplete(true);
+			this.fireCommitComplete(TransactionListener.OPT_SUCCESS);
 		}
 
 	}
@@ -584,17 +612,23 @@ public class TransactionImpl implements Transaction {
 			firstTerminator.commit(xid, false);
 			if (unFinishExists == false) {
 				transactionCompleted = true;
+				this.fireCommitComplete(TransactionListener.OPT_SUCCESS);
+			} else {
+				this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 			}
 		} catch (XAInternalException xaex) {
+			this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 			CommitRequiredException ex = new CommitRequiredException();
 			ex.initCause(xaex);
 			throw ex;
 		} catch (XAException xaex) {
 			if (unFinishExists) {
+				this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 				CommitRequiredException ex = new CommitRequiredException();
 				ex.initCause(xaex);
 				throw ex;
 			} else if (mixedExists) {
+				this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 				transactionCompleted = true;
 				throw new HeuristicMixedException();
 			} else {
@@ -602,12 +636,16 @@ public class TransactionImpl implements Transaction {
 
 				switch (xaex.errorCode) {
 				case XAException.XA_HEURMIX:
+					this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 					throw new HeuristicMixedException();
 				case XAException.XA_HEURCOM:
+					this.fireCommitComplete(TransactionListener.OPT_SUCCESS);
 					break;
 				case XAException.XA_HEURRB:
+					this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 					throw new HeuristicMixedException();
 				default:
+					this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 					logger.warning("Unknown state in committing transaction phase.");
 				}
 			}
@@ -617,7 +655,6 @@ public class TransactionImpl implements Transaction {
 				archive.setStatus(this.transactionStatus);
 				transactionLogger.deleteTransaction(archive);
 			}
-			this.fireCommitComplete(transactionCompleted);
 		}
 
 	}
@@ -841,17 +878,23 @@ public class TransactionImpl implements Transaction {
 			this.remoteTerminator.rollback(xid);
 			if (unFinishExists == false) {
 				transactionCompleted = true;
+				this.fireRollbackComplete(TransactionListener.OPT_SUCCESS);
+			} else {
+				this.fireRollbackComplete(TransactionListener.OPT_FAILURE);
 			}
 		} catch (XAInternalException xaex) {
+			this.fireRollbackComplete(TransactionListener.OPT_FAILURE);
 			RollbackRequiredException ex = new RollbackRequiredException();
 			ex.initCause(xaex);
 			throw ex;
 		} catch (XAException xaex) {
 			if (unFinishExists) {
+				this.fireRollbackComplete(TransactionListener.OPT_FAILURE);
 				RollbackRequiredException ex = new RollbackRequiredException();
 				ex.initCause(xaex);
 				throw ex;
 			} else if (mixedExists) {
+				this.fireRollbackComplete(TransactionListener.OPT_FAILURE);
 				transactionCompleted = true;
 				SystemException systemErr = new SystemException();
 				systemErr.initCause(new XAException(XAException.XA_HEURMIX));
@@ -862,26 +905,32 @@ public class TransactionImpl implements Transaction {
 				switch (xaex.errorCode) {
 				case XAException.XA_HEURRB:
 					if (commitExists) {
+						this.fireRollbackComplete(TransactionListener.OPT_HEURMIX);
 						SystemException systemErr = new SystemException();
 						systemErr.initCause(new XAException(XAException.XA_HEURMIX));
 						throw systemErr;
 					}
+					this.fireRollbackComplete(TransactionListener.OPT_SUCCESS);
 					break;
 				case XAException.XA_HEURMIX:
+					this.fireRollbackComplete(TransactionListener.OPT_HEURMIX);
 					SystemException systemErr = new SystemException();
 					systemErr.initCause(new XAException(XAException.XA_HEURMIX));
 					throw systemErr;
 				case XAException.XA_HEURCOM:
 					if (commitExists) {
+						this.fireRollbackComplete(TransactionListener.OPT_HEURMIX);
 						SystemException committedErr = new SystemException();
 						committedErr.initCause(new XAException(XAException.XA_HEURCOM));
 						throw committedErr;
 					} else {
+						this.fireRollbackComplete(TransactionListener.OPT_HEURMIX);
 						SystemException mixedErr = new SystemException();
 						mixedErr.initCause(new XAException(XAException.XA_HEURMIX));
 						throw mixedErr;
 					}
 				default:
+					this.fireRollbackComplete(TransactionListener.OPT_FAILURE);
 					logger.warning("Unknown state in rollingback transaction phase.");
 				}
 			}
@@ -891,7 +940,6 @@ public class TransactionImpl implements Transaction {
 				archive.setStatus(this.transactionStatus);
 				transactionLogger.deleteTransaction(archive);
 			}
-			this.fireRollbackComplete(transactionCompleted);
 		}
 
 	}
@@ -1077,17 +1125,23 @@ public class TransactionImpl implements Transaction {
 			rolledbackExists = true;
 			if (unFinishExists == false) {
 				transactionCompleted = true;
+				this.fireRollbackComplete(TransactionListener.OPT_SUCCESS);
+			} else {
+				this.fireRollbackComplete(TransactionListener.OPT_FAILURE);
 			}
 		} catch (XAInternalException xaex) {
+			this.fireRollbackComplete(TransactionListener.OPT_FAILURE);
 			RollbackRequiredException rrex = new RollbackRequiredException();
 			rrex.initCause(xaex);
 			throw rrex;
 		} catch (XAException xaex) {
 			if (unFinishExists) {
+				this.fireRollbackComplete(TransactionListener.OPT_FAILURE);
 				RollbackRequiredException rrex = new RollbackRequiredException();
 				rrex.initCause(xaex);
 				throw rrex;
 			} else if (committedExists && rolledbackExists) {
+				this.fireRollbackComplete(TransactionListener.OPT_HEURMIX);
 				transactionCompleted = true;
 				SystemException ex = new SystemException(XAException.XA_HEURMIX);
 				ex.initCause(xaex);
@@ -1097,27 +1151,33 @@ public class TransactionImpl implements Transaction {
 
 				switch (xaex.errorCode) {
 				case XAException.XA_HEURMIX:
+					this.fireRollbackComplete(TransactionListener.OPT_HEURMIX);
 					SystemException ex = new SystemException(XAException.XA_HEURMIX);
 					ex.initCause(xaex);
 					throw ex;
 				case XAException.XA_HEURCOM:
 					if (rolledbackExists) {
+						this.fireRollbackComplete(TransactionListener.OPT_HEURMIX);
 						SystemException mixedErr = new SystemException(XAException.XA_HEURMIX);
 						mixedErr.initCause(xaex);
 						throw mixedErr;
 					} else {
+						this.fireRollbackComplete(TransactionListener.OPT_HEURMIX);
 						SystemException committedErr = new SystemException(XAException.XA_HEURCOM);
 						committedErr.initCause(xaex);
 						throw committedErr;
 					}
 				case XAException.XA_HEURRB:
 					if (committedExists) {
+						this.fireRollbackComplete(TransactionListener.OPT_HEURMIX);
 						SystemException mixedErr = new SystemException(XAException.XA_HEURMIX);
 						mixedErr.initCause(xaex);
 						throw mixedErr;
 					}
+					this.fireRollbackComplete(TransactionListener.OPT_SUCCESS);
 					break;
 				default:
+					this.fireRollbackComplete(TransactionListener.OPT_FAILURE);
 					logger.warning("Unknown state in recovery-committing phase.");
 				}
 			}
@@ -1132,8 +1192,6 @@ public class TransactionImpl implements Transaction {
 				archive.setStatus(this.transactionStatus);
 				transactionLogger.deleteTransaction(archive);
 			}
-
-			this.fireRollbackComplete(transactionCompleted);
 
 		}
 
@@ -1180,17 +1238,23 @@ public class TransactionImpl implements Transaction {
 			committedExists = true;
 			if (unFinishExists == false) {
 				transactionCompleted = true;
+				this.fireCommitComplete(TransactionListener.OPT_SUCCESS);
+			} else {
+				this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 			}
 		} catch (XAInternalException xaex) {
+			this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 			CommitRequiredException ex = new CommitRequiredException();
 			ex.initCause(xaex);
 			throw ex;
 		} catch (XAException xaex) {
 			if (unFinishExists) {
+				this.fireCommitComplete(TransactionListener.OPT_FAILURE);
 				CommitRequiredException ex = new CommitRequiredException();
 				ex.initCause(xaex);
 				throw ex;
 			} else if (committedExists && rolledbackExists) {
+				this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 				transactionCompleted = true;
 				throw new HeuristicMixedException();
 			} else {
@@ -1200,14 +1264,18 @@ public class TransactionImpl implements Transaction {
 				case XAException.XA_HEURMIX:
 					committedExists = true;
 					rolledbackExists = true;
+					this.fireCommitComplete(TransactionListener.OPT_HEURMIX);
 					break;
 				case XAException.XA_HEURCOM:
 					committedExists = true;
+					// this.fireCommitComplete(TransactionListener.OPT_FAILURE);// TODO
 					break;
 				case XAException.XA_HEURRB:
 					rolledbackExists = true;
+					// this.fireCommitComplete(TransactionListener.OPT_FAILURE);// TODO
 					break;
 				default:
+					// this.fireCommitComplete(TransactionListener.OPT_FAILURE);// TODO
 					logger.warning("Unknown state in recovery-committing phase.");
 				}
 			}
@@ -1223,7 +1291,6 @@ public class TransactionImpl implements Transaction {
 				archive.setStatus(this.transactionStatus);
 				transactionLogger.deleteTransaction(archive);
 			}
-			this.fireCommitComplete(transactionCompleted);
 
 		}
 
@@ -1275,11 +1342,11 @@ public class TransactionImpl implements Transaction {
 		}
 	}
 
-	public void fireCommitComplete(boolean success) {
+	public void fireCommitComplete(int optcode) {
 		for (int i = 0; i < this.listeners.size(); i++) {
 			try {
 				TransactionListener listener = this.listeners.get(i);
-				listener.commitComplete(success);
+				listener.commitComplete(optcode);
 			} catch (RuntimeException rex) {
 				// ignore
 			}
@@ -1297,11 +1364,11 @@ public class TransactionImpl implements Transaction {
 		}
 	}
 
-	public void fireRollbackComplete(boolean success) {
+	public void fireRollbackComplete(int optcode) {
 		for (int i = 0; i < this.listeners.size(); i++) {
 			try {
 				TransactionListener listener = this.listeners.get(i);
-				listener.rollbackComplete(success);
+				listener.rollbackComplete(optcode);
 			} catch (RuntimeException rex) {
 				// ignore
 			}

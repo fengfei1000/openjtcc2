@@ -62,9 +62,9 @@ public class CompensableJtaTransaction extends CompensableTransaction {
 		}
 	}
 
-	public void commitComplete(boolean success) {
+	public void commitComplete(int optcode) {
 		if (this.compensableTccTransaction != null) {
-			this.compensableTccTransaction.commitComplete(success);
+			this.compensableTccTransaction.commitComplete(optcode);
 		}
 	}
 
@@ -74,9 +74,9 @@ public class CompensableJtaTransaction extends CompensableTransaction {
 		}
 	}
 
-	public void rollbackComplete(boolean success) {
+	public void rollbackComplete(int optcode) {
 		if (this.compensableTccTransaction != null) {
-			this.compensableTccTransaction.rollbackComplete(success);
+			this.compensableTccTransaction.rollbackComplete(optcode);
 		}
 	}
 

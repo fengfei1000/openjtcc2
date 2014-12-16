@@ -78,29 +78,29 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	public synchronized void nativeConfirm() throws RollbackRequiredException {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		CompensableInvocationExecutor executor = configurator.getCompensableInvocationExecutor();
-		if (executor != null) {
-			List<CompensableInvocation> compensables = new ArrayList<CompensableInvocation>();
-			if (this.transactionContext.isCoordinator()) {
-				Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
-				while (coordinatorItr.hasNext()) {
-					CompensableArchive archive = coordinatorItr.next();
-					compensables.add(archive.getCompensable());
-				}
-			}
-
-			Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
-			while (participantItr.hasNext()) {
-				CompensableArchive archive = participantItr.next();
+		List<CompensableInvocation> compensables = new ArrayList<CompensableInvocation>();
+		if (this.transactionContext.isCoordinator()) {
+			Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
+			while (coordinatorItr.hasNext()) {
+				CompensableArchive archive = coordinatorItr.next();
+				archive.setConfirmed(true);
 				compensables.add(archive.getCompensable());
 			}
+		}
 
-			try {
-				executor.confirm(compensables);
-			} catch (RuntimeException runtimeEx) {
-				RollbackRequiredException rrex = new RollbackRequiredException();
-				rrex.initCause(runtimeEx);
-				throw rrex;
-			}
+		Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
+		while (participantItr.hasNext()) {
+			CompensableArchive archive = participantItr.next();
+			archive.setConfirmed(true);
+			compensables.add(archive.getCompensable());
+		}
+
+		try {
+			executor.confirm(compensables);
+		} catch (RuntimeException runtimeEx) {
+			RollbackRequiredException rrex = new RollbackRequiredException();
+			rrex.initCause(runtimeEx);
+			throw rrex;
 		}
 	}
 
@@ -178,13 +178,40 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	public void commitStart() {
 	}
 
-	public void commitComplete(boolean success) {
+	public void commitComplete(int optcode) {
+		if (this.transactionStatus == Status.STATUS_PREPARING) {
+			// TODO
+		} else if (this.transactionStatus == Status.STATUS_PREPARED) {
+			if (this.transactionContext.isCoordinator()) {
+				Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
+				while (coordinatorItr.hasNext()) {
+					CompensableArchive archive = coordinatorItr.next();
+					// archive.setCommitted(success);// TODO
+				}
+			}
+			Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
+			while (participantItr.hasNext()) {
+				CompensableArchive archive = participantItr.next();
+				// archive.setCommitted(success);// TODO
+			}
+		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
+		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
+		} else {
+			// ignore
+		}
 	}
 
 	public void rollbackStart() {
 	}
 
-	public void rollbackComplete(boolean success) {
+	public void rollbackComplete(int optcode) {
+		if (this.transactionStatus == Status.STATUS_PREPARING) {
+		} else if (this.transactionStatus == Status.STATUS_PREPARED) {
+		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
+		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
+		} else {
+			// ignore
+		}
 	}
 
 	public int getTransactionStatus() {
