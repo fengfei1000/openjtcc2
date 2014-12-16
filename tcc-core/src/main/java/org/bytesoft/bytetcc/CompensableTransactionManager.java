@@ -108,8 +108,9 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 		try {
 			this.jtaTransactionManager.begin(transactionContext);
-			TransactionImpl jtaTransaction = this.jtaTransactionManager.getTransaction();
+			TransactionImpl jtaTransaction = this.jtaTransactionManager.getCurrentTransaction();
 			transaction.setJtaTransaction(jtaTransaction);
+			jtaTransaction.registerTransactionListener(transaction);
 		} catch (SystemException ex) {
 			try {
 				this.jtaTransactionManager.rollback();
@@ -150,7 +151,19 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 		TransactionXid jtaGlobalXid = xidFactory.createGlobalXid(branchXid.getBranchQualifier());
 		jtaTransactionContext.setCurrentXid(jtaGlobalXid);
-		this.jtaTransactionManager.begin(jtaTransactionContext);
+		try {
+			this.jtaTransactionManager.begin(jtaTransactionContext);
+			TransactionImpl jtaTransaction = this.jtaTransactionManager.getCurrentTransaction();
+			transaction.setJtaTransaction(jtaTransaction);
+			jtaTransaction.registerTransactionListener(transaction);
+		} catch (SystemException ex) {
+			try {
+				this.jtaTransactionManager.rollback();
+			} catch (Exception ignore) {
+				// ignore
+			}
+			throw ex;
+		}
 		this.associateds.put(Thread.currentThread(), transaction);
 		transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
 
@@ -178,7 +191,19 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 		if (transaction == null) {
 			transaction = new CompensableTccTransaction(transactionContext);
-			this.jtaTransactionManager.begin(jtaTransactionContext);
+			try {
+				this.jtaTransactionManager.begin(jtaTransactionContext);
+				TransactionImpl jtaTransaction = this.jtaTransactionManager.getCurrentTransaction();
+				transaction.setJtaTransaction(jtaTransaction);
+				jtaTransaction.registerTransactionListener(transaction);
+			} catch (SystemException ex) {
+				try {
+					this.jtaTransactionManager.rollback();
+				} catch (Exception ignore) {
+					// ignore
+				}
+				throw ex;
+			}
 			transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
 		} else {
 			transaction.propagationBegin(transactionContext);
