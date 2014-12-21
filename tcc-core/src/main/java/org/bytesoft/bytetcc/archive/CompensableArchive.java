@@ -24,10 +24,11 @@ public class CompensableArchive {
 
 	private Xid xid;
 	private CompensableInvocation compensable;
-	private boolean confirmed;
-	private boolean cancelled;
-	private boolean committed;
-	private boolean rolledback;
+
+	// private boolean confirmed;
+	// private boolean cancelled;
+	// private boolean committed;
+	// private boolean rolledback;
 
 	public int hashCode() {
 		int hash = 23;
@@ -61,36 +62,36 @@ public class CompensableArchive {
 		this.compensable = compensable;
 	}
 
-	public boolean isConfirmed() {
-		return confirmed;
-	}
-
-	public void setConfirmed(boolean confirmed) {
-		this.confirmed = confirmed;
-	}
-
-	public boolean isCancelled() {
-		return cancelled;
-	}
-
-	public void setCancelled(boolean cancelled) {
-		this.cancelled = cancelled;
-	}
-
-	public boolean isCommitted() {
-		return committed;
-	}
-
-	public void setCommitted(boolean committed) {
-		this.committed = committed;
-	}
-
-	public boolean isRolledback() {
-		return rolledback;
-	}
-
-	public void setRolledback(boolean rolledback) {
-		this.rolledback = rolledback;
-	}
+	// public boolean isConfirmed() {
+	// return confirmed;
+	// }
+	//
+	// public void setConfirmed(boolean confirmed) {
+	// this.confirmed = confirmed;
+	// }
+	//
+	// public boolean isCancelled() {
+	// return cancelled;
+	// }
+	//
+	// public void setCancelled(boolean cancelled) {
+	// this.cancelled = cancelled;
+	// }
+	//
+	// public boolean isCommitted() {
+	// return committed;
+	// }
+	//
+	// public void setCommitted(boolean committed) {
+	// this.committed = committed;
+	// }
+	//
+	// public boolean isRolledback() {
+	// return rolledback;
+	// }
+	//
+	// public void setRolledback(boolean rolledback) {
+	// this.rolledback = rolledback;
+	// }
 
 }

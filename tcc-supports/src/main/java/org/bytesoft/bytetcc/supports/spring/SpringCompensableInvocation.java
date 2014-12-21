@@ -1,7 +1,6 @@
 package org.bytesoft.bytetcc.supports.spring;
 
-import java.util.logging.Logger;
-
+import org.apache.log4j.Logger;
 import org.bytesoft.bytetcc.internal.CompensableInvocationImpl;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -21,7 +20,7 @@ public class SpringCompensableInvocation extends CompensableInvocationImpl imple
 				}
 				throw new IllegalStateException();
 			} catch (RuntimeException rex) {
-				logger.warning("Get the cancel-object failed.");
+				logger.warn("Get the cancel-object failed.");
 				return null;
 			}
 		} else {
@@ -39,7 +38,7 @@ public class SpringCompensableInvocation extends CompensableInvocationImpl imple
 				}
 				throw new IllegalStateException();
 			} catch (RuntimeException rex) {
-				logger.warning("Get the confirm-object failed.");
+				logger.warn("Get the confirm-object failed.");
 				return null;
 			}
 		} else {

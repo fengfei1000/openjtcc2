@@ -21,14 +21,29 @@ import javax.transaction.xa.Xid;
 
 import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.bytetcc.common.TransactionConfigurator;
+import org.bytesoft.bytetcc.xa.CompensableTccTransactionSkeleton;
+import org.bytesoft.bytetcc.xa.CompensableTransactionSkeleton;
 import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.TransactionContext;
+import org.bytesoft.transaction.TransactionListener;
 import org.bytesoft.transaction.archive.XAResourceArchive;
 import org.bytesoft.transaction.xa.TransactionXid;
 
 public class CompensableTccTransaction extends CompensableTransaction {
+	public static int STATUS_UNKNOWN = 0;
+	public static int STATUS_TRY_FAILURE = 1;
+	public static int STATUS_TRIED = 2;
+	public static int STATUS_CONFIRMING = 3;
+	public static int STATUS_CONFIRM_FAILURE = 4;
+	public static int STATUS_CONFIRMED = 5;
+	public static int STATUS_CANCELLING = 6;
+	public static int STATUS_CANCEL_FAILURE = 7;
+	public static int STATUS_CANCELLED = 8;
+
 	private int transactionStatus;
+	private int compensableStatus;
 	private CompensableJtaTransaction compensableJtaTransaction;
+	private final CompensableTccTransactionSkeleton skeleton = new CompensableTccTransactionSkeleton(this);
 	private final List<CompensableArchive> coordinatorArchives = new ArrayList<CompensableArchive>();
 	private final List<CompensableArchive> participantArchives = new ArrayList<CompensableArchive>();
 	private final Map<Xid, XAResourceArchive> resourceArchives = new ConcurrentHashMap<Xid, XAResourceArchive>();
@@ -78,25 +93,23 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	public synchronized void nativeConfirm() throws RollbackRequiredException {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		CompensableInvocationExecutor executor = configurator.getCompensableInvocationExecutor();
-		List<CompensableInvocation> compensables = new ArrayList<CompensableInvocation>();
-		if (this.transactionContext.isCoordinator()) {
-			Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
-			while (coordinatorItr.hasNext()) {
-				CompensableArchive archive = coordinatorItr.next();
-				archive.setConfirmed(true);
-				compensables.add(archive.getCompensable());
-			}
-		}
-
-		Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
-		while (participantItr.hasNext()) {
-			CompensableArchive archive = participantItr.next();
-			archive.setConfirmed(true);
-			compensables.add(archive.getCompensable());
-		}
-
 		try {
-			executor.confirm(compensables);
+			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMING;
+
+			if (this.transactionContext.isCoordinator()) {
+				Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
+				while (coordinatorItr.hasNext()) {
+					CompensableArchive archive = coordinatorItr.next();
+					executor.confirm(archive.getCompensable());
+				}
+			}
+
+			Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
+			while (participantItr.hasNext()) {
+				CompensableArchive archive = participantItr.next();
+				this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMING;
+				executor.confirm(archive.getCompensable());
+			}
 		} catch (RuntimeException runtimeEx) {
 			RollbackRequiredException rrex = new RollbackRequiredException();
 			rrex.initCause(runtimeEx);
@@ -137,6 +150,10 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		return this.transactionStatus;
 	}
 
+	public synchronized void setTransactionStatus(int transactionStatus) {
+		this.transactionStatus = transactionStatus;
+	}
+
 	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException,
 			IllegalStateException, SystemException {
 		// TODO Auto-generated method stub
@@ -149,8 +166,17 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	public synchronized void nativeCancel() throws RollbackRequiredException {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		CompensableInvocationExecutor executor = configurator.getCompensableInvocationExecutor();
-		if (executor != null) {
-			// TODO
+		try {
+			this.compensableStatus = CompensableTccTransaction.STATUS_CANCELLING;
+			Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
+			while (participantItr.hasNext()) {
+				CompensableArchive archive = participantItr.next();
+				executor.cancel(archive.getCompensable());
+			}
+		} catch (RuntimeException runtimeEx) {
+			RollbackRequiredException rrex = new RollbackRequiredException();
+			rrex.initCause(runtimeEx);
+			throw rrex;
 		}
 	}
 
@@ -159,6 +185,9 @@ public class CompensableTccTransaction extends CompensableTransaction {
 
 	public synchronized void setRollbackOnly() throws IllegalStateException, SystemException {
 		if (this.transactionStatus == Status.STATUS_ACTIVE || this.transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
+			if (this.jtaTransaction != null) {
+				this.jtaTransaction.setRollbackOnlyQuietly();
+			}
 			this.transactionStatus = Status.STATUS_MARKED_ROLLBACK;
 		} else {
 			throw new IllegalStateException();
@@ -178,48 +207,90 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	public void commitStart() {
 	}
 
-	public void commitComplete(int optcode) {
+	public void commitSuccess() {
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
-			// TODO
-		} else if (this.transactionStatus == Status.STATUS_PREPARED) {
-			if (this.transactionContext.isCoordinator()) {
-				Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
-				while (coordinatorItr.hasNext()) {
-					CompensableArchive archive = coordinatorItr.next();
-					// archive.setCommitted(success);// TODO
-				}
-			}
-			Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
-			while (participantItr.hasNext()) {
-				CompensableArchive archive = participantItr.next();
-				// archive.setCommitted(success);// TODO
-			}
+			// TODO transaction-log
+			this.compensableStatus = CompensableTccTransaction.STATUS_TRIED;
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
+			// TODO transaction-log
+			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMED;
 		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
-		} else {
+			// TODO transaction-log
+			this.compensableStatus = CompensableTccTransaction.STATUS_CANCELLED;
+		}
+	}
+
+	public void commitFailure(int optcode) {
+		if (this.transactionStatus == Status.STATUS_PREPARING) {
+			this.completeFailureInPreparing(optcode);
+		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
+			this.completeFailureInCommitting(optcode);
+		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
+			this.completeFailureInRollingback(optcode);
+		}
+	}
+
+	private void completeFailureInPreparing(int optcode) {
+		if (optcode == TransactionListener.OPT_DEFAULT) {
+			this.compensableStatus = CompensableTccTransaction.STATUS_TRY_FAILURE;
+		} else if (optcode == TransactionListener.OPT_HEURCOM) {
+			this.compensableStatus = CompensableTccTransaction.STATUS_TRIED;
+		} else if (optcode == TransactionListener.OPT_HEURRB) {
 			// ignore
+		} else if (optcode == TransactionListener.OPT_HEURMIX) {
+			this.compensableStatus = CompensableTccTransaction.STATUS_TRY_FAILURE;
+		}
+	}
+
+	private void completeFailureInCommitting(int optcode) {
+		if (optcode == TransactionListener.OPT_DEFAULT) {
+			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRM_FAILURE;
+		} else if (optcode == TransactionListener.OPT_HEURCOM) {
+			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMED;
+		} else if (optcode == TransactionListener.OPT_HEURRB) {
+			// ignore
+		} else if (optcode == TransactionListener.OPT_HEURMIX) {
+			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRM_FAILURE;
+		}
+	}
+
+	private void completeFailureInRollingback(int optcode) {
+		if (optcode == TransactionListener.OPT_DEFAULT) {
+			this.compensableStatus = CompensableTccTransaction.STATUS_CANCEL_FAILURE;
+		} else if (optcode == TransactionListener.OPT_HEURCOM) {
+			this.compensableStatus = CompensableTccTransaction.STATUS_CANCELLED;
+		} else if (optcode == TransactionListener.OPT_HEURRB) {
+			// ignore
+		} else if (optcode == TransactionListener.OPT_HEURMIX) {
+			this.compensableStatus = CompensableTccTransaction.STATUS_CANCEL_FAILURE;
 		}
 	}
 
 	public void rollbackStart() {
 	}
 
-	public void rollbackComplete(int optcode) {
+	public void rollbackSuccess() {
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
-		} else if (this.transactionStatus == Status.STATUS_PREPARED) {
+			// ignore
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
+			// ignore
 		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
-		} else {
 			// ignore
 		}
 	}
 
-	public int getTransactionStatus() {
-		return transactionStatus;
+	public void rollbackFailure(int optcode) {
+		if (this.transactionStatus == Status.STATUS_PREPARING) {
+			this.completeFailureInPreparing(optcode);
+		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
+			this.completeFailureInCommitting(optcode);
+		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
+			this.completeFailureInRollingback(optcode);
+		}
 	}
 
-	public void setTransactionStatus(int transactionStatus) {
-		this.transactionStatus = transactionStatus;
+	public CompensableTransactionSkeleton getSkeleton() {
+		return this.skeleton;
 	}
 
 	public CompensableJtaTransaction getCompensableJtaTransaction() {
@@ -228,6 +299,14 @@ public class CompensableTccTransaction extends CompensableTransaction {
 
 	public void setCompensableJtaTransaction(CompensableJtaTransaction compensableJtaTransaction) {
 		this.compensableJtaTransaction = compensableJtaTransaction;
+	}
+
+	public int getCompensableStatus() {
+		return compensableStatus;
+	}
+
+	public void setCompensableStatus(int compensableStatus) {
+		this.compensableStatus = compensableStatus;
 	}
 
 }

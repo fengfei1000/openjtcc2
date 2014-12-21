@@ -1,12 +1,11 @@
 package org.bytesoft.transaction.supports.rpc;
 
-import java.util.logging.Logger;
-
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.xa.XAResource;
 
+import org.apache.log4j.Logger;
 import org.bytesoft.bytejta.TransactionImpl;
 import org.bytesoft.bytejta.TransactionManagerImpl;
 import org.bytesoft.bytejta.common.TransactionConfigurator;
@@ -40,14 +39,14 @@ public class TransactionInterceptorImpl implements TransactionInterceptor {
 				XAResourceDescriptor descriptor = this.createResourceDescriptor(resource, supportXA);
 				transaction.enlistResource(descriptor);
 			} catch (IllegalStateException ex) {
-				logger.throwing(TransactionInterceptorImpl.class.getName(), "beforeSendRequest(TransactionRequest)", ex);
+				logger.error("TransactionInterceptorImpl.beforeSendRequest(TransactionRequest)", ex);
 				throw ex;
 			} catch (RollbackException ex) {
 				transaction.setRollbackOnlyQuietly();
-				logger.throwing(TransactionInterceptorImpl.class.getName(), "beforeSendRequest(TransactionRequest)", ex);
+				logger.error("TransactionInterceptorImpl.beforeSendRequest(TransactionRequest)", ex);
 				throw new IllegalStateException(ex);
 			} catch (SystemException ex) {
-				logger.throwing(TransactionInterceptorImpl.class.getName(), "beforeSendRequest(TransactionRequest)", ex);
+				logger.error("TransactionInterceptorImpl.beforeSendRequest(TransactionRequest)", ex);
 				throw new IllegalStateException(ex);
 			}
 		}
@@ -109,12 +108,10 @@ public class TransactionInterceptorImpl implements TransactionInterceptor {
 						XAResourceDescriptor descriptor = this.createResourceDescriptor(resource, supportXA);
 						transaction.delistResource(descriptor, XAResource.TMSUCCESS);
 					} catch (IllegalStateException ex) {
-						logger.throwing(TransactionInterceptorImpl.class.getName(),
-								"afterReceiveResponse(TransactionRequest)", ex);
+						logger.error("TransactionInterceptorImpl.afterReceiveResponse(TransactionRequest)", ex);
 						throw ex;
 					} catch (SystemException ex) {
-						logger.throwing(TransactionInterceptorImpl.class.getName(),
-								"afterReceiveResponse(TransactionRequest)", ex);
+						logger.error("TransactionInterceptorImpl.afterReceiveResponse(TransactionRequest)", ex);
 						throw new IllegalStateException(ex);
 					}
 				}

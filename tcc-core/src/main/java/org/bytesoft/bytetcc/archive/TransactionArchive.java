@@ -18,18 +18,17 @@ package org.bytesoft.bytetcc.archive;
 import java.util.Map;
 
 import org.bytesoft.transaction.TransactionContext;
-import org.bytesoft.transaction.TransactionStatus;
 import org.bytesoft.transaction.xa.TransactionXid;
 
 public interface TransactionArchive {
 
-	public TransactionStatus getTransactionStatus();
+	public int getTransactionStatus();
 
 	public Map<TransactionXid, CompensableArchive> getCompensableArchiveMap();
 
 	public TransactionContext getTransactionContext();
 
-	public void setTransactionStatus(TransactionStatus status);
+	public void setTransactionStatus(int transactionStatus);
 
 	public void setTransactionContext(TransactionContext context);
 
