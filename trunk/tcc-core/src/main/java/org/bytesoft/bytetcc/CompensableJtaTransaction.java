@@ -8,11 +8,14 @@ import javax.transaction.SystemException;
 import javax.transaction.xa.XAResource;
 
 import org.bytesoft.bytejta.TransactionImpl;
+import org.bytesoft.bytetcc.xa.CompensableJtaTransactionSkeleton;
+import org.bytesoft.bytetcc.xa.CompensableTransactionSkeleton;
 import org.bytesoft.transaction.TransactionContext;
 
 public class CompensableJtaTransaction extends CompensableTransaction {
 
 	private CompensableTccTransaction compensableTccTransaction;
+	private final CompensableJtaTransactionSkeleton skeleton = new CompensableJtaTransactionSkeleton(this);
 
 	public CompensableJtaTransaction(TransactionContext transactionContext) {
 		super(transactionContext);
@@ -62,9 +65,15 @@ public class CompensableJtaTransaction extends CompensableTransaction {
 		}
 	}
 
-	public void commitComplete(int optcode) {
+	public void commitSuccess() {
 		if (this.compensableTccTransaction != null) {
-			this.compensableTccTransaction.commitComplete(optcode);
+			this.compensableTccTransaction.commitSuccess();
+		}
+	}
+
+	public void commitFailure(int optcode) {
+		if (this.compensableTccTransaction != null) {
+			this.compensableTccTransaction.commitFailure(optcode);
 		}
 	}
 
@@ -74,14 +83,24 @@ public class CompensableJtaTransaction extends CompensableTransaction {
 		}
 	}
 
-	public void rollbackComplete(int optcode) {
+	public void rollbackSuccess() {
 		if (this.compensableTccTransaction != null) {
-			this.compensableTccTransaction.rollbackComplete(optcode);
+			this.compensableTccTransaction.rollbackSuccess();
+		}
+	}
+
+	public void rollbackFailure(int optcode) {
+		if (this.compensableTccTransaction != null) {
+			this.compensableTccTransaction.rollbackFailure(optcode);
 		}
 	}
 
 	public void setRollbackOnly() throws IllegalStateException, SystemException {
 		this.jtaTransaction.setRollbackOnly();
+	}
+
+	public CompensableTransactionSkeleton getSkeleton() {
+		return this.skeleton;
 	}
 
 	public TransactionImpl getJtaTransaction() {

@@ -2,9 +2,10 @@ package org.bytesoft.transaction;
 
 public interface TransactionListener {
 
-	public int OPT_SUCCESS = 0;
-	public int OPT_FAILURE = 1;
-	public int OPT_HEURMIX = 2;
+	public int OPT_DEFAULT = 0;
+	public int OPT_HEURCOM = 1;
+	public int OPT_HEURRB = 2;
+	public int OPT_HEURMIX = 3;
 
 	public void prepareStart();
 
@@ -12,10 +13,14 @@ public interface TransactionListener {
 
 	public void commitStart();
 
-	public void commitComplete(int optcode);
+	public void commitSuccess();
+
+	public void commitFailure(int optcode);
 
 	public void rollbackStart();
 
-	public void rollbackComplete(int optcode);
+	public void rollbackSuccess();
+
+	public void rollbackFailure(int optcode);
 
 }

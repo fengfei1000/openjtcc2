@@ -15,8 +15,7 @@
  */
 package org.bytesoft.bytetcc.supports.internal;
 
-import java.util.logging.Logger;
-
+import org.apache.log4j.Logger;
 import org.bytesoft.bytetcc.CompensableTransaction;
 import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.bytetcc.supports.serialize.TerminatorMarshaller;

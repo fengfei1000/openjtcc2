@@ -3,7 +3,6 @@ package org.bytesoft.bytejta.xa;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Logger;
 
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
@@ -11,6 +10,7 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.apache.log4j.Logger;
 import org.bytesoft.bytejta.utils.ByteUtils;
 import org.bytesoft.bytejta.utils.CommonUtils;
 import org.bytesoft.transaction.RemoteSystemException;
@@ -109,7 +109,7 @@ public class XATerminatorImpl implements XATerminator {
 				case XAException.XA_HEURMIX:
 					throw xae;
 				default:
-					logger.warning("Unknown state in committing transaction phase.");
+					logger.warn("Unknown state in committing transaction phase.");
 				}
 			}
 		}
@@ -274,7 +274,7 @@ public class XATerminatorImpl implements XATerminator {
 							case XAException.XA_HEURMIX:
 								throw xae;
 							default:
-								logger.warning("Unknown state in committing transaction phase.");
+								logger.warn("Unknown state in committing transaction phase.");
 							}
 						}
 					}
@@ -436,7 +436,7 @@ public class XATerminatorImpl implements XATerminator {
 						case XAException.XA_HEURMIX:
 							throw xae;
 						default:
-							logger.warning("Unknown state in committing transaction phase.");
+							logger.warn("Unknown state in committing transaction phase.");
 						}
 					}
 				}
@@ -632,17 +632,17 @@ public class XATerminatorImpl implements XATerminator {
 					// , XAER_NOTA, XAER_INVAL, or XAER_PROTO.
 					switch (xae.errorCode) {
 					case XAException.XAER_RMERR:
-						logger.warning("Error Occurred in forget: " + xae.getMessage());
+						logger.warn("Error Occurred in forget: " + xae.getMessage());
 						break;
 					case XAException.XAER_RMFAIL:
-						logger.warning("Error Occurred in forget: " + xae.getMessage());
+						logger.warn("Error Occurred in forget: " + xae.getMessage());
 						break;
 					case XAException.XAER_NOTA:
 					case XAException.XAER_INVAL:
 					case XAException.XAER_PROTO:
 						break;
 					default:
-						logger.warning("Unknown state in forget.");
+						logger.warn("Unknown state in forget.");
 					}
 				}
 			}// end-if
@@ -692,7 +692,7 @@ public class XATerminatorImpl implements XATerminator {
 			logger.info(String.format("\t[%s] delist: xares= %s, flags= %s",
 					ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), archive, flag));
 		} catch (XAException xae) {
-			logger.throwing(XATerminatorImpl.class.getName(), "delistResource(XAResourceArchive, int)", xae);
+			logger.error("XATerminatorImpl.delistResource(XAResourceArchive, int)", xae);
 
 			// Possible XAException values are XAER_RMERR, XAER_RMFAIL,
 			// XAER_NOTA, XAER_INVAL, XAER_PROTO, or XA_RB*.
@@ -777,7 +777,7 @@ public class XATerminatorImpl implements XATerminator {
 				throw new SystemException();
 			}
 		} catch (XAException xae) {
-			logger.throwing(XATerminatorImpl.class.getName(), "enlistResource(XAResourceArchive, int)", xae);
+			logger.error("XATerminatorImpl.enlistResource(XAResourceArchive, int)", xae);
 
 			// Possible exceptions are XA_RB*, XAER_RMERR, XAER_RMFAIL,
 			// XAER_DUPID, XAER_OUTSIDE, XAER_NOTA, XAER_INVAL, or XAER_PROTO.

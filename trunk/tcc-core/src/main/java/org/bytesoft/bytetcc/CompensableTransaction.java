@@ -4,6 +4,7 @@ import javax.transaction.Transaction;
 
 import org.bytesoft.bytejta.TransactionImpl;
 import org.bytesoft.bytejta.utils.CommonUtils;
+import org.bytesoft.bytetcc.xa.CompensableTransactionSkeleton;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionListener;
 import org.bytesoft.transaction.xa.TransactionXid;
@@ -47,6 +48,8 @@ public abstract class CompensableTransaction implements Transaction, Transaction
 		TransactionXid thatXid = thatContext == null ? null : thatContext.getGlobalXid();
 		return CommonUtils.equals(thisXid, thatXid);
 	}
+
+	public abstract CompensableTransactionSkeleton getSkeleton();
 
 	public TransactionImpl getJtaTransaction() {
 		return jtaTransaction;
