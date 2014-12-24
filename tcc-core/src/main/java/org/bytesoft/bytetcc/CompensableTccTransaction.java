@@ -118,32 +118,50 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public synchronized void remoteConfirm() throws SystemException, RemoteException {
+		// boolean failure = false;
 		Set<Entry<Xid, XAResourceArchive>> entrySet = this.resourceArchives.entrySet();
 		Iterator<Map.Entry<Xid, XAResourceArchive>> resourceItr = entrySet.iterator();
 		while (resourceItr.hasNext()) {
 			Map.Entry<Xid, XAResourceArchive> entry = resourceItr.next();
 			Xid key = entry.getKey();
 			XAResourceArchive archive = entry.getValue();
-			try {
-				archive.commit(key, true);
-				archive.setCommitted(true);
-				archive.setCompleted(true);
-			} catch (XAException xaex) {
-				// TODO
+			if (archive.isCompleted()) {
+				if (archive.isCommitted()) {
+					// TODO
+				} else if (archive.isRolledback()) {
+					// TODO
+				} else {
+					// TODO
+				}
+			} else {
+				try {
+					archive.commit(key, true);
+					archive.setCommitted(true);
+					archive.setCompleted(true);
+				} catch (XAException xaex) {
+					// TODO
+					switch (xaex.errorCode) {
+					case XAException.XA_HEURCOM:
+					case XAException.XA_HEURRB:
+					case XAException.XA_HEURMIX:
+					case XAException.XAER_NOTA:
+					case XAException.XAER_RMFAIL:
+					case XAException.XAER_RMERR:
+					}
+				}
 			}
-		}
+		} // end-while (resourceItr.hasNext())
+		
 	}
 
 	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException,
 			SystemException {
-		// TODO Auto-generated method stub
-		return false;
+		return this.jtaTransaction.delistResource(xaRes, flag);
 	}
 
 	public synchronized boolean enlistResource(XAResource xaRes) throws RollbackException, IllegalStateException,
 			SystemException {
-		// TODO Auto-generated method stub
-		return false;
+		return this.jtaTransaction.enlistResource(xaRes);
 	}
 
 	public int getStatus() throws SystemException {
@@ -156,8 +174,8 @@ public class CompensableTccTransaction extends CompensableTransaction {
 
 	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException,
 			IllegalStateException, SystemException {
-		// TODO Auto-generated method stub
-
+		// TODO
+		this.jtaTransaction.registerSynchronization(sync);
 	}
 
 	public synchronized void rollback() throws IllegalStateException, SystemException {
