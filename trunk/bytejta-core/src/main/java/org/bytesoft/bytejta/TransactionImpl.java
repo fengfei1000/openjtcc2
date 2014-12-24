@@ -1265,20 +1265,28 @@ public class TransactionImpl implements Transaction {
 
 				switch (xaex.errorCode) {
 				case XAException.XA_HEURMIX:
-					committedExists = true;
-					rolledbackExists = true;
+					// committedExists = true;
+					// rolledbackExists = true;
 					this.fireCommitFailure(TransactionListener.OPT_HEURMIX);
 					break;
 				case XAException.XA_HEURCOM:
-					committedExists = true;
-					// this.fireCommitComplete(TransactionListener.OPT_FAILURE);// TODO
+					// committedExists = true;
+					if (rolledbackExists) {
+						this.fireCommitFailure(TransactionListener.OPT_HEURMIX);
+					} else {
+						this.fireCommitFailure(TransactionListener.OPT_HEURCOM);
+					}
 					break;
 				case XAException.XA_HEURRB:
-					rolledbackExists = true;
-					// this.fireCommitComplete(TransactionListener.OPT_FAILURE);// TODO
+					// rolledbackExists = true;
+					if (committedExists) {
+						this.fireCommitFailure(TransactionListener.OPT_HEURMIX);
+					} else {
+						this.fireCommitFailure(TransactionListener.OPT_HEURRB);
+					}
 					break;
 				default:
-					// this.fireCommitComplete(TransactionListener.OPT_FAILURE);// TODO
+					this.fireCommitFailure(TransactionListener.OPT_DEFAULT);
 					logger.warn("Unknown state in recovery-committing phase.");
 				}
 			}
