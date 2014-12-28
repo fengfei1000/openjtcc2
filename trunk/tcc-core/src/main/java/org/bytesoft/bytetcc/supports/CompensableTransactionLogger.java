@@ -22,25 +22,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bytesoft.bytetcc.archive.CompensableArchive;
-import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.logger.TransactionLogger;
 
 public interface CompensableTransactionLogger extends TransactionLogger {
 
-	/* service */
-	public void enlistService(TransactionContext transactionContext, CompensableArchive holder);
+	/* compensable */
+	public void updateCompensable(CompensableArchive archive);
 
-	public void delistService(TransactionContext transactionContext, CompensableArchive holder);
-
-	public void updateService(TransactionContext transactionContext, CompensableArchive holder);
-
-	public void confirmService(TransactionContext transactionContext, CompensableArchive holder);
-
-	public void cancelService(TransactionContext transactionContext, CompensableArchive holder);
-
-	public void commitService(TransactionContext transactionContext, CompensableArchive holder);
-
-	public void rollbackService(TransactionContext transactionContext, CompensableArchive holder);
+	// public void enlistCompensable(CompensableArchive archive);
+	// public void delistCompensable(CompensableArchive archive);
+	// public void confirmCompensable(CompensableArchive archive);
+	// public void cancelCompensable(CompensableArchive archive);
 
 	/* default transaction logger */
 	public static CompensableTransactionLogger defaultTransactionLogger = NullTransactionLoggerHanlder

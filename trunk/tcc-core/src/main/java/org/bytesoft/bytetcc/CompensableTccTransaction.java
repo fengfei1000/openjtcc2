@@ -20,7 +20,9 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import org.bytesoft.bytetcc.archive.CompensableArchive;
+import org.bytesoft.bytetcc.archive.CompensableTransactionArchive;
 import org.bytesoft.bytetcc.common.TransactionConfigurator;
+import org.bytesoft.bytetcc.supports.CompensableTransactionLogger;
 import org.bytesoft.bytetcc.xa.CompensableTccTransactionSkeleton;
 import org.bytesoft.bytetcc.xa.CompensableTransactionSkeleton;
 import org.bytesoft.transaction.RollbackRequiredException;
@@ -88,6 +90,7 @@ public class CompensableTccTransaction extends CompensableTransaction {
 
 	public synchronized void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
 			SecurityException, IllegalStateException, SystemException {
+		throw new IllegalStateException();
 	}
 
 	public synchronized void nativeConfirm() throws RollbackRequiredException {
@@ -118,7 +121,10 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public synchronized void remoteConfirm() throws SystemException, RemoteException {
-		// boolean failure = false;
+
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		CompensableTransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
+
 		Set<Entry<Xid, XAResourceArchive>> entrySet = this.resourceArchives.entrySet();
 		Iterator<Map.Entry<Xid, XAResourceArchive>> resourceItr = entrySet.iterator();
 		while (resourceItr.hasNext()) {
@@ -149,9 +155,12 @@ public class CompensableTccTransaction extends CompensableTransaction {
 					case XAException.XAER_RMERR:
 					}
 				}
+
+				transactionLogger.updateResource(archive);
 			}
+
 		} // end-while (resourceItr.hasNext())
-		
+
 	}
 
 	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException,
@@ -179,6 +188,7 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public synchronized void rollback() throws IllegalStateException, SystemException {
+		throw new IllegalStateException();
 	}
 
 	public synchronized void nativeCancel() throws RollbackRequiredException {
@@ -199,6 +209,12 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public synchronized void remoteCancel() throws SystemException, RemoteException {
+	}
+
+	public CompensableTransactionArchive getTransactionArchive() {
+		CompensableTransactionArchive transactionArchive = new CompensableTransactionArchive();
+		// TODO
+		return transactionArchive;
 	}
 
 	public synchronized void setRollbackOnly() throws IllegalStateException, SystemException {
