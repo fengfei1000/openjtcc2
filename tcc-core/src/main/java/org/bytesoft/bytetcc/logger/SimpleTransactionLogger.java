@@ -3,25 +3,30 @@ package org.bytesoft.bytetcc.logger;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel.MapMode;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import org.bytesoft.bytejta.utils.ByteUtils;
+import org.bytesoft.bytetcc.CompensableInvocation;
 import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.bytetcc.archive.CompensableTransactionArchive;
+import org.bytesoft.bytetcc.common.TransactionConfigurator;
 import org.bytesoft.bytetcc.supports.CompensableTransactionLogger;
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.archive.XAResourceArchive;
 import org.bytesoft.transaction.serialize.TransactionArchiveSerializer;
 import org.bytesoft.transaction.serialize.XAResourceSerializer;
+import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
+import org.bytesoft.transaction.xa.XidFactory;
 
 public class SimpleTransactionLogger implements CompensableTransactionLogger, TransactionArchiveSerializer {
 	private File directory;
@@ -54,18 +59,27 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		File storageFile = new File(this.directory, txid);
 		if (entry != null) {
 			RandomAccessFile raf = entry.getAccessFile();
-			MappedByteBuffer buf = entry.getByteBuffer();
-			buf.position(0);
-			buf.put((byte) 0);
+			FileChannel channel = entry.getFileChannel();
 			try {
-				raf.close();
+				ByteBuffer buffer = ByteBuffer.allocate(1);
+				buffer.put((byte) 0);
+				buffer.flip();
+
+				channel.position(0);
+				channel.write(buffer);
 			} catch (IOException ex) {
 				// ignore
+			} finally {
+				try {
+					raf.close();
+				} catch (IOException ignore) {
+					// ignore
+				}
 			}
 		}
 
 		try {
-			if (storageFile.delete()) {
+			if (storageFile.delete() == false) {
 				storageFile.deleteOnExit();
 			}
 		} catch (RuntimeException ex) {
@@ -99,36 +113,168 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		if (entry == null) {
 			String txid = ByteUtils.byteArrayToString(xid.getGlobalTransactionId());
 			RandomAccessFile raf = null;
-			MappedByteBuffer buf = null;
+			FileChannel channel = null;
 			try {
 				File storageFile = new File(this.directory, txid);
 				raf = new RandomAccessFile(storageFile, "rw");
-				buf = raf.getChannel().map(MapMode.READ_WRITE, 0, raf.length());
+				channel = raf.getChannel();
 				entry = new SimpleTransactionLoggerEntry();
 				entry.setAccessFile(raf);
-				entry.setByteBuffer(buf);
+				entry.setFileChannel(channel);
 				this.transactions.put(xid, entry);
 			} catch (IOException ex) {
-				if (raf != null) {
-					try {
-						raf.close();
-					} catch (IOException otherEx) {
-						// ignore
-					}
-				} // if (raf != null)
+				// ignore
 				return;
 			}
 		}
 
-		MappedByteBuffer buf = entry.getByteBuffer();
-		buf.position(0);
+		ByteBuffer buf = ByteBuffer.allocate(bytes.length + 5);
 		buf.put((byte) 1);
 		buf.putInt(bytes.length);
 		buf.put(bytes);
+		buf.flip();
+		FileChannel channel = entry.getFileChannel();
+		try {
+			channel.write(buf);
+		} catch (IOException ex) {
+			// ignore
+		}
 	}
 
 	public CompensableTransactionArchive deserialize(byte[] bytes) throws IOException {
-		return null;
+		ByteBuffer buffer = ByteBuffer.allocate(bytes.length);
+		buffer.put(bytes);
+		buffer.flip();
+
+		CompensableTransactionArchive archive = new CompensableTransactionArchive();
+		byte[] transactionId = new byte[XidFactory.GLOBAL_TRANSACTION_LENGTH];
+		buffer.get(transactionId);
+
+		XidFactory xidFactory = TransactionConfigurator.getInstance().getXidFactory();
+		TransactionXid globalXid = xidFactory.createGlobalXid(transactionId);
+		archive.setXid(globalXid);
+
+		byte transactionStatus = buffer.get();
+		byte compensableStatus = buffer.get();
+		byte coordinator = buffer.get();
+
+		archive.setStatus(transactionStatus);
+		// archive.setCompensable(true);
+		archive.setCoordinator(coordinator != 0);
+		archive.setCompensableStatus(compensableStatus);
+
+		byte compensableNumber = buffer.get();
+		for (int i = 0; i < compensableNumber; i++) {
+			CompensableArchive compensableArchive = null;
+			compensableArchive = this.deserializeCompensableArchive(globalXid, buffer);
+			archive.getCompensables().add(compensableArchive);
+		}
+
+		byte resourceNumber = buffer.get();
+		for (int i = 0; i < resourceNumber; i++) {
+			XAResourceArchive resourceArchive = null;
+			resourceArchive = this.deserializeXAResourceArchive(globalXid, buffer);
+			archive.getRemoteResources().add(resourceArchive);
+		}
+
+		return archive;
+	}
+
+	private CompensableArchive deserializeCompensableArchive(TransactionXid globalXid, ByteBuffer buffer) {
+		CompensableArchive archive = new CompensableArchive();
+		byte[] transactiondId = new byte[XidFactory.GLOBAL_TRANSACTION_LENGTH];
+		byte[] branchQualifier = new byte[XidFactory.BRANCH_QUALIFIER_LENGTH];
+		buffer.get(transactiondId);
+		buffer.get(branchQualifier);
+
+		byte coordinator = buffer.get();
+		byte confirmed = buffer.get();
+		byte cancelled = buffer.get();
+
+		archive.setCoordinator(coordinator != 0);
+		archive.setConfirmed(confirmed != 0);
+		archive.setCancelled(cancelled != 0);
+
+		XidFactory xidFactory = TransactionConfigurator.getInstance().getXidFactory();
+		TransactionXid branchXid = xidFactory.createBranchXid(globalXid, branchQualifier);
+		archive.setXid(branchXid);
+
+		// CompensableInvocation compensable = new CompensableInvocation();
+		// int lengthOfConfirmable = buffer.getInt();
+		// byte[] confirmables = new byte[lengthOfConfirmable];
+		// buffer.get(confirmables);
+		//
+		// int lengthOfCancellable = buffer.getInt();
+		// byte[] cancellables = new byte[lengthOfCancellable];
+		// buffer.get(cancellables);
+		//
+		// String confirmable = new String(confirmables);
+		// String cancellable = new String(cancellables);
+		//
+		// int lengthOfClass = buffer.getInt();
+		// byte[] classes = new byte[lengthOfClass];
+		// buffer.get(classes);
+		// String declaring = new String(classes);
+		//
+		// int lengthOfMethod = buffer.getInt();
+		// byte[] methods = new byte[lengthOfMethod];
+		// buffer.get(methods);
+		// String methodName = new String(methods);
+		//
+		// int lengthOfParamTypes = buffer.getInt();
+		// byte[] paramTypes = new byte[lengthOfParamTypes];
+		// buffer.get(paramTypes);
+		// Class<?>[] parameterTypes = (Class<?>[]) this.deserializeObject(paramTypes);
+		//
+		// int lengthOfargs = buffer.getInt();
+		// byte[] argsByteArray = new byte[lengthOfargs];
+		// buffer.get(argsByteArray);
+		// Object[] args = (Object[]) this.deserializeObject(argsByteArray);
+
+		int length = buffer.getInt();
+		byte[] bytes = new byte[length];
+		buffer.get(bytes);
+		CompensableInvocation compensable = (CompensableInvocation) this.deserializeObject(bytes);
+		archive.setCompensable(compensable);
+
+		return archive;
+
+	}
+
+	private XAResourceArchive deserializeXAResourceArchive(TransactionXid globalXid, ByteBuffer buffer)
+			throws IOException {
+
+		int length = buffer.getInt();
+		int lengthOfidentifier = length - XidFactory.BRANCH_QUALIFIER_LENGTH - 4;
+
+		byte[] branchQualifier = new byte[XidFactory.BRANCH_QUALIFIER_LENGTH];
+		buffer.get(branchQualifier);
+		int branchVote = buffer.get();
+		int committedValue = buffer.get();
+		int rolledbackValue = buffer.get();
+		int heuristicValue = buffer.get();
+		byte[] identifiers = new byte[lengthOfidentifier];
+		buffer.get(identifiers);
+
+		XAResourceArchive resourceArchive = new XAResourceArchive();
+		XidFactory xidFactory = TransactionConfigurator.getInstance().getXidFactory();
+		TransactionXid branchXid = xidFactory.createBranchXid(globalXid, branchQualifier);
+		resourceArchive.setXid(branchXid);
+		resourceArchive.setVote(branchVote);
+		resourceArchive.setRolledback(rolledbackValue != 0);
+		resourceArchive.setCommitted(committedValue != 0);
+		resourceArchive.setHeuristic(heuristicValue != 0);
+		if (branchVote == XAResource.XA_RDONLY) {
+			resourceArchive.setCompleted(true);
+		} else if (resourceArchive.isCommitted() || resourceArchive.isRolledback()) {
+			resourceArchive.setCompleted(true);
+		}
+
+		String identifier = new String(identifiers);
+		XAResourceDescriptor descriptor = this.resourceSerializer.deserialize(identifier);
+		resourceArchive.setDescriptor(descriptor);
+
+		return resourceArchive;
 	}
 
 	public byte[] serialize(TransactionArchive transactionArchive) throws IOException {
@@ -175,28 +321,95 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		return byteArray;
 	}
 
-	private void serializeCompensableArchive(ByteBuffer buffer, CompensableArchive compensableArchive) {
-		compensableArchive.getCompensable();
-		compensableArchive.getXid();
+	private byte[] serializeObject(Serializable obj) {
+		return new byte[0];
+	}
+
+	private Serializable deserializeObject(byte[] bytes) {
+		return null;
+	}
+
+	private void serializeCompensableArchive(ByteBuffer buffer, CompensableArchive archive) {
+		Xid xid = archive.getXid();
+		byte[] transactiondId = new byte[XidFactory.GLOBAL_TRANSACTION_LENGTH];
+		byte[] branchQualifier = new byte[XidFactory.BRANCH_QUALIFIER_LENGTH];
+		byte[] global = xid.getGlobalTransactionId();
+		byte[] branch = xid.getBranchQualifier();
+		System.arraycopy(global, 0, transactiondId, 0, global.length);
+		if (branch != null) {
+			System.arraycopy(branch, 0, branchQualifier, 0, branch.length);
+		}
+		buffer.put(transactiondId);
+		buffer.put(branchQualifier);
+
+		boolean coordinator = archive.isCoordinator();
+		boolean confirmed = archive.isConfirmed();
+		boolean cancelled = archive.isCancelled();
+
+		buffer.put(coordinator ? (byte) 1 : (byte) 0);
+		buffer.put(confirmed ? (byte) 1 : (byte) 0);
+		buffer.put(cancelled ? (byte) 1 : (byte) 0);
+
+		CompensableInvocation compensable = archive.getCompensable();
+		// String confirmable = compensable.getConfirmableKey();
+		// String cancellable = compensable.getCancellableKey();
+		//
+		// int lengthOfConfirmable = confirmable.getBytes().length;
+		// int lengthOfCancellable = cancellable.getBytes().length;
+		//
+		// buffer.putInt(lengthOfConfirmable);
+		// buffer.put(confirmable.getBytes());
+		//
+		// buffer.putInt(lengthOfCancellable);
+		// buffer.put(cancellable.getBytes());
+		//
+		// Method method = compensable.getMethod();
+		// String declaring = method.getDeclaringClass().getName();
+		// int lengthOfClass = declaring.getBytes().length;
+		// buffer.putInt(lengthOfClass);
+		// buffer.put(declaring.getBytes());
+		//
+		// String methodName = method.getName();
+		// int lengthOfMethod = methodName.getBytes().length;
+		// buffer.putInt(lengthOfMethod);
+		// buffer.put(methodName.getBytes());
+		//
+		// Class<?>[] parameterTypes = method.getParameterTypes();
+		// byte[] paramTypes = this.serializeObject(parameterTypes);
+		// buffer.putInt(paramTypes.length);
+		// buffer.put(paramTypes);
+		//
+		// Object[] args = compensable.getArgs();
+		// byte[] argsByteArray = this.serializeObject(args);
+		// buffer.putInt(argsByteArray.length);
+		// buffer.put(argsByteArray);
+
+		byte[] bytes = this.serializeObject(compensable);
+		buffer.putInt(bytes.length);
+		buffer.put(bytes);
+
 	}
 
 	private void serializeXAResourceArchive(ByteBuffer buffer, XAResourceArchive resourceArchive) {
 		XAResourceDescriptor descriptor = resourceArchive.getDescriptor();
-		byte descriptorId = (byte) descriptor.getDescriptorId();
+		String identifier = descriptor.getIdentifier();
 		Xid branchXid = resourceArchive.getXid();
 
 		byte[] branchQualifier = branchXid.getBranchQualifier();
+		byte[] identifiers = identifier.getBytes();
 		byte branchVote = (byte) resourceArchive.getVote();
 		byte rolledback = resourceArchive.isRolledback() ? (byte) 1 : (byte) 0;
 		byte committed = resourceArchive.isCommitted() ? (byte) 1 : (byte) 0;
 		byte heuristic = resourceArchive.isHeuristic() ? (byte) 1 : (byte) 0;
 
+		int length = branchQualifier.length + identifiers.length + 4;
+		buffer.putInt(length);
 		buffer.put(branchQualifier);
-		buffer.put(descriptorId);
 		buffer.put(branchVote);
 		buffer.put(committed);
 		buffer.put(rolledback);
 		buffer.put(heuristic);
+		buffer.put(identifiers);
 	}
 
 	public void updateCompensable(CompensableArchive archive) {

@@ -35,6 +35,7 @@
 	<tx:annotation-driven transaction-manager="transactionManager" />
 
 	<bean id="bytetccXidFactory" class="org.bytesoft.bytetcc.xa.XidFactoryImpl" />
+	<bean id="bytetccTransactionLogger" class="org.bytesoft.bytetcc.logger.SimpleTransactionLogger" init-method="initialize" />
 
 	<bean id="bytetccTransactionRepository" class="org.bytesoft.bytetcc.common.TransactionRepository" />
 	<bean id="bytetccTransactionConfigurator" class="org.bytesoft.bytetcc.common.TransactionConfigurator"
@@ -44,8 +45,9 @@
 		<property name="transactionRepository" ref="bytetccTransactionRepository" />
 		<!-- <property name="transactionTimer" ref="bytetccTransactionManager" /> -->
 		<property name="compensableInvocationExecutor" ref="compensableInvocationExecutor" />
-		<!-- <property name="transactionLogger" ref="bytetccTransactionLogger" /> <property name="transactionInterceptor" ref="bytetccTransactionInterceptor" 
-			/> <property name="transactionRecovery" ref="bytetccTransactionRecovery" /> -->
+		<property name="transactionLogger" ref="bytetccTransactionLogger" />
+		<!-- <property name="transactionInterceptor" ref="bytetccTransactionInterceptor" /> <property name="transactionRecovery" 
+			ref="bytetccTransactionRecovery" /> -->
 	</bean>
 
 </beans>

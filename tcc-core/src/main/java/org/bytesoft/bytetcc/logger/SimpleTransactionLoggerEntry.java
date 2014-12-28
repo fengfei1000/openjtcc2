@@ -1,23 +1,23 @@
 package org.bytesoft.bytetcc.logger;
 
 import java.io.RandomAccessFile;
-import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 
 public class SimpleTransactionLoggerEntry {
 
-	private MappedByteBuffer byteBuffer;
+	private FileChannel fileChannel;
 	private RandomAccessFile accessFile;
-
-	public MappedByteBuffer getByteBuffer() {
-		return byteBuffer;
-	}
-
-	public void setByteBuffer(MappedByteBuffer byteBuffer) {
-		this.byteBuffer = byteBuffer;
-	}
 
 	public RandomAccessFile getAccessFile() {
 		return accessFile;
+	}
+
+	public FileChannel getFileChannel() {
+		return fileChannel;
+	}
+
+	public void setFileChannel(FileChannel fileChannel) {
+		this.fileChannel = fileChannel;
 	}
 
 	public void setAccessFile(RandomAccessFile accessFile) {

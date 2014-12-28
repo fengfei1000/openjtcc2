@@ -6,9 +6,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 public class SpringCompensableInvocation extends CompensableInvocationImpl implements ApplicationContextAware {
+	private static final long serialVersionUID = 1L;
 	private static final Logger logger = Logger.getLogger("bytetcc");
+
 	private Class<?> interfaceClass;
-	private ApplicationContext applicationContext;
+	private transient ApplicationContext applicationContext;
 
 	public Object getCancellableObject() {
 		String cancellableKey = this.getCancellableKey();
