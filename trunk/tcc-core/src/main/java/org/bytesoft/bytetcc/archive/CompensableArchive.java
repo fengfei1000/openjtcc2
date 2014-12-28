@@ -24,6 +24,7 @@ public class CompensableArchive {
 
 	private Xid xid;
 	private CompensableInvocation compensable;
+	private boolean coordinator;
 	private boolean confirmed;
 	private boolean cancelled;
 
@@ -73,6 +74,14 @@ public class CompensableArchive {
 
 	public void setCancelled(boolean cancelled) {
 		this.cancelled = cancelled;
+	}
+
+	public boolean isCoordinator() {
+		return coordinator;
+	}
+
+	public void setCoordinator(boolean coordinator) {
+		this.coordinator = coordinator;
 	}
 
 }

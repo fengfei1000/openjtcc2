@@ -13,12 +13,13 @@ import org.bytesoft.transaction.xa.TransactionXid;
 
 public class CompensableInvocationImpl extends CompensableSynchronization implements CompensableContext,
 		CompensableInvocation {
+	private static final long serialVersionUID = 1L;
 
 	private transient Object identifier;
 	private transient Method method;
 	private Object[] args;
-	private transient String confirmableKey;
-	private transient String cancellableKey;
+	private String confirmableKey;
+	private String cancellableKey;
 	private Serializable variable;
 	private transient CompensableTccTransaction transaction;
 

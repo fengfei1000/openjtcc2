@@ -76,6 +76,7 @@ public class CompensableTccTransaction extends CompensableTransaction {
 				CompensableArchive archive = new CompensableArchive();
 				archive.setXid(currentXid);
 				archive.setCompensable(compensable);
+				archive.setCoordinator(true);
 				this.coordinatorArchives.add(archive);
 			} else {
 				CompensableArchive archive = new CompensableArchive();
@@ -212,8 +213,19 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public CompensableTransactionArchive getTransactionArchive() {
+		TransactionContext transactionContext = this.getTransactionContext();
 		CompensableTransactionArchive transactionArchive = new CompensableTransactionArchive();
-		// TODO
+		transactionArchive.setXid(transactionContext.getGlobalXid());
+		transactionArchive.setStatus(this.transactionStatus);
+		transactionArchive.setCompensableStatus(this.compensableStatus);
+		transactionArchive.setCompensable(transactionContext.isCompensable());
+		transactionArchive.setCoordinator(transactionContext.isCoordinator());
+
+		transactionArchive.getCompensables().addAll(this.coordinatorArchives);
+		transactionArchive.getCompensables().addAll(this.participantArchives);
+
+		transactionArchive.getRemoteResources().addAll(this.resourceArchives.values());
+
 		return transactionArchive;
 	}
 

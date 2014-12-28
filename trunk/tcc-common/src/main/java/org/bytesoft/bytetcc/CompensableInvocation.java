@@ -1,8 +1,9 @@
 package org.bytesoft.bytetcc;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 
-public interface CompensableInvocation {
+public interface CompensableInvocation extends Serializable {
 
 	public Method getMethod();
 
