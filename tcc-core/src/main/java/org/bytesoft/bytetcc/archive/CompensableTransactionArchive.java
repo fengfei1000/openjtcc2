@@ -15,21 +15,26 @@
  */
 package org.bytesoft.bytetcc.archive;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.bytesoft.transaction.TransactionContext;
-import org.bytesoft.transaction.xa.TransactionXid;
+import org.bytesoft.transaction.archive.TransactionArchive;
 
-public interface TransactionArchive {
+public class CompensableTransactionArchive extends TransactionArchive {
 
-	public int getTransactionStatus();
+	private int compensableStatus;
+	private final List<CompensableArchive> compensables = new ArrayList<CompensableArchive>();
 
-	public Map<TransactionXid, CompensableArchive> getCompensableArchiveMap();
+	public int getCompensableStatus() {
+		return compensableStatus;
+	}
 
-	public TransactionContext getTransactionContext();
+	public void setCompensableStatus(int compensableStatus) {
+		this.compensableStatus = compensableStatus;
+	}
 
-	public void setTransactionStatus(int transactionStatus);
-
-	public void setTransactionContext(TransactionContext context);
+	public List<CompensableArchive> getCompensables() {
+		return compensables;
+	}
 
 }

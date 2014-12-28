@@ -25,7 +25,6 @@ import org.bytesoft.bytejta.utils.ByteUtils;
 public abstract class TransactionXid implements Xid, Serializable {
 	private static final long serialVersionUID = 1L;
 
-	protected final int formatId = XidFactory.XID_FORMAT_ID;
 	protected byte[] globalTransactionId;
 	protected byte[] branchQualifier;
 
@@ -49,16 +48,14 @@ public abstract class TransactionXid implements Xid, Serializable {
 		this.branchQualifier = branch;
 	}
 
+	public abstract int getFormatId();
+
 	public abstract TransactionXid getGlobalXid();
 
 	public abstract TransactionXid createBranchXid();
 
 	public byte[] getBranchQualifier() {
 		return this.branchQualifier;
-	}
-
-	public int getFormatId() {
-		return this.formatId;
 	}
 
 	public byte[] getGlobalTransactionId() {
@@ -68,7 +65,7 @@ public abstract class TransactionXid implements Xid, Serializable {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + formatId;
+		result = prime * result + this.getFormatId();
 		result = prime * result + Arrays.hashCode(branchQualifier);
 		result = prime * result + Arrays.hashCode(globalTransactionId);
 		return result;
@@ -83,7 +80,7 @@ public abstract class TransactionXid implements Xid, Serializable {
 			return false;
 		}
 		TransactionXid other = (TransactionXid) obj;
-		if (formatId != other.formatId) {
+		if (this.getFormatId() != other.getFormatId()) {
 			return false;
 		} else if (Arrays.equals(branchQualifier, other.branchQualifier) == false) {
 			return false;
@@ -96,7 +93,7 @@ public abstract class TransactionXid implements Xid, Serializable {
 	public String toString() {
 		String global = this.globalTransactionId == null ? null : ByteUtils.byteArrayToString(this.globalTransactionId);
 		String branch = this.branchQualifier == null ? null : ByteUtils.byteArrayToString(this.branchQualifier);
-		return String.format("%s-%s-%s", this.formatId, global, branch);
+		return String.format("%s-%s-%s", this.getFormatId(), global, branch);
 	}
 
 }

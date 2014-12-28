@@ -34,10 +34,12 @@
 	</bean>
 	<tx:annotation-driven transaction-manager="transactionManager" />
 
+	<bean id="bytetccXidFactory" class="org.bytesoft.bytetcc.xa.XidFactoryImpl" />
+
 	<bean id="bytetccTransactionRepository" class="org.bytesoft.bytetcc.common.TransactionRepository" />
 	<bean id="bytetccTransactionConfigurator" class="org.bytesoft.bytetcc.common.TransactionConfigurator"
 		factory-method="getInstance">
-		<property name="xidFactory" ref="bytejtaXidFactory" />
+		<property name="xidFactory" ref="bytetccXidFactory" />
 		<property name="transactionManager" ref="bytetccTransactionManager" />
 		<property name="transactionRepository" ref="bytetccTransactionRepository" />
 		<!-- <property name="transactionTimer" ref="bytetccTransactionManager" /> -->
