@@ -38,7 +38,9 @@
 	<bean id="bytetccTransactionLogger" class="org.bytesoft.bytetcc.supports.logger.SimpleTransactionLogger"
 		init-method="initialize" />
 
-	<bean id="bytetccTransactionSkeleton" class="org.bytesoft.bytetcc.xa.CompensableTransactionSkeleton" />
+	<bean id="bytejtaTransactionSkeleton" class="org.bytesoft.bytetcc.xa.CompensableJtaTransactionSkeleton" />
+	<bean id="bytetccTransactionSkeleton" class="org.bytesoft.bytetcc.xa.CompensableTccTransactionSkeleton" />
+	<bean id="bytetccTransactionSkeletonDispatcher" class="org.bytesoft.bytetcc.xa.CompensableTransactionSkeletonDispatcher" />
 	<bean id="bytetccTransactionRepository" class="org.bytesoft.bytetcc.common.TransactionRepository" />
 	<bean id="bytetccTransactionConfigurator" class="org.bytesoft.bytetcc.common.TransactionConfigurator"
 		factory-method="getInstance">
@@ -49,7 +51,7 @@
 		<property name="transactionLogger" ref="bytetccTransactionLogger" />
 		<!-- <property name="transactionInterceptor" ref="bytetccTransactionInterceptor" /> <property name="transactionRecovery" 
 			ref="bytetccTransactionRecovery" /> -->
-		<property name="transactionSkeleton" ref="bytetccTransactionSkeleton" />
+		<property name="transactionSkeleton" ref="bytetccTransactionSkeletonDispatcher" />
 	</bean>
 
 </beans>

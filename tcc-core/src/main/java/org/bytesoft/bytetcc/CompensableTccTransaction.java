@@ -171,7 +171,7 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		return this.jtaTransaction.enlistResource(xaRes);
 	}
 
-	public int getStatus() throws SystemException {
+	public int getStatus() /* throws SystemException */{
 		return this.transactionStatus;
 	}
 

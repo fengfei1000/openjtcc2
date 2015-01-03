@@ -86,7 +86,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		}
 	}
 
-	private void beginJtaTransaction() throws NotSupportedException, SystemException {
+	public void beginJtaTransaction() throws NotSupportedException, SystemException {
 		if (this.getTransaction() != null) {
 			throw new NotSupportedException();
 		}
@@ -258,7 +258,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		}
 	}
 
-	private void internalCommitJtaTransaction() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
+	public void internalCommitJtaTransaction() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
 			SecurityException, IllegalStateException, SystemException {
 		CompensableTransaction transaction = this.associateds.remove(Thread.currentThread());
 		if (transaction == null) {
@@ -482,7 +482,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		}
 	}
 
-	private void internalRollbackJtaTransaction() throws IllegalStateException, SecurityException, SystemException {
+	public void internalRollbackJtaTransaction() throws IllegalStateException, SecurityException, SystemException {
 		CompensableTransaction transaction = this.associateds.remove(Thread.currentThread());
 		if (transaction == null) {
 			throw new IllegalStateException();
