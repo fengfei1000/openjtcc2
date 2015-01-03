@@ -1,5 +1,8 @@
-package org.bytesoft.bytetcc.logger;
+package org.bytesoft.bytetcc.supports.logger;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -14,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.apache.log4j.Logger;
 import org.bytesoft.bytejta.utils.ByteUtils;
 import org.bytesoft.bytetcc.CompensableInvocation;
 import org.bytesoft.bytetcc.archive.CompensableArchive;
@@ -28,7 +32,12 @@ import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XAResourceDescriptor;
 import org.bytesoft.transaction.xa.XidFactory;
 
+import com.caucho.hessian.io.HessianInput;
+import com.caucho.hessian.io.HessianOutput;
+
 public class SimpleTransactionLogger implements CompensableTransactionLogger, TransactionArchiveSerializer {
+	static final Logger logger = Logger.getLogger(SimpleTransactionLogger.class.getSimpleName());
+
 	private File directory;
 	private XAResourceSerializer resourceSerializer;
 	private final Map<Xid, SimpleTransactionLoggerEntry> transactions = new ConcurrentHashMap<Xid, SimpleTransactionLoggerEntry>();
@@ -68,12 +77,12 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 				channel.position(0);
 				channel.write(buffer);
 			} catch (IOException ex) {
-				// ignore
+				logger.error(ex.getMessage(), ex);
 			} finally {
 				try {
 					raf.close();
 				} catch (IOException ignore) {
-					// ignore
+					logger.debug(ignore.getMessage());
 				}
 			}
 		}
@@ -83,7 +92,7 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 				storageFile.deleteOnExit();
 			}
 		} catch (RuntimeException ex) {
-			// ignore
+			logger.error(ex.getMessage(), ex);
 		}
 
 	}
@@ -92,7 +101,29 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		return new ArrayList<TransactionArchive>();
 	}
 
-	public void updateResource(XAResourceArchive archive) {
+	public void updateResource(Xid transactionXid, XAResourceArchive resourceArchive) {
+		TransactionArchive archive = this.uploadTransaction(transactionXid);
+		List<XAResourceArchive> resources = archive.getRemoteResources();
+		XAResourceArchive target = null;
+		for (int i = 0; i < resources.size(); i++) {
+			XAResourceArchive object = resources.get(i);
+			if (object.equals(resourceArchive)) {
+				target = object;
+				break;
+			}
+		}
+		if (target == null) {
+			resources.add(resourceArchive);
+		} else {
+			target.setVote(resourceArchive.getVote());
+			target.setReadonly(resourceArchive.isReadonly());
+			target.setCommitted(resourceArchive.isCommitted());
+			target.setRolledback(resourceArchive.isRolledback());
+			target.setHeuristic(resourceArchive.isHeuristic());
+			target.setCompleted(resourceArchive.isCompleted());
+		}
+		this.updateTransaction(archive);
+
 	}
 
 	public void updateTransaction(TransactionArchive transactionArchive) {
@@ -105,7 +136,8 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		try {
 			bytes = this.serialize(archive);
 		} catch (IOException ex) {
-			return;// TODO
+			logger.error(ex.getMessage(), ex);
+			return;
 		}
 
 		Xid xid = archive.getXid();
@@ -123,7 +155,7 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 				entry.setFileChannel(channel);
 				this.transactions.put(xid, entry);
 			} catch (IOException ex) {
-				// ignore
+				logger.error(ex.getMessage(), ex);
 				return;
 			}
 		}
@@ -137,8 +169,42 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		try {
 			channel.write(buf);
 		} catch (IOException ex) {
-			// ignore
+			logger.error(ex.getMessage(), ex);
 		}
+	}
+
+	public CompensableTransactionArchive uploadTransaction(Xid xid) {
+		SimpleTransactionLoggerEntry entry = this.transactions.get(xid);
+		if (entry == null) {
+			return null;
+		}
+		FileChannel channel = entry.getFileChannel();
+		long pos = -1;
+		try {
+			pos = channel.position();
+			channel.position(0);
+			ByteBuffer buf = ByteBuffer.allocate((int) channel.size());
+			channel.read(buf);
+			buf.flip();
+			byte[] bytes = new byte[buf.capacity()];
+			buf.get(bytes);
+			return this.deserialize(bytes);
+		} catch (IOException ex) {
+			logger.error(ex.getMessage(), ex);
+			return null;
+		} catch (RuntimeException ex) {
+			logger.error(ex.getMessage(), ex);
+			return null;
+		} finally {
+			if (pos != -1) {
+				try {
+					channel.position(pos);
+				} catch (Exception ex) {
+					logger.debug(ex.getMessage());
+				}
+			}
+		}
+
 	}
 
 	public CompensableTransactionArchive deserialize(byte[] bytes) throws IOException {
@@ -241,8 +307,7 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 
 	}
 
-	private XAResourceArchive deserializeXAResourceArchive(TransactionXid globalXid, ByteBuffer buffer)
-			throws IOException {
+	private XAResourceArchive deserializeXAResourceArchive(TransactionXid globalXid, ByteBuffer buffer) throws IOException {
 
 		int length = buffer.getInt();
 		int lengthOfidentifier = length - XidFactory.BRANCH_QUALIFIER_LENGTH - 4;
@@ -322,11 +387,31 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 	}
 
 	private byte[] serializeObject(Serializable obj) {
-		return new byte[0];
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		HessianOutput ho = new HessianOutput(baos);
+		try {
+			ho.writeObject(obj);
+			return baos.toByteArray();
+		} catch (IOException ex) {
+			return new byte[0];
+		} finally {
+			this.closeIfRequired(baos);
+		}
+
 	}
 
 	private Serializable deserializeObject(byte[] bytes) {
-		return null;
+		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+		HessianInput hi = new HessianInput(bais);
+		Object result;
+		try {
+			result = hi.readObject();
+			return (Serializable) result;
+		} catch (IOException ex) {
+			return null;
+		} finally {
+			this.closeIfRequired(bais);
+		}
 	}
 
 	private void serializeCompensableArchive(ByteBuffer buffer, CompensableArchive archive) {
@@ -412,7 +497,35 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		buffer.put(identifiers);
 	}
 
-	public void updateCompensable(CompensableArchive archive) {
+	public void updateCompensable(Xid transactionXid, CompensableArchive archive) {
+		CompensableTransactionArchive transactionArchive = this.uploadTransaction(transactionXid);
+		List<CompensableArchive> compensables = transactionArchive.getCompensables();
+		CompensableArchive target = null;
+		for (int i = 0; i < compensables.size(); i++) {
+			CompensableArchive object = compensables.get(i);
+			if (object.equals(archive)) {
+				target = object;
+				break;
+			}
+		}
+		if (target == null) {
+			compensables.add(archive);
+		} else {
+			target.setCancelled(archive.isCancelled());
+			target.setConfirmed(archive.isConfirmed());
+		}
+		this.updateTransaction(transactionArchive);
+
+	}
+
+	private void closeIfRequired(Closeable closeable) {
+		if (closeable != null) {
+			try {
+				closeable.close();
+			} catch (IOException ex) {
+				logger.debug(ex.getMessage());
+			}
+		}
 	}
 
 	public File getDirectory() {

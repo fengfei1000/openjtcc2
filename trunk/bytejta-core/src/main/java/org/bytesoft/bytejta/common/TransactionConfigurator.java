@@ -1,5 +1,7 @@
 package org.bytesoft.bytejta.common;
 
+import javax.transaction.xa.XAResource;
+
 import org.bytesoft.bytejta.TransactionManagerImpl;
 import org.bytesoft.transaction.TransactionTimer;
 import org.bytesoft.transaction.logger.TransactionLogger;
@@ -19,6 +21,7 @@ public final class TransactionConfigurator {
 	private TransactionRepository transactionRepository;
 	private TransactionInterceptor transactionInterceptor;
 	private TransactionRecovery transactionRecovery;
+	private XAResource transactionSkeleton;
 
 	public static TransactionConfigurator getInstance() {
 		return instance;
@@ -138,7 +141,7 @@ public final class TransactionConfigurator {
 
 	public TransactionRecovery getTransactionRecovery() {
 		if (this == instance) {
-			return transactionRecovery;
+			return this.transactionRecovery;
 		} else {
 			return instance.getTransactionRecovery();
 		}
@@ -149,6 +152,22 @@ public final class TransactionConfigurator {
 			this.transactionRecovery = transactionRecovery;
 		} else {
 			instance.setTransactionRecovery(transactionRecovery);
+		}
+	}
+
+	public XAResource getTransactionSkeleton() {
+		if (this == instance) {
+			return this.transactionSkeleton;
+		} else {
+			return instance.getTransactionSkeleton();
+		}
+	}
+
+	public void setTransactionSkeleton(XAResource transactionSkeleton) {
+		if (this == instance) {
+			this.transactionSkeleton = transactionSkeleton;
+		} else {
+			instance.setTransactionSkeleton(transactionSkeleton);
 		}
 	}
 

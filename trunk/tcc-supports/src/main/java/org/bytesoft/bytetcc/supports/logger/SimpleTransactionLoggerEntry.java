@@ -1,4 +1,4 @@
-package org.bytesoft.bytetcc.logger;
+package org.bytesoft.bytetcc.supports.logger;
 
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;

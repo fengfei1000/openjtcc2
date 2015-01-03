@@ -23,8 +23,6 @@ import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.bytetcc.archive.CompensableTransactionArchive;
 import org.bytesoft.bytetcc.common.TransactionConfigurator;
 import org.bytesoft.bytetcc.supports.CompensableTransactionLogger;
-import org.bytesoft.bytetcc.xa.CompensableTccTransactionSkeleton;
-import org.bytesoft.bytetcc.xa.CompensableTransactionSkeleton;
 import org.bytesoft.transaction.RollbackRequiredException;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionListener;
@@ -45,7 +43,6 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	private int transactionStatus;
 	private int compensableStatus;
 	private CompensableJtaTransaction compensableJtaTransaction;
-	private final CompensableTccTransactionSkeleton skeleton = new CompensableTccTransactionSkeleton(this);
 	private final List<CompensableArchive> coordinatorArchives = new ArrayList<CompensableArchive>();
 	private final List<CompensableArchive> participantArchives = new ArrayList<CompensableArchive>();
 	private final Map<Xid, XAResourceArchive> resourceArchives = new ConcurrentHashMap<Xid, XAResourceArchive>();
@@ -123,6 +120,7 @@ public class CompensableTccTransaction extends CompensableTransaction {
 
 	public synchronized void remoteConfirm() throws SystemException, RemoteException {
 
+		TransactionXid globalXid = this.transactionContext.getGlobalXid();
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		CompensableTransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
 
@@ -157,15 +155,14 @@ public class CompensableTccTransaction extends CompensableTransaction {
 					}
 				}
 
-				transactionLogger.updateResource(archive);
+				transactionLogger.updateResource(globalXid, archive);
 			}
 
 		} // end-while (resourceItr.hasNext())
 
 	}
 
-	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException,
-			SystemException {
+	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException, SystemException {
 		return this.jtaTransaction.delistResource(xaRes, flag);
 	}
 
@@ -182,8 +179,8 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		this.transactionStatus = transactionStatus;
 	}
 
-	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException,
-			IllegalStateException, SystemException {
+	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException, IllegalStateException,
+			SystemException {
 		// TODO
 		this.jtaTransaction.registerSynchronization(sync);
 	}
@@ -333,10 +330,6 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
 			this.completeFailureInRollingback(optcode);
 		}
-	}
-
-	public CompensableTransactionSkeleton getSkeleton() {
-		return this.skeleton;
 	}
 
 	public CompensableJtaTransaction getCompensableJtaTransaction() {

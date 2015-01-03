@@ -96,7 +96,7 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 		return archives;
 	}
 
-	public void updateResource(XAResourceArchive archive) {
+	public void updateResource(Xid transactionXid, XAResourceArchive archive) {
 		// Not support yet.
 	}
 
@@ -198,8 +198,7 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 		return archive;
 	}
 
-	private XAResourceArchive deserializeXAResourceArchive(TransactionXid globalXid, ByteBuffer buffer)
-			throws IOException {
+	private XAResourceArchive deserializeXAResourceArchive(TransactionXid globalXid, ByteBuffer buffer) throws IOException {
 		byte[] branchQualifier = new byte[XidFactory.BRANCH_QUALIFIER_LENGTH];
 		buffer.get(branchQualifier);
 		int descriptorId = buffer.get();

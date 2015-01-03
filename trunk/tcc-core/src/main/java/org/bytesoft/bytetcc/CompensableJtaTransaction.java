@@ -8,21 +8,18 @@ import javax.transaction.SystemException;
 import javax.transaction.xa.XAResource;
 
 import org.bytesoft.bytejta.TransactionImpl;
-import org.bytesoft.bytetcc.xa.CompensableJtaTransactionSkeleton;
-import org.bytesoft.bytetcc.xa.CompensableTransactionSkeleton;
 import org.bytesoft.transaction.TransactionContext;
 
 public class CompensableJtaTransaction extends CompensableTransaction {
 
 	private CompensableTccTransaction compensableTccTransaction;
-	private final CompensableJtaTransactionSkeleton skeleton = new CompensableJtaTransactionSkeleton(this);
 
 	public CompensableJtaTransaction(TransactionContext transactionContext) {
 		super(transactionContext);
 	}
 
-	public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
-			SecurityException, IllegalStateException, SystemException {
+	public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+			IllegalStateException, SystemException {
 		this.jtaTransaction.commit();
 	}
 
@@ -38,8 +35,7 @@ public class CompensableJtaTransaction extends CompensableTransaction {
 		return this.jtaTransaction.getStatus();
 	}
 
-	public void registerSynchronization(Synchronization sync) throws RollbackException, IllegalStateException,
-			SystemException {
+	public void registerSynchronization(Synchronization sync) throws RollbackException, IllegalStateException, SystemException {
 		this.jtaTransaction.registerSynchronization(sync);
 	}
 
@@ -97,10 +93,6 @@ public class CompensableJtaTransaction extends CompensableTransaction {
 
 	public void setRollbackOnly() throws IllegalStateException, SystemException {
 		this.jtaTransaction.setRollbackOnly();
-	}
-
-	public CompensableTransactionSkeleton getSkeleton() {
-		return this.skeleton;
 	}
 
 	public TransactionImpl getJtaTransaction() {

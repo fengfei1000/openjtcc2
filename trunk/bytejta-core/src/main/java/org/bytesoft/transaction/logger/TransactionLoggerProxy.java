@@ -2,6 +2,8 @@ package org.bytesoft.transaction.logger;
 
 import java.util.List;
 
+import javax.transaction.xa.Xid;
+
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.archive.XAResourceArchive;
 
@@ -25,8 +27,8 @@ public class TransactionLoggerProxy implements TransactionLogger {
 		return delegate.getTransactionArchiveList();
 	}
 
-	public void updateResource(XAResourceArchive archive) {
-		delegate.updateResource(archive);
+	public void updateResource(Xid transactionXid, XAResourceArchive archive) {
+		delegate.updateResource(transactionXid, archive);
 	}
 
 	public void setDelegate(TransactionLogger delegate) {

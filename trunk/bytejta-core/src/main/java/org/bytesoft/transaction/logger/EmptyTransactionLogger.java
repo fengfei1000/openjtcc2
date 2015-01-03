@@ -3,6 +3,8 @@ package org.bytesoft.transaction.logger;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.transaction.xa.Xid;
+
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.archive.XAResourceArchive;
 
@@ -21,7 +23,7 @@ public class EmptyTransactionLogger implements TransactionLogger {
 		return new ArrayList<TransactionArchive>();
 	}
 
-	public void updateResource(XAResourceArchive archive) {
+	public void updateResource(Xid transactionXid, XAResourceArchive archive) {
 	}
 
 }

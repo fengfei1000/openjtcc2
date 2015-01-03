@@ -41,6 +41,7 @@
 		<constructor-arg value="bytejta/bytejta.dat" />
 	</bean>
 
+	<bean id="bytejtaTransactionSkeleton" class="org.bytesoft.bytejta.xa.TransactionSkeleton" />
 	<bean id="bytejtaTransactionRecovery" class="org.bytesoft.bytejta.TransactionRecoveryImpl" />
 	<bean id="bytejtaTransactionRepository" class="org.bytesoft.bytejta.common.TransactionRepository" />
 	<bean id="bytejtaTransactionInterceptor" class="org.bytesoft.transaction.supports.rpc.TransactionInterceptorImpl" />
@@ -53,6 +54,7 @@
 		<property name="transactionLogger" ref="bytejtaTransactionLogger" />
 		<property name="transactionInterceptor" ref="bytejtaTransactionInterceptor" />
 		<property name="transactionRecovery" ref="bytejtaTransactionRecovery" />
+		<property name="transactionSkeleton" ref="bytejtaTransactionSkeleton" />
 	</bean>
 
 </beans>
