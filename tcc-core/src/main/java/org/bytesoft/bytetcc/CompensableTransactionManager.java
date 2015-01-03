@@ -145,7 +145,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		TransactionXid branchXid = xidFactory.createBranchXid(globalXid);
 		transactionContext.setCurrentXid(branchXid);
 
-		CompensableTransaction transaction = new CompensableTccTransaction(transactionContext);
+		CompensableTccTransaction transaction = new CompensableTccTransaction(transactionContext);
 		TransactionRepository transactionRepository = configurator.getTransactionRepository();
 
 		TransactionContext jtaTransactionContext = transactionContext.clone();
@@ -170,8 +170,8 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		this.associateds.put(Thread.currentThread(), transaction);
 		transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
 
-		// CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
-		// transactionLogger.createTransaction(archive);
+		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+		transactionLogger.createTransaction(transaction.getTransactionArchive());
 	}
 
 	public void propagationBegin(TransactionContext transactionContext) throws NotSupportedException, SystemException {
@@ -187,8 +187,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 		TransactionXid propagationXid = transactionContext.getCurrentXid();
 		TransactionXid globalXid = propagationXid.getGlobalXid();
-		CompensableTccTransaction transaction = (CompensableTccTransaction) transactionRepository
-				.getTransaction(globalXid);
+		CompensableTccTransaction transaction = (CompensableTccTransaction) transactionRepository.getTransaction(globalXid);
 
 		TransactionContext jtaTransactionContext = transactionContext.clone();
 
@@ -244,8 +243,8 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 	}
 
-	public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
-			SecurityException, IllegalStateException, SystemException {
+	public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+			IllegalStateException, SystemException {
 		CompensableTransaction transaction = this.associateds.remove(Thread.currentThread());
 		if (transaction == null) {
 			throw new IllegalStateException();
@@ -259,8 +258,8 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		}
 	}
 
-	private void internalCommitJtaTransaction() throws RollbackException, HeuristicMixedException,
-			HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
+	private void internalCommitJtaTransaction() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
+			SecurityException, IllegalStateException, SystemException {
 		CompensableTransaction transaction = this.associateds.remove(Thread.currentThread());
 		if (transaction == null) {
 			throw new IllegalStateException();
@@ -271,15 +270,13 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		this.commitJtaTransaction((CompensableJtaTransaction) transaction);
 	}
 
-	public void commitJtaTransaction(CompensableJtaTransaction transaction) throws RollbackException,
-			HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException,
-			SystemException {
+	public void commitJtaTransaction(CompensableJtaTransaction transaction) throws RollbackException, HeuristicMixedException,
+			HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
 		this.jtaTransactionManager.commit();
 	}
 
-	public void commitTccTransaction(CompensableTccTransaction transaction) throws RollbackException,
-			HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException,
-			SystemException {
+	public void commitTccTransaction(CompensableTccTransaction transaction) throws RollbackException, HeuristicMixedException,
+			HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
 
 		if (transaction == null) {
 			throw new IllegalStateException();
@@ -303,7 +300,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		CompensableTransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
 
 		transaction.setTransactionStatus(Status.STATUS_PREPARING);
-		transactionLogger.createTransaction(transaction.getTransactionArchive());
+		transactionLogger.updateTransaction(transaction.getTransactionArchive());
 
 		// step1: commit try-phase-transaction
 		try {
@@ -496,13 +493,13 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		this.rollbackJtaTransaction((CompensableJtaTransaction) transaction);
 	}
 
-	public void rollbackJtaTransaction(CompensableJtaTransaction transaction) throws IllegalStateException,
-			SecurityException, SystemException {
+	public void rollbackJtaTransaction(CompensableJtaTransaction transaction) throws IllegalStateException, SecurityException,
+			SystemException {
 		this.jtaTransactionManager.rollback();
 	}
 
-	public void rollbackTccTransaction(CompensableTccTransaction transaction) throws IllegalStateException,
-			SecurityException, SystemException {
+	public void rollbackTccTransaction(CompensableTccTransaction transaction) throws IllegalStateException, SecurityException,
+			SystemException {
 
 		if (transaction == null) {
 			throw new IllegalStateException();

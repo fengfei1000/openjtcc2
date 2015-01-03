@@ -21,18 +21,15 @@ import java.lang.reflect.Proxy;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.transaction.xa.Xid;
+
 import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.transaction.logger.TransactionLogger;
 
 public interface CompensableTransactionLogger extends TransactionLogger {
 
 	/* compensable */
-	public void updateCompensable(CompensableArchive archive);
-
-	// public void enlistCompensable(CompensableArchive archive);
-	// public void delistCompensable(CompensableArchive archive);
-	// public void confirmCompensable(CompensableArchive archive);
-	// public void cancelCompensable(CompensableArchive archive);
+	public void updateCompensable(Xid transactionXid, CompensableArchive archive);
 
 	/* default transaction logger */
 	public static CompensableTransactionLogger defaultTransactionLogger = NullTransactionLoggerHanlder
@@ -61,8 +58,7 @@ public interface CompensableTransactionLogger extends TransactionLogger {
 		}
 
 		public static CompensableTransactionLogger getNullTransactionLogger() {
-			return (CompensableTransactionLogger) Proxy.newProxyInstance(
-					CompensableTransactionLogger.class.getClassLoader(),
+			return (CompensableTransactionLogger) Proxy.newProxyInstance(CompensableTransactionLogger.class.getClassLoader(),
 					new Class[] { CompensableTransactionLogger.class }, instance);
 		}
 	}

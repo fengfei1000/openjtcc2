@@ -17,7 +17,6 @@ import org.apache.log4j.Logger;
 import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.bytejta.utils.ByteUtils;
 import org.bytesoft.bytejta.utils.CommonUtils;
-import org.bytesoft.bytejta.xa.TransactionSkeleton;
 import org.bytesoft.bytejta.xa.XATerminatorImpl;
 import org.bytesoft.transaction.CommitRequiredException;
 import org.bytesoft.transaction.RemoteSystemException;
@@ -45,8 +44,6 @@ public class TransactionImpl implements Transaction {
 	private final TransactionContext transactionContext;
 	private final XATerminatorImpl nativeTerminator;
 	private final XATerminatorImpl remoteTerminator;
-
-	private final TransactionSkeleton skeleton = new TransactionSkeleton(this);
 
 	private final List<SynchronizationImpl> synchronizations = new ArrayList<SynchronizationImpl>();
 	private final List<TransactionListener> listeners = new ArrayList<TransactionListener>();
@@ -82,8 +79,8 @@ public class TransactionImpl implements Transaction {
 		}// end-for
 	}
 
-	private synchronized void checkBeforeCommit() throws RollbackException, IllegalStateException,
-			RollbackRequiredException, CommitRequiredException {
+	private synchronized void checkBeforeCommit() throws RollbackException, IllegalStateException, RollbackRequiredException,
+			CommitRequiredException {
 
 		if (this.transactionStatus == Status.STATUS_ROLLEDBACK) {
 			throw new RollbackException();
@@ -224,9 +221,8 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	public synchronized void participantCommit() throws RollbackException, HeuristicMixedException,
-			HeuristicRollbackException, SecurityException, IllegalStateException, CommitRequiredException,
-			SystemException {
+	public synchronized void participantCommit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
+			SecurityException, IllegalStateException, CommitRequiredException, SystemException {
 
 		if (this.transactionStatus == Status.STATUS_ACTIVE) {
 			throw new IllegalStateException();
@@ -378,8 +374,8 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	public synchronized void opcCommit() throws HeuristicRollbackException, HeuristicMixedException,
-			CommitRequiredException, SystemException {
+	public synchronized void opcCommit() throws HeuristicRollbackException, HeuristicMixedException, CommitRequiredException,
+			SystemException {
 		TransactionXid xid = this.transactionContext.getGlobalXid();
 		try {
 			this.fireCommitStart();
@@ -662,8 +658,7 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException,
-			SystemException {
+	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException, SystemException {
 		if (this.getStatus() != Status.STATUS_ACTIVE && this.getStatus() != Status.STATUS_MARKED_ROLLBACK) {
 			throw new IllegalStateException();
 		}
@@ -775,18 +770,16 @@ public class TransactionImpl implements Transaction {
 		return this.transactionStatus;
 	}
 
-	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException,
-			IllegalStateException, SystemException {
+	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException, IllegalStateException,
+			SystemException {
 
 		if (this.getStatus() == Status.STATUS_MARKED_ROLLBACK) {
 			throw new RollbackException();
 		} else if (this.getStatus() == Status.STATUS_ACTIVE) {
 			SynchronizationImpl synchronization = new SynchronizationImpl(sync);
 			this.synchronizations.add(synchronization);
-			logger.info(String.format(
-					"[%s] register-sync: sync= %s"//
-					, ByteUtils.byteArrayToString(this.transactionContext.getCurrentXid().getGlobalTransactionId()),
-					sync));
+			logger.info(String.format("[%s] register-sync: sync= %s"//
+					, ByteUtils.byteArrayToString(this.transactionContext.getCurrentXid().getGlobalTransactionId()), sync));
 		} else {
 			throw new IllegalStateException();
 		}
@@ -1442,10 +1435,6 @@ public class TransactionImpl implements Transaction {
 
 	public XATerminatorImpl getRemoteTerminator() {
 		return remoteTerminator;
-	}
-
-	public TransactionSkeleton getSkeleton() {
-		return skeleton;
 	}
 
 	public boolean isTiming() {

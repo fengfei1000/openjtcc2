@@ -30,6 +30,4 @@ public @interface Compensable {
 
 	public String cancellableKey() default "";
 
-	// public boolean skipCoordinatorCancelIfTryRolledback() default true;
-
 }

@@ -20,11 +20,6 @@
 
 	<bean id="bytejtaTransactionManager" class="org.bytesoft.bytejta.TransactionManagerImpl" />
 
-	<!-- <bean id="bytejtaUserTransaction" class="org.bytesoft.bytejta.UserTransactionImpl"> <property name="transactionManager" 
-		ref="bytejtaTransactionManager" /> </bean> <bean id="transactionManager" class="org.springframework.transaction.jta.JtaTransactionManager"> 
-		<property name="userTransaction" ref="bytejtaUserTransaction" /> <property name="transactionManager" ref="bytejtaTransactionManager" 
-		/> </bean> <tx:annotation-driven transaction-manager="transactionManager" /> -->
-
 	<bean id="bytejtaResourceSerializer" class="org.bytesoft.transaction.supports.spring.XAResourceSerializerImpl" />
 	<bean id="bytejtaTransactionLogger" class="org.bytesoft.bytejta.logger.SimpleTransactionLogger">
 		<property name="storageManager" ref="bytejtaTransactionStorage" />
@@ -36,6 +31,7 @@
 		<constructor-arg value="bytejta/bytejta.dat" />
 	</bean>
 
+	<bean id="bytejtaTransactionSkeleton" class="org.bytesoft.bytejta.xa.TransactionSkeleton" />
 	<bean id="bytejtaTransactionRecovery" class="org.bytesoft.bytejta.TransactionRecoveryImpl" />
 	<bean id="bytejtaTransactionRepository" class="org.bytesoft.bytejta.common.TransactionRepository" />
 	<bean id="bytejtaTransactionInterceptor" class="org.bytesoft.transaction.supports.rpc.TransactionInterceptorImpl" />
@@ -48,6 +44,7 @@
 		<property name="transactionLogger" ref="bytejtaTransactionLogger" />
 		<property name="transactionInterceptor" ref="bytejtaTransactionInterceptor" />
 		<property name="transactionRecovery" ref="bytejtaTransactionRecovery" />
+		<property name="transactionSkeleton" ref="bytejtaTransactionSkeleton" />
 	</bean>
 
 </beans>

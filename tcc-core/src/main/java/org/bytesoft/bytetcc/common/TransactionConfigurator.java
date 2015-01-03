@@ -1,5 +1,7 @@
 package org.bytesoft.bytetcc.common;
 
+import javax.transaction.xa.XAResource;
+
 import org.bytesoft.bytetcc.CompensableInvocationExecutor;
 import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.bytetcc.supports.CompensableTransactionLogger;
@@ -13,11 +15,11 @@ public final class TransactionConfigurator {
 	private boolean optimizeEnabled = true;
 	private CompensableTransactionManager transactionManager;
 	private XidFactory xidFactory;
-	// private TransactionTimer transactionTimer;
 	private CompensableTransactionLogger transactionLogger = CompensableTransactionLogger.defaultTransactionLogger;
 	private TransactionRepository transactionRepository;
 	private TransactionInterceptor transactionInterceptor;
 	private TransactionRecovery transactionRecovery;
+	private XAResource transactionSkeleton;
 	private CompensableInvocationExecutor compensableInvocationExecutor;
 
 	public static TransactionConfigurator getInstance() {
@@ -80,22 +82,6 @@ public final class TransactionConfigurator {
 		}
 	}
 
-	// public TransactionTimer getTransactionTimer() {
-	// if (this == instance) {
-	// return this.transactionTimer;
-	// } else {
-	// return instance.getTransactionTimer();
-	// }
-	// }
-	//
-	// public void setTransactionTimer(TransactionTimer transactionTimer) {
-	// if (this == instance) {
-	// this.transactionTimer = transactionTimer;
-	// } else {
-	// instance.setTransactionTimer(transactionTimer);
-	// }
-	// }
-
 	public boolean isOptimizeEnabled() {
 		if (this == instance) {
 			return this.optimizeEnabled;
@@ -157,6 +143,22 @@ public final class TransactionConfigurator {
 			this.compensableInvocationExecutor = compensableInvocationExecutor;
 		} else {
 			instance.setCompensableInvocationExecutor(compensableInvocationExecutor);
+		}
+	}
+
+	public XAResource getTransactionSkeleton() {
+		if (this == instance) {
+			return this.transactionSkeleton;
+		} else {
+			return instance.getTransactionSkeleton();
+		}
+	}
+
+	public void setTransactionSkeleton(XAResource transactionSkeleton) {
+		if (this == instance) {
+			this.transactionSkeleton = transactionSkeleton;
+		} else {
+			instance.setTransactionSkeleton(transactionSkeleton);
 		}
 	}
 

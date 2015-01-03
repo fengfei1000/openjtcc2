@@ -2,6 +2,8 @@ package org.bytesoft.transaction.logger;
 
 import java.util.List;
 
+import javax.transaction.xa.Xid;
+
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.archive.XAResourceArchive;
 
@@ -17,6 +19,6 @@ public interface TransactionLogger {
 	public List<TransactionArchive> getTransactionArchiveList();
 
 	/* resource */
-	public void updateResource(XAResourceArchive archive);
+	public void updateResource(Xid transactionXid, XAResourceArchive archive);
 
 }

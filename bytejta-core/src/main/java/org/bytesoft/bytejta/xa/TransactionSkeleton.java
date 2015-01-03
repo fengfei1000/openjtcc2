@@ -13,57 +13,51 @@ import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.bytejta.common.TransactionRepository;
 import org.bytesoft.transaction.CommitRequiredException;
 import org.bytesoft.transaction.RollbackRequiredException;
-import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.xa.TransactionXid;
 
 public class TransactionSkeleton implements XAResource {
 
-	private final TransactionImpl transaction;
-
-	public TransactionSkeleton(TransactionImpl tx) {
-		this.transaction = tx;
-	}
-
 	public void commit(Xid xid, boolean onePhase) throws XAException {
-		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
-		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
+		TransactionXid branchXid = (TransactionXid) xid;
+		TransactionXid globalXid = branchXid.getGlobalXid();
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		TransactionRepository repository = configurator.getTransactionRepository();
+		TransactionImpl transaction = repository.getTransaction(globalXid);
 		boolean transactionDone = true;
-		TransactionContext transactionContext = this.transaction.getTransactionContext();
-		TransactionXid globalXid = transactionContext.getGlobalXid();
 		try {
 			if (onePhase) {
-				this.transaction.commit();
+				transaction.commit();
 			} else {
-				this.transaction.participantCommit();
+				transaction.participantCommit();
 			}
 		} catch (SecurityException ignore) {
 			transactionDone = false;
-			transactionRepository.putErrorTransaction(globalXid, transaction);
+			repository.putErrorTransaction(globalXid, transaction);
 			throw new XAException(XAException.XAER_RMERR);
 		} catch (IllegalStateException ignore) {
 			transactionDone = false;
-			transactionRepository.putErrorTransaction(globalXid, transaction);
+			repository.putErrorTransaction(globalXid, transaction);
 			throw new XAException(XAException.XAER_RMERR);
 		} catch (CommitRequiredException ignore) {
 			transactionDone = false;
-			transactionRepository.putErrorTransaction(globalXid, transaction);
+			repository.putErrorTransaction(globalXid, transaction);
 			throw new XAException(XAException.XAER_RMERR);
 		} catch (RollbackException ignore) {
 			throw new XAException(XAException.XA_HEURRB);
 		} catch (HeuristicMixedException ignore) {
 			transactionDone = false;// TODO
-			transactionRepository.putErrorTransaction(globalXid, transaction);
+			repository.putErrorTransaction(globalXid, transaction);
 			throw new XAException(XAException.XA_HEURMIX);
 		} catch (HeuristicRollbackException ignore) {
 			throw new XAException(XAException.XA_HEURRB);
 		} catch (SystemException ignore) {
 			transactionDone = false;
-			transactionRepository.putErrorTransaction(globalXid, transaction);
+			repository.putErrorTransaction(globalXid, transaction);
 			throw new XAException(XAException.XAER_RMERR);
 		} finally {
 			if (transactionDone) {
-				transactionRepository.removeErrorTransaction(globalXid);
-				transactionRepository.removeTransaction(globalXid);
+				repository.removeErrorTransaction(globalXid);
+				repository.removeTransaction(globalXid);
 			}
 		}
 	}
@@ -83,8 +77,13 @@ public class TransactionSkeleton implements XAResource {
 	}
 
 	public int prepare(Xid xid) throws XAException {
+		TransactionXid branchXid = (TransactionXid) xid;
+		TransactionXid globalXid = branchXid.getGlobalXid();
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		TransactionRepository repository = configurator.getTransactionRepository();
+		TransactionImpl transaction = repository.getTransaction(globalXid);
 		try {
-			this.transaction.participantPrepare();
+			transaction.participantPrepare();
 		} catch (CommitRequiredException crex) {
 			return XAResource.XA_OK;
 		} catch (RollbackRequiredException rrex) {
@@ -98,31 +97,33 @@ public class TransactionSkeleton implements XAResource {
 	}
 
 	public void rollback(Xid xid) throws XAException {
-		TransactionContext transactionContext = transaction.getTransactionContext();
-		TransactionXid globalXid = transactionContext.getGlobalXid();
-		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
-		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
+		TransactionXid branchXid = (TransactionXid) xid;
+		TransactionXid globalXid = branchXid.getGlobalXid();
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		TransactionRepository repository = configurator.getTransactionRepository();
+		TransactionImpl transaction = repository.getTransaction(globalXid);
+
 		boolean transactionDone = true;
 		try {
-			this.transaction.rollback();
+			transaction.rollback();
 		} catch (RollbackRequiredException rrex) {
 			transactionDone = false;
-			transactionRepository.putErrorTransaction(globalXid, transaction);
+			repository.putErrorTransaction(globalXid, transaction);
 			throw new XAException(XAException.XAER_RMERR);
 		} catch (SystemException ex) {
 			transactionDone = false;
-			transactionRepository.putErrorTransaction(globalXid, transaction);
+			repository.putErrorTransaction(globalXid, transaction);
 			throw new XAException(XAException.XAER_RMERR);
 		} catch (RuntimeException rrex) {
 			transactionDone = false;
-			transactionRepository.putErrorTransaction(globalXid, transaction);
+			repository.putErrorTransaction(globalXid, transaction);
 			SystemException ex = new SystemException();
 			ex.initCause(rrex);
 			throw new XAException(XAException.XAER_RMERR);
 		} finally {
 			if (transactionDone) {
-				transactionRepository.removeErrorTransaction(globalXid);
-				transactionRepository.removeTransaction(globalXid);
+				repository.removeErrorTransaction(globalXid);
+				repository.removeTransaction(globalXid);
 			}
 		}
 	}
@@ -132,10 +133,6 @@ public class TransactionSkeleton implements XAResource {
 	}
 
 	public void start(Xid xid, int flags) throws XAException {
-	}
-
-	public TransactionImpl getTransaction() {
-		return transaction;
 	}
 
 }
