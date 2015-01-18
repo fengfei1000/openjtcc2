@@ -1,4 +1,4 @@
-package org.bytesoft.bytetcc.supports.spring.rpc;
+package org.bytesoft.bytetcc.supports.rpc;
 
 import org.apache.log4j.Logger;
 import org.bytesoft.transaction.rpc.TransactionInterceptor;

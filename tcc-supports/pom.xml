@@ -26,6 +26,11 @@
 			<version>0.1.2</version>
 		</dependency>
 		<dependency>
+			<groupId>org.bytesoft</groupId>
+			<artifactId>byterpc-supports</artifactId>
+			<version>0.0.1</version>
+		</dependency>
+		<dependency>
 			<groupId>javax.resource</groupId>
 			<artifactId>connector-api</artifactId>
 			<version>1.5</version>
@@ -75,6 +80,5 @@
 			<artifactId>aspectjweaver</artifactId>
 			<version>1.6.8</version>
 		</dependency>
-		<!--<dependency> <groupId>hessian</groupId> <artifactId>hessian</artifactId> <version>3.0.1</version> </dependency> -->
 	</dependencies>
 </project>

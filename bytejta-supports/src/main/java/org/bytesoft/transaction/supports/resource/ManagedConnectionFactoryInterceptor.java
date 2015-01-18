@@ -23,24 +23,62 @@ public class ManagedConnectionFactoryInterceptor implements InvocationHandler {
 		Class<?> returningClass = method.getReturnType();
 
 		Object resultObject = method.invoke(this.delegate, args);
+		Class<?> clazz = resultObject.getClass();
+		ClassLoader cl = clazz.getClassLoader();
+
+		boolean containsReturningClass = false;
+		Class<?>[] interfaces = clazz.getInterfaces();
+		for (int i = 0; i < interfaces.length; i++) {
+			Class<?> interfaceClass = interfaces[i];
+			if (interfaceClass.equals(returningClass)) {
+				containsReturningClass = true;
+				break;
+			}
+		}
 
 		if (XADataSource.class.equals(declaringClass) && javax.sql.XAConnection.class.equals(returningClass)) {
 			ManagedConnectionInterceptor interceptor = new ManagedConnectionInterceptor(resultObject);
 			interceptor.setIdentifier(this.identifier);
-			return (javax.sql.XAConnection) Proxy.newProxyInstance(resultObject.getClass().getClassLoader(),
-					new Class<?>[] { javax.sql.XAConnection.class }, interceptor);
-		} else if (XAConnectionFactory.class.equals(declaringClass)
-				&& javax.jms.XAConnection.class.equals(returningClass)) {
+
+			Object finalObject = null;
+			if (containsReturningClass) {
+				finalObject = Proxy.newProxyInstance(cl, interfaces, interceptor);
+			} else {
+				Class<?>[] interfaceArray = new Class<?>[interfaces.length];
+				System.arraycopy(interfaces, 0, interfaceArray, 0, interfaces.length);
+				interfaceArray[interfaces.length] = javax.sql.XAConnection.class;
+				finalObject = Proxy.newProxyInstance(cl, interfaceArray, interceptor);
+			}
+			return (javax.sql.XAConnection) finalObject;
+		} else if (XAConnectionFactory.class.equals(declaringClass) && javax.jms.XAConnection.class.equals(returningClass)) {
 			ManagedConnectionInterceptor interceptor = new ManagedConnectionInterceptor(resultObject);
 			interceptor.setIdentifier(this.identifier);
-			return (javax.jms.XAConnection) Proxy.newProxyInstance(resultObject.getClass().getClassLoader(),
-					new Class<?>[] { javax.jms.XAConnection.class }, interceptor);
-		} else if (ManagedConnectionFactory.class.equals(declaringClass)
-				&& ManagedConnection.class.equals(returningClass)) {
+
+			Object finalObject = null;
+			if (containsReturningClass) {
+				finalObject = Proxy.newProxyInstance(cl, interfaces, interceptor);
+			} else {
+				Class<?>[] interfaceArray = new Class<?>[interfaces.length];
+				System.arraycopy(interfaces, 0, interfaceArray, 0, interfaces.length);
+				interfaceArray[interfaces.length] = javax.jms.XAConnection.class;
+				finalObject = Proxy.newProxyInstance(cl, interfaceArray, interceptor);
+			}
+			return (javax.jms.XAConnection) finalObject;
+		} else if (ManagedConnectionFactory.class.equals(declaringClass) && ManagedConnection.class.equals(returningClass)) {
 			ManagedConnectionInterceptor interceptor = new ManagedConnectionInterceptor(resultObject);
 			interceptor.setIdentifier(this.identifier);
-			return (ManagedConnection) Proxy.newProxyInstance(resultObject.getClass().getClassLoader(),
-					new Class<?>[] { ManagedConnection.class }, interceptor);
+
+			Object finalObject = null;
+			if (containsReturningClass) {
+				finalObject = Proxy.newProxyInstance(cl, interfaces, interceptor);
+			} else {
+				Class<?>[] interfaceArray = new Class<?>[interfaces.length];
+				System.arraycopy(interfaces, 0, interfaceArray, 0, interfaces.length);
+				interfaceArray[interfaces.length] = ManagedConnection.class;
+				finalObject = Proxy.newProxyInstance(cl, interfaceArray, interceptor);
+			}
+
+			return (ManagedConnection) finalObject;
 		} else {
 			return resultObject;
 		}
