@@ -1,0 +1,92 @@
+package org.bytesoft.bytetcc.supports.spring.beans;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+
+import org.bytesoft.byterpc.RemoteInvocationResult;
+import org.bytesoft.byterpc.cci.ConnectionFactory;
+import org.bytesoft.byterpc.cci.internal.ConnectionImpl;
+import org.bytesoft.byterpc.common.RemoteMethodFactory;
+import org.bytesoft.byterpc.common.RemoteMethodKey;
+import org.bytesoft.byterpc.spi.ConnectionManager;
+import org.bytesoft.byterpc.spi.internal.ManagedConnectionImpl;
+import org.bytesoft.byterpc.wire.RemoteClientEndpoint;
+import org.bytesoft.bytetcc.supports.spring.rpc.ByteTccRemoteInvocation;
+import org.bytesoft.naming.NamingContextFactory;
+
+public class ByteTccStubInvocationHandler implements ByteTccStubObject, InvocationHandler {
+	private String provider;
+	private String serviceId;
+	private Class<?> interfaceClass;
+	private RemoteClientEndpoint remoteEndpoint;
+
+	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+		if (Object.class.equals(method.getDeclaringClass())) {
+			return method.invoke(this, args);
+		} else if (ByteTccStubObject.class.equals(method.getDeclaringClass())) {
+			return method.invoke(this, args);
+		}
+
+		if (this.remoteEndpoint == null) {
+			NamingContextFactory namingContextFactory = NamingContextFactory.getInstance();
+			ConnectionManager connectionManager = namingContextFactory.getConnectionManager();
+			ConnectionImpl connection = (ConnectionImpl) connectionManager.allocateConnection(this.provider);
+			ManagedConnectionImpl mc = connection.getManagedConnection();
+			this.remoteEndpoint = (RemoteClientEndpoint) mc.getRemoteRequestor();
+		}
+
+		RemoteMethodFactory rmf = this.remoteEndpoint.getRemoteMethodFactory();
+		RemoteMethodKey methodKey = rmf.getRemoteMethodKey(method);
+
+		ByteTccRemoteInvocation invocation = new ByteTccRemoteInvocation();
+		invocation.setInstanceKey(this.serviceId);
+		invocation.setMethodKey(methodKey.getMethodKey());
+		invocation.setArgs(args);
+		String destination = null;
+		if (this.provider.startsWith(ConnectionFactory.PROTOCOL_PREFIX)) {
+			destination = this.provider.substring(ConnectionFactory.PROTOCOL_PREFIX.length());
+		} else {
+			destination = this.provider;
+		}
+		invocation.setDestination(destination);
+
+		RemoteInvocationResult result = this.remoteEndpoint.fireRequest(invocation);
+		if (result.isFailure()) {
+			throw (Throwable) result.getValue();
+		} else {
+			return result.getValue();
+		}
+
+	}
+
+	public String toString() {
+		String className = this.interfaceClass == null ? Object.class.getName() : this.interfaceClass.getName();
+		return String.format("%s [url: %s]", className, this.provider);
+	}
+
+	public String getProvider() {
+		return provider;
+	}
+
+	public void setProvider(String provider) {
+		this.provider = provider;
+	}
+
+	public Class<?> getInterfaceClass() {
+		return interfaceClass;
+	}
+
+	public void setInterfaceClass(Class<?> interfaceClass) {
+		this.interfaceClass = interfaceClass;
+	}
+
+	public String getServiceId() {
+		return serviceId;
+	}
+
+	public void setServiceId(String serviceId) {
+		this.serviceId = serviceId;
+	}
+
+}

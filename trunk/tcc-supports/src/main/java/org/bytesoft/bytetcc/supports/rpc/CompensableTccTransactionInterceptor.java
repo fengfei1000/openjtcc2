@@ -1,4 +1,4 @@
-package org.bytesoft.bytetcc.supports.spring.rpc;
+package org.bytesoft.bytetcc.supports.rpc;
 
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
