@@ -16,7 +16,6 @@ public class ByteTccRemoteInvocation extends RemoteInvocation implements RemoteD
 
 	private transient Object destination;
 	private transient RemoteRequestor requestor;
-	private transient TransactionResource resource;
 	private TransactionContext transaction;
 
 	public void setRemoteRequestor(RemoteRequestor requestor) {
