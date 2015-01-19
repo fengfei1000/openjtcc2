@@ -2,7 +2,7 @@ package org.bytesoft.bytetcc.supports.spring.rpc;
 
 import org.bytesoft.byterpc.RemoteInvocation;
 import org.bytesoft.byterpc.RemoteInvocationResult;
-import org.bytesoft.byterpc.wire.RemoteInterceptor;
+import org.bytesoft.byterpc.supports.RemoteInterceptor;
 import org.bytesoft.bytetcc.common.TransactionConfigurator;
 import org.bytesoft.transaction.rpc.TransactionInterceptor;
 
