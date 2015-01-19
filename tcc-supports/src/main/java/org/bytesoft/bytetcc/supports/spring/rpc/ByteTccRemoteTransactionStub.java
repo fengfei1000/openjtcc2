@@ -9,18 +9,22 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.bytesoft.bytejta.utils.CommonUtils;
 import org.bytesoft.byterpc.RemoteInvocation;
 import org.bytesoft.byterpc.RemoteInvocationResult;
+import org.bytesoft.byterpc.common.RemoteMethodKey;
 import org.bytesoft.byterpc.remote.RemoteRequestor;
 import org.bytesoft.byterpc.supports.RemoteInvocationFactory;
+import org.bytesoft.byterpc.supports.RemoteMethodFactory;
+import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.bytetcc.supports.spring.beans.ByteTccSkeletonObject;
 import org.bytesoft.transaction.rpc.TransactionResource;
-import org.bytesoft.utils.CommonUtils;
 
 public class ByteTccRemoteTransactionStub implements InvocationHandler, TransactionResource {
 	private String identifier;
 	private RemoteRequestor requestor;
 	private RemoteInvocationFactory invocationFactory;
+	private RemoteMethodFactory remoteMethodFactory;
 
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		if (Object.class.equals(method.getDeclaringClass())) {
@@ -55,10 +59,12 @@ public class ByteTccRemoteTransactionStub implements InvocationHandler, Transact
 			} catch (InvocationTargetException ex) {
 				Throwable targetEx = ex.getTargetException();
 				if (IllegalStateException.class.isInstance(targetEx)) {
-					RemoteInvocationResult result = null;
 					RemoteInvocation invocation = this.invocationFactory.createRemoteInvocation();
-					// TODO
-					result = this.requestor.fireRequest(invocation);
+					RemoteMethodKey methodKey = this.remoteMethodFactory.getRemoteMethodKey(method);
+					invocation.setMethodKey(methodKey.getMethodKey());
+					invocation.setInstanceKey(CompensableTransactionManager.class.getName());// TODO
+					invocation.setArgs(args);
+					RemoteInvocationResult result = this.requestor.fireRequest(invocation);
 					if (result.isFailure()) {
 						throw (Throwable) result.getValue();
 					} else {
@@ -101,30 +107,6 @@ public class ByteTccRemoteTransactionStub implements InvocationHandler, Transact
 		return String.format("ByteTccRemoteTransactionStub(identifier: %s)", this.identifier);
 	}
 
-	public String getIdentifier() {
-		return identifier;
-	}
-
-	public void setIdentifier(String identifier) {
-		this.identifier = identifier;
-	}
-
-	public RemoteRequestor getRequestor() {
-		return requestor;
-	}
-
-	public void setRequestor(RemoteRequestor requestor) {
-		this.requestor = requestor;
-	}
-
-	public RemoteInvocationFactory getInvocationFactory() {
-		return invocationFactory;
-	}
-
-	public void setInvocationFactory(RemoteInvocationFactory invocationFactory) {
-		this.invocationFactory = invocationFactory;
-	}
-
 	public void commit(Xid arg0, boolean arg1) throws XAException {
 		throw new IllegalStateException();
 	}
@@ -162,4 +144,35 @@ public class ByteTccRemoteTransactionStub implements InvocationHandler, Transact
 	public void start(Xid arg0, int arg1) throws XAException {
 	}
 
+	public RemoteMethodFactory getRemoteMethodFactory() {
+		return remoteMethodFactory;
+	}
+
+	public void setRemoteMethodFactory(RemoteMethodFactory remoteMethodFactory) {
+		this.remoteMethodFactory = remoteMethodFactory;
+	}
+
+	public String getIdentifier() {
+		return identifier;
+	}
+
+	public void setIdentifier(String identifier) {
+		this.identifier = identifier;
+	}
+
+	public RemoteRequestor getRequestor() {
+		return requestor;
+	}
+
+	public void setRequestor(RemoteRequestor requestor) {
+		this.requestor = requestor;
+	}
+
+	public RemoteInvocationFactory getInvocationFactory() {
+		return invocationFactory;
+	}
+
+	public void setInvocationFactory(RemoteInvocationFactory invocationFactory) {
+		this.invocationFactory = invocationFactory;
+	}
 }
