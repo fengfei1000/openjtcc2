@@ -2,7 +2,7 @@ package org.bytesoft.bytetcc.supports.spring.rpc;
 
 import org.bytesoft.byterpc.RemoteInvocation;
 import org.bytesoft.byterpc.RemoteInvocationResult;
-import org.bytesoft.byterpc.wire.RemoteInvocationFactory;
+import org.bytesoft.byterpc.supports.RemoteInvocationFactory;
 
 public class ByteTccRemoteInvocationFactory implements RemoteInvocationFactory {
 
