@@ -10,7 +10,6 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import org.bytesoft.bytejta.utils.CommonUtils;
-import org.bytesoft.byterpc.RemoteInvocation;
 import org.bytesoft.byterpc.RemoteInvocationResult;
 import org.bytesoft.byterpc.common.RemoteMethodKey;
 import org.bytesoft.byterpc.remote.RemoteRequestor;
@@ -59,10 +58,12 @@ public class ByteTccRemoteTransactionStub implements InvocationHandler, Transact
 			} catch (InvocationTargetException ex) {
 				Throwable targetEx = ex.getTargetException();
 				if (IllegalStateException.class.isInstance(targetEx)) {
-					RemoteInvocation invocation = this.invocationFactory.createRemoteInvocation();
+					ByteTccRemoteInvocation invocation = (ByteTccRemoteInvocation) this.invocationFactory
+							.createRemoteInvocation();
 					RemoteMethodKey methodKey = this.remoteMethodFactory.getRemoteMethodKey(method);
+					invocation.setDestination(this.identifier);
 					invocation.setMethodKey(methodKey.getMethodKey());
-					invocation.setInstanceKey(CompensableTransactionManager.class.getName());// TODO
+					invocation.setInstanceKey(XAResource.class.getName());// TODO
 					invocation.setArgs(args);
 					RemoteInvocationResult result = this.requestor.fireRequest(invocation);
 					if (result.isFailure()) {

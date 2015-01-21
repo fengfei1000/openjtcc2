@@ -8,6 +8,4 @@ public interface ByteTccSkeletonObject {
 
 	public void setTarget(Object target);
 
-	// public void setTransactionInterceptor(TransactionInterceptor interceptor);
-
 }
