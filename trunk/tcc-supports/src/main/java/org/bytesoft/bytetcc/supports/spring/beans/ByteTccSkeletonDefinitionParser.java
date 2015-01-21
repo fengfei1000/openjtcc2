@@ -2,8 +2,6 @@ package org.bytesoft.bytetcc.supports.spring.beans;
 
 import java.lang.reflect.Proxy;
 
-import org.bytesoft.byterpc.supports.spring.beans.ByteRpcSkeletonInvocationHandler;
-import org.bytesoft.byterpc.supports.spring.beans.ByteRpcSkeletonObject;
 import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
@@ -21,7 +19,7 @@ public class ByteTccSkeletonDefinitionParser extends AbstractSingleBeanDefinitio
 		String interfaceClassName = element.getAttribute("interface");
 
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
-		ByteRpcSkeletonInvocationHandler target = new ByteRpcSkeletonInvocationHandler();
+		ByteTccSkeletonInvocationHandler target = new ByteTccSkeletonInvocationHandler();
 		Class<?> interfaceClass = null;
 		try {
 			interfaceClass = cl.loadClass(interfaceClassName);
@@ -31,10 +29,10 @@ public class ByteTccSkeletonDefinitionParser extends AbstractSingleBeanDefinitio
 		target.setServiceId(serviceId);
 		target.setInterfaceClass(interfaceClass);
 
-		Object proxyBean = Proxy.newProxyInstance(cl, new Class<?>[] { ByteRpcSkeletonObject.class, interfaceClass }, target);
+		Object proxyBean = Proxy.newProxyInstance(cl, new Class<?>[] { ByteTccSkeletonObject.class, interfaceClass }, target);
 
 		bean.addPropertyValue("target", proxyBean);
-		bean.addPropertyValue("interfaces", new Class<?>[] { ByteRpcSkeletonObject.class, interfaceClass });
+		bean.addPropertyValue("interfaces", new Class<?>[] { ByteTccSkeletonObject.class, interfaceClass });
 
 	}
 }

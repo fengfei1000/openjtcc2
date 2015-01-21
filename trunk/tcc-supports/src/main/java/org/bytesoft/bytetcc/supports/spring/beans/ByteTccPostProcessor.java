@@ -1,5 +1,7 @@
 package org.bytesoft.bytetcc.supports.spring.beans;
 
+import javax.transaction.xa.XAResource;
+
 import org.bytesoft.byterpc.svc.ServiceFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -8,11 +10,19 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 public class ByteTccPostProcessor implements BeanFactoryPostProcessor {
 
 	private ServiceFactory serviceFactory;
+	private XAResource transactionSkeleton;
 
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-		this.serviceFactory = beanFactory.getBean(ServiceFactory.class);
+		// this.serviceFactory = beanFactory.getBean(ServiceFactory.class);
 		this.processStubObjects(beanFactory);
 		this.processSkeletonObjects(beanFactory);
+		this.processTransactionalObjects();
+	}
+
+	private void processTransactionalObjects() {
+		// TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		// XAResource transactionSkeleton = configurator.getTransactionSkeleton();
+		serviceFactory.putServiceObject(XAResource.class.getName(), XAResource.class, this.transactionSkeleton);
 	}
 
 	private void processStubObjects(ConfigurableListableBeanFactory beanFactory) throws BeansException {
@@ -35,6 +45,22 @@ public class ByteTccPostProcessor implements BeanFactoryPostProcessor {
 			Class<?> interfaceClass = bean.getInterfaceClass();
 			this.serviceFactory.putServiceObject(beanName, interfaceClass, bean);
 		}
+	}
+
+	public ServiceFactory getServiceFactory() {
+		return serviceFactory;
+	}
+
+	public void setServiceFactory(ServiceFactory serviceFactory) {
+		this.serviceFactory = serviceFactory;
+	}
+
+	public XAResource getTransactionSkeleton() {
+		return transactionSkeleton;
+	}
+
+	public void setTransactionSkeleton(XAResource transactionSkeleton) {
+		this.transactionSkeleton = transactionSkeleton;
 	}
 
 }
