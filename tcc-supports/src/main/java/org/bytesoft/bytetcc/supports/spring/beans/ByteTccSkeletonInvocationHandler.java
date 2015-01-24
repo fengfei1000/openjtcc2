@@ -4,20 +4,39 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class ByteTccSkeletonInvocationHandler implements ByteTccSkeletonObject, InvocationHandler {
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+
+public class ByteTccSkeletonInvocationHandler implements ByteTccSkeletonObject, InvocationHandler, MethodInterceptor {
 	private Class<?> interfaceClass;
 	private String serviceId;
 	private Object target;
+	private ApplicationContext applicationContext;
+
+	public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+		// System.out.printf("method: %s, args: %s, proxy: %s%n", method, Arrays.toString(args), proxy);
+		return this.invoke(proxy, method, args);
+	}
 
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-		if (Object.class.equals(method.getDeclaringClass())) {
-			return method.invoke(this, args);
-		} else if (ByteTccSkeletonObject.class.equals(method.getDeclaringClass())) {
-			return method.invoke(this, args);
-		}
-
 		try {
+			if (Object.class.equals(method.getDeclaringClass())) {
+				return method.invoke(this, args);
+			} else if (ByteTccSkeletonObject.class.equals(method.getDeclaringClass())) {
+				return method.invoke(this, args);
+			} else if (ApplicationContextAware.class.equals(method.getDeclaringClass())) {
+				return method.invoke(this, args);
+			}
+
+			if (this.target == null) {
+				this.target = this.applicationContext.getBean(this.serviceId);
+			}
+
 			return method.invoke(this.target, args);
 		} catch (IllegalAccessException ex) {
 			throw new RuntimeException(ex);
@@ -53,6 +72,10 @@ public class ByteTccSkeletonInvocationHandler implements ByteTccSkeletonObject, 
 
 	public void setTarget(Object target) {
 		this.target = target;
+	}
+
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
 	}
 
 }

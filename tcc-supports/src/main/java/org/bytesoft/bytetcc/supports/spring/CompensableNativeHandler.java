@@ -5,12 +5,9 @@ import java.lang.reflect.Method;
 
 import org.bytesoft.bytetcc.CompensableInvocation;
 import org.bytesoft.bytetcc.CompensableTransactionManager;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
-public class CompensableNativeHandler implements java.lang.reflect.InvocationHandler,
-		net.sf.cglib.proxy.InvocationHandler, org.springframework.cglib.proxy.InvocationHandler,
-		ApplicationContextAware {
+public class CompensableNativeHandler implements java.lang.reflect.InvocationHandler, net.sf.cglib.proxy.InvocationHandler,
+		org.springframework.cglib.proxy.InvocationHandler {
 
 	private Object delegate;
 	private String beanName;
@@ -19,7 +16,6 @@ public class CompensableNativeHandler implements java.lang.reflect.InvocationHan
 	private String confirmableKey;
 	private String cancellableKey;
 
-	// private transient ApplicationContext applicationContext;
 	private transient CompensableTransactionManager transactionManager;
 
 	private void checkIsCurrentCompensable(Object proxy, Method method, Object[] args) throws IllegalAccessException {
@@ -133,14 +129,6 @@ public class CompensableNativeHandler implements java.lang.reflect.InvocationHan
 
 	public void setTargetClass(Class<?> targetClass) {
 		this.targetClass = targetClass;
-	}
-
-	// public ApplicationContext getApplicationContext() {
-	// return applicationContext;
-	// }
-
-	public void setApplicationContext(ApplicationContext applicationContext) {
-		// this.applicationContext = applicationContext;
 	}
 
 	public CompensableTransactionManager getTransactionManager() {

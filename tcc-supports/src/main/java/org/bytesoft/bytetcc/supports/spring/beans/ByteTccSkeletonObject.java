@@ -1,11 +1,9 @@
 package org.bytesoft.bytetcc.supports.spring.beans;
 
-public interface ByteTccSkeletonObject {
+import org.springframework.context.ApplicationContextAware;
+
+public interface ByteTccSkeletonObject extends ApplicationContextAware {
 
 	public Class<?> getInterfaceClass();
-
-	public String getTargetId();
-
-	public void setTarget(Object target);
 
 }
