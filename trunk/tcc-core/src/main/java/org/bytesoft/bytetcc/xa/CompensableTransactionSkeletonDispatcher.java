@@ -16,28 +16,30 @@ public class CompensableTransactionSkeletonDispatcher implements XAResource {
 	private XAResource tccTransactionSkeleton;
 
 	public void commit(Xid xid, boolean opc) throws XAException {
-		TransactionXid transactionXid = (TransactionXid) xid;
+		TransactionXid branchXid = (TransactionXid) xid;
+		TransactionXid globalXid = branchXid.getGlobalXid();
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		TransactionRepository repository = configurator.getTransactionRepository();
-		CompensableTransaction transaction = repository.getTransaction(transactionXid);
+		CompensableTransaction transaction = repository.getTransaction(globalXid);
 		TransactionContext transactionContext = transaction.getTransactionContext();
 		if (transactionContext.isCompensable()) {
-			this.tccTransactionSkeleton.commit(xid, opc);
+			this.tccTransactionSkeleton.commit(globalXid, opc);
 		} else {
-			this.jtaTransactionSkeleton.commit(xid, opc);
+			this.jtaTransactionSkeleton.commit(globalXid, opc);
 		}
 	}
 
 	public void rollback(Xid xid) throws XAException {
-		TransactionXid transactionXid = (TransactionXid) xid;
+		TransactionXid branchXid = (TransactionXid) xid;
+		TransactionXid globalXid = branchXid.getGlobalXid();
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		TransactionRepository repository = configurator.getTransactionRepository();
-		CompensableTransaction transaction = repository.getTransaction(transactionXid);
+		CompensableTransaction transaction = repository.getTransaction(globalXid);
 		TransactionContext transactionContext = transaction.getTransactionContext();
 		if (transactionContext.isCompensable()) {
-			this.tccTransactionSkeleton.rollback(xid);
+			this.tccTransactionSkeleton.rollback(globalXid);
 		} else {
-			this.jtaTransactionSkeleton.rollback(xid);
+			this.jtaTransactionSkeleton.rollback(globalXid);
 		}
 	}
 
@@ -51,15 +53,16 @@ public class CompensableTransactionSkeletonDispatcher implements XAResource {
 	}
 
 	public void forget(Xid xid) throws XAException {
-		TransactionXid transactionXid = (TransactionXid) xid;
+		TransactionXid branchXid = (TransactionXid) xid;
+		TransactionXid globalXid = branchXid.getGlobalXid();
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		TransactionRepository repository = configurator.getTransactionRepository();
-		CompensableTransaction transaction = repository.getTransaction(transactionXid);
+		CompensableTransaction transaction = repository.getTransaction(globalXid);
 		TransactionContext transactionContext = transaction.getTransactionContext();
 		if (transactionContext.isCompensable()) {
-			this.tccTransactionSkeleton.forget(xid);
+			this.tccTransactionSkeleton.forget(globalXid);
 		} else {
-			this.jtaTransactionSkeleton.forget(xid);
+			this.jtaTransactionSkeleton.forget(globalXid);
 		}
 	}
 

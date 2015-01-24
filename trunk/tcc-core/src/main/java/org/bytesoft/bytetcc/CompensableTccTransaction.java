@@ -28,6 +28,8 @@ import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionListener;
 import org.bytesoft.transaction.archive.XAResourceArchive;
 import org.bytesoft.transaction.xa.TransactionXid;
+import org.bytesoft.transaction.xa.XAResourceDescriptor;
+import org.bytesoft.transaction.xa.XidFactory;
 
 public class CompensableTccTransaction extends CompensableTransaction {
 	public static int STATUS_UNKNOWN = 0;
@@ -163,12 +165,102 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException, SystemException {
-		return this.jtaTransaction.delistResource(xaRes, flag);
+		if (XAResourceDescriptor.class.isInstance(xaRes)) {
+			XAResourceDescriptor descriptor = (XAResourceDescriptor) xaRes;
+			if (descriptor.isRemote()) {
+				Set<Entry<Xid, XAResourceArchive>> entrySet = this.resourceArchives.entrySet();
+				Iterator<Map.Entry<Xid, XAResourceArchive>> itr = entrySet.iterator();
+				while (itr.hasNext()) {
+					Map.Entry<Xid, XAResourceArchive> entry = itr.next();
+					XAResourceArchive archive = entry.getValue();
+					XAResourceDescriptor resource = archive.getDescriptor();
+					if (resource.equals(descriptor)) {
+						return true;
+					}
+				}
+
+				Iterator<Map.Entry<Xid, XAResourceArchive>> iterator = entrySet.iterator();
+				while (iterator.hasNext()) {
+					Map.Entry<Xid, XAResourceArchive> entry = iterator.next();
+					XAResourceArchive archive = entry.getValue();
+					XAResourceDescriptor resource = archive.getDescriptor();
+					boolean isSameRM = false;
+					try {
+						isSameRM = resource.isSameRM(descriptor);
+					} catch (XAException ex) {
+						continue;
+					}
+					if (isSameRM) {
+						return true;
+					}
+				}
+
+				TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+				XidFactory xidFactory = configurator.getXidFactory();
+				TransactionXid globalXid = this.transactionContext.getGlobalXid();
+				TransactionXid branchXid = xidFactory.createBranchXid(globalXid);
+				XAResourceArchive archive = new XAResourceArchive();
+				archive.setDescriptor(descriptor);
+				archive.setXid(branchXid);
+				this.resourceArchives.put(branchXid, archive);
+
+				return true;
+			} else {
+				return this.jtaTransaction.delistResource(xaRes, flag);
+			}
+		} else {
+			return this.jtaTransaction.delistResource(xaRes, flag);
+		}
 	}
 
 	public synchronized boolean enlistResource(XAResource xaRes) throws RollbackException, IllegalStateException,
 			SystemException {
-		return this.jtaTransaction.enlistResource(xaRes);
+		if (XAResourceDescriptor.class.isInstance(xaRes)) {
+			XAResourceDescriptor descriptor = (XAResourceDescriptor) xaRes;
+			if (descriptor.isRemote()) {
+				Set<Entry<Xid, XAResourceArchive>> entrySet = this.resourceArchives.entrySet();
+				Iterator<Map.Entry<Xid, XAResourceArchive>> itr = entrySet.iterator();
+				while (itr.hasNext()) {
+					Map.Entry<Xid, XAResourceArchive> entry = itr.next();
+					XAResourceArchive archive = entry.getValue();
+					XAResourceDescriptor resource = archive.getDescriptor();
+					if (resource.equals(descriptor)) {
+						return true;
+					}
+				}
+
+				Iterator<Map.Entry<Xid, XAResourceArchive>> iterator = entrySet.iterator();
+				while (iterator.hasNext()) {
+					Map.Entry<Xid, XAResourceArchive> entry = iterator.next();
+					XAResourceArchive archive = entry.getValue();
+					XAResourceDescriptor resource = archive.getDescriptor();
+					boolean isSameRM = false;
+					try {
+						isSameRM = resource.isSameRM(descriptor);
+					} catch (XAException ex) {
+						continue;
+					}
+					if (isSameRM) {
+						return true;
+					}
+				}
+
+				TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+				XidFactory xidFactory = configurator.getXidFactory();
+				TransactionXid globalXid = this.transactionContext.getGlobalXid();
+				TransactionXid branchXid = xidFactory.createBranchXid(globalXid);
+				XAResourceArchive archive = new XAResourceArchive();
+				archive.setDescriptor(descriptor);
+				archive.setXid(branchXid);
+				this.resourceArchives.put(branchXid, archive);
+
+				return true;
+			} else {
+				return this.jtaTransaction.enlistResource(xaRes);
+			}
+		} else {
+			return this.jtaTransaction.enlistResource(xaRes);
+		}
 	}
 
 	public int getStatus() /* throws SystemException */{
