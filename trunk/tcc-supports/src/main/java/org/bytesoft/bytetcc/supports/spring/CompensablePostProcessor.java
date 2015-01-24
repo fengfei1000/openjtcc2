@@ -1,11 +1,15 @@
 package org.bytesoft.bytetcc.supports.spring;
 
+import javax.transaction.xa.XAResource;
+
+import org.bytesoft.byterpc.svc.ServiceFactory;
 import org.bytesoft.bytetcc.Compensable;
 import org.bytesoft.bytetcc.CompensableTransactionManager;
+import org.bytesoft.bytetcc.supports.spring.beans.ByteTccSkeletonObject;
+import org.bytesoft.bytetcc.supports.spring.beans.ByteTccStubObject;
 import org.springframework.aop.TargetClassAware;
 import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.FatalBeanException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -16,17 +20,11 @@ public class CompensablePostProcessor implements BeanFactoryPostProcessor, BeanP
 
 	private ApplicationContext applicationContext;
 	private CompensableTransactionManager transactionManager;
-
-	// private final Set<CompensableNativeHandler> compensables = new HashSet<CompensableNativeHandler>();
+	private ServiceFactory serviceFactory;
+	private XAResource transactionSkeleton;
 
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-		// Iterator<CompensableNativeHandler> itr = this.compensables.iterator();
-		// while (itr.hasNext()) {
-		// CompensableNativeHandler compensable = itr.next();
-		// itr.remove();
-		// compensable.setApplicationContext(this.applicationContext);
-		// compensable.setTransactionManager(this.transactionManager);
-		// }
+		this.serviceFactory.putServiceObject(XAResource.class.getName(), XAResource.class, this.transactionSkeleton);
 	}
 
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -34,13 +32,7 @@ public class CompensablePostProcessor implements BeanFactoryPostProcessor, BeanP
 	}
 
 	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-		if (CompensableTransactionManager.class.isInstance(bean)) {
-			if (this.transactionManager != null) {
-				throw new FatalBeanException("There already has a compensable-transaction-manager exists!");
-			}
-			this.transactionManager = (CompensableTransactionManager) bean;
-			return bean;
-		} else if (TargetClassAware.class.isInstance(bean)) {
+		if (TargetClassAware.class.isInstance(bean)) {
 			TargetClassAware tca = (TargetClassAware) bean;
 			Class<?> targetClass = tca.getTargetClass();
 			Compensable compensable = targetClass.getAnnotation(Compensable.class);
@@ -82,21 +74,30 @@ public class CompensablePostProcessor implements BeanFactoryPostProcessor, BeanP
 				handler.setInterfaceClass(interfaceClass);
 				handler.setConfirmableKey(confirmableKey);
 				handler.setCancellableKey(cancellableKey);
-				// handler.setApplicationContext(this.applicationContext);
 				handler.setTransactionManager(this.transactionManager);
 
 				pfb.setTarget(target);
 				pfb.setInterfaces(interfaces);
 
 				return pfb;
-			} else {
-				return bean;
 			}
 
-		} else {
+		}
+
+		if (ByteTccStubObject.class.isInstance(bean)) {
+			ByteTccStubObject stub = (ByteTccStubObject) bean;
+			Class<?> interfaceClass = stub.getInterfaceClass();
+			this.serviceFactory.putServiceObject(beanName, interfaceClass, stub);
+			return bean;
+		} else if (ByteTccSkeletonObject.class.isInstance(bean)) {
+			ByteTccSkeletonObject skeleton = (ByteTccSkeletonObject) bean;
+			Class<?> interfaceClass = skeleton.getInterfaceClass();
+			skeleton.setApplicationContext(this.applicationContext);
+			this.serviceFactory.putServiceObject(beanName, interfaceClass, skeleton);
 			return bean;
 		}
 
+		return bean;
 	}
 
 	public ApplicationContext getApplicationContext() {
@@ -113,6 +114,22 @@ public class CompensablePostProcessor implements BeanFactoryPostProcessor, BeanP
 
 	public void setTransactionManager(CompensableTransactionManager transactionManager) {
 		this.transactionManager = transactionManager;
+	}
+
+	public ServiceFactory getServiceFactory() {
+		return serviceFactory;
+	}
+
+	public void setServiceFactory(ServiceFactory serviceFactory) {
+		this.serviceFactory = serviceFactory;
+	}
+
+	public XAResource getTransactionSkeleton() {
+		return transactionSkeleton;
+	}
+
+	public void setTransactionSkeleton(XAResource transactionSkeleton) {
+		this.transactionSkeleton = transactionSkeleton;
 	}
 
 }

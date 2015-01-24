@@ -1,7 +1,11 @@
 package org.bytesoft.bytetcc.supports.spring.beans;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
 
 import org.bytesoft.byterpc.RemoteInvocationResult;
 import org.bytesoft.byterpc.cci.ConnectionFactory;
@@ -14,18 +18,29 @@ import org.bytesoft.byterpc.wire.RemoteClientEndpoint;
 import org.bytesoft.bytetcc.supports.spring.rpc.ByteTccRemoteInvocation;
 import org.bytesoft.naming.NamingContextFactory;
 
-public class ByteTccStubInvocationHandler implements ByteTccStubObject, InvocationHandler {
+public class ByteTccStubInvocationHandler implements ByteTccStubObject, InvocationHandler, MethodInterceptor {
 	private String provider;
 	private String serviceId;
 	private Class<?> interfaceClass;
 	private RemoteClientEndpoint remoteEndpoint;
 
+	public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+		// System.out.printf("method: %s, args: %s, proxy: %s%n", method, Arrays.toString(args), proxy);
+		return this.invoke(proxy, method, args);
+	}
+
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-		if (Object.class.equals(method.getDeclaringClass())) {
-			return method.invoke(this, args);
-		} else if (ByteTccStubObject.class.equals(method.getDeclaringClass())) {
-			return method.invoke(this, args);
+		try {
+			if (Object.class.equals(method.getDeclaringClass())) {
+				return method.invoke(this, args);
+			} else if (ByteTccStubObject.class.equals(method.getDeclaringClass())) {
+				return method.invoke(this, args);
+			}
+		} catch (IllegalAccessException ex) {
+			throw new RuntimeException(ex);
+		} catch (InvocationTargetException ex) {
+			throw ex.getTargetException();
 		}
 
 		if (this.remoteEndpoint == null) {
