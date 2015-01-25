@@ -31,12 +31,13 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 	/* it's unnecessary for compensable-transaction to do the timing, the jta-transaction will do it. */
 	private int timeoutSeconds = 5 * 60;
-	private final ThreadLocal<CompensableInvocation> compensables = new ThreadLocal<CompensableInvocation>();
+	private final ThreadLocal<CompensableInvocation> invocations = new ThreadLocal<CompensableInvocation>();
+	private final ThreadLocal<CompensableTccTransaction> transients = new ThreadLocal<CompensableTccTransaction>();
 	private final Map<Thread, CompensableTransaction> associateds = new ConcurrentHashMap<Thread, CompensableTransaction>();
 
 	public CompensableInvocation beforeCompensableExecution(CompensableInvocation lastest) {
-		CompensableInvocation original = this.compensables.get();
-		this.compensables.set(lastest);
+		CompensableInvocation original = this.invocations.get();
+		this.invocations.set(lastest);
 		return original;
 	}
 
@@ -48,13 +49,13 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 				this.delistCompensableInvocationIfRequired((CompensableTccTransaction) transaction);
 			}
 		} finally {
-			this.compensables.set(original);
+			this.invocations.set(original);
 		}
 
 	}
 
 	private void delistCompensableInvocationIfRequired(CompensableTccTransaction transaction) {
-		CompensableInvocation compensable = this.compensables.get();
+		CompensableInvocation compensable = this.invocations.get();
 		if (transaction != null) {
 			transaction.delistCompensableInvocation(compensable);
 		}
@@ -64,7 +65,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 		this.initializeTransactionManagerIfRequired();
 
-		CompensableInvocation lastest = compensables.get();
+		CompensableInvocation lastest = invocations.get();
 		boolean compensable = (lastest != null);
 		if (compensable) {
 			this.beginCompensableTransaction();
@@ -125,6 +126,11 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		this.associateds.put(Thread.currentThread(), transaction);
 		transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
 
+		CompensableTccTransaction compensableTx = this.transients.get();
+		if (compensableTx != null) {
+			transaction.setCompensableTccTransaction(compensableTx);
+			// TODO compensableTx.setCompensableJtaTransaction(transaction);
+		}
 	}
 
 	private void beginCompensableTransaction() throws NotSupportedException, SystemException {
@@ -337,82 +343,9 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 		transactionLogger.updateTransaction(transaction.getTransactionArchive());
 
-		// step2: create confirm-phase-transaction
-		CompensableJtaTransaction confirmTransaction = null;
+		// step2: confirm
 		try {
-			this.beginJtaTransaction();
-			confirmTransaction = (CompensableJtaTransaction) this.getCurrentTransaction();
-			confirmTransaction.setCompensableTccTransaction(transaction);
-			transaction.setCompensableJtaTransaction(confirmTransaction);
-		} catch (SystemException ex) {
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException(ex);
-		} catch (NotSupportedException ex) {
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException(ex);
-		} catch (RuntimeException ex) {
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException(ex);
-		}
-
-		// step3: confirm
-		try {
-			transaction.nativeConfirm();
-		} catch (Exception ex) /* RollbackRequiredException | RuntimeException */{
-
-			TransactionXid confirmXid = confirmTransaction.getTransactionContext().getCurrentXid();
-			try {
-				this.internalRollbackJtaTransaction();
-				transaction.setCompensableJtaTransaction(null);
-			} catch (IllegalStateException otherEx) {
-				transactionRepository.putErrorTransaction(confirmXid, confirmTransaction);
-			} catch (SecurityException otherEx) {
-				transactionRepository.putErrorTransaction(confirmXid, confirmTransaction);
-			} catch (SystemException otherEx) {
-				transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CONFIRM_FAILURE);
-				transactionLogger.updateTransaction(transaction.getTransactionArchive());
-
-				transactionRepository.putErrorTransaction(confirmXid, confirmTransaction);
-			} catch (RuntimeException otherEx) {
-				transactionRepository.putErrorTransaction(confirmXid, confirmTransaction);
-			}
-
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException(ex);
-		}
-
-		try {
-			this.internalCommitJtaTransaction();
-		} catch (CommitRequiredException ex) {
-			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CONFIRM_FAILURE);
-			transactionLogger.updateTransaction(transaction.getTransactionArchive());
-
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException(ex);
-		} catch (RollbackException ex) {
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException(ex);
-		} catch (HeuristicMixedException ex) {
-			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CONFIRM_FAILURE);
-			transactionLogger.updateTransaction(transaction.getTransactionArchive());
-
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException(ex);
-		} catch (HeuristicRollbackException ex) {
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException(ex);
-		} catch (SecurityException ex) {
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException(ex);
-		} catch (IllegalStateException ex) {
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException(ex);
-		} catch (SystemException ex) {
-			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CONFIRM_FAILURE);
-			transactionLogger.updateTransaction(transaction.getTransactionArchive());
-
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException(ex);
+			this.processNativeConfirm(transaction);
 		} catch (RuntimeException ex) {
 			transactionRepository.putErrorTransaction(globalXid, transaction);
 			throw new CommittingException(ex);
@@ -439,6 +372,15 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 	}
 
+	public void processNativeConfirm(CompensableTccTransaction transaction) {
+		try {
+			this.transients.set(transaction);
+			transaction.nativeConfirm();
+		} finally {
+			this.transients.remove();
+		}
+	}
+
 	public int getStatus() throws SystemException {
 		Transaction transaction = this.getTransaction();
 		return transaction == null ? Status.STATUS_NO_TRANSACTION : transaction.getStatus();
@@ -462,7 +404,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		CompensableTransaction transaction = (CompensableTransaction) tobj;
 		TransactionImpl jtaTransaction = transaction.getJtaTransaction();
 		CompensableInvocation compensableObject = transaction.getCompensableObject();
-		this.compensables.set(compensableObject);
+		this.invocations.set(compensableObject);
 		transaction.setCompensableObject(null);
 		this.jtaTransactionManager.resume(jtaTransaction);
 		this.associateds.put(Thread.currentThread(), transaction);
@@ -551,118 +493,23 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 			throw new CommittingException();/* never happen */
 		}
 
-		CompensableJtaTransaction originTransaction = transaction.getCompensableJtaTransaction();
-		if (originTransaction != null) {
-			transactionRepository.putErrorTransaction(globalXid, transaction);
-			throw new CommittingException();/* never happen */
-		}
-
 		transaction.setTransactionStatus(Status.STATUS_ROLLING_BACK);
 
 		if (transaction.getCompensableStatus() == CompensableTccTransaction.STATUS_TRIED) {
 			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CANCELLING);
 			transactionLogger.updateTransaction(transaction.getTransactionArchive());
 
-			// step1: create cancel-phase-transaction
-			CompensableJtaTransaction cancelTransaction = null;
-			try {
-				this.beginJtaTransaction();
-				cancelTransaction = (CompensableJtaTransaction) this.getCurrentTransaction();
-				cancelTransaction.setCompensableTccTransaction(transaction);
-				transaction.setCompensableJtaTransaction(cancelTransaction);
-			} catch (SystemException ex) {
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-				throw ex;
-			} catch (NotSupportedException ex) {
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-				SystemException sysEx = new SystemException();
-				sysEx.initCause(ex);
-				throw sysEx;
-			} catch (RuntimeException ex) {
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-				SystemException sysEx = new SystemException();
-				sysEx.initCause(ex);
-				throw sysEx;
-			}
-
 			// step2: cancel
 			try {
-				transaction.nativeCancel();
-			} catch (Exception ex) /* RollbackRequiredException | RuntimeException */{
-				TransactionXid cancelXid = cancelTransaction.getTransactionContext().getCurrentXid();
-				try {
-					this.internalRollbackJtaTransaction();
-					transaction.setCompensableJtaTransaction(null);
-				} catch (IllegalStateException otherEx) {
-					transactionRepository.putErrorTransaction(cancelXid, cancelTransaction);
-				} catch (SecurityException otherEx) {
-					transactionRepository.putErrorTransaction(cancelXid, cancelTransaction);
-				} catch (SystemException otherEx) {
-					transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CANCEL_FAILURE);
-					transactionLogger.updateTransaction(transaction.getTransactionArchive());
-
-					transactionRepository.putErrorTransaction(cancelXid, cancelTransaction);
-				} catch (RuntimeException otherEx) {
-					transactionRepository.putErrorTransaction(cancelXid, cancelTransaction);
-				}
-
-				SystemException sysEx = new SystemException();
-				sysEx.initCause(ex);
-				throw sysEx;
-			}
-
-			try {
-				this.internalCommitJtaTransaction();
-			} catch (CommitRequiredException ex) {
-				transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CANCEL_FAILURE);
-				transactionLogger.updateTransaction(transaction.getTransactionArchive());
-
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-				SystemException sysEx = new SystemException();
-				sysEx.initCause(ex);
-				throw sysEx;
-			} catch (RollbackException ex) {
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-				SystemException sysEx = new SystemException();
-				sysEx.initCause(ex);
-				throw sysEx;
-			} catch (HeuristicMixedException ex) {
-				transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CANCEL_FAILURE);
-				transactionLogger.updateTransaction(transaction.getTransactionArchive());
-
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-				SystemException sysEx = new SystemException();
-				sysEx.initCause(ex);
-				throw sysEx;
-			} catch (HeuristicRollbackException ex) {
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-				SystemException sysEx = new SystemException();
-				sysEx.initCause(ex);
-				throw sysEx;
-			} catch (SecurityException ex) {
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-				SystemException sysEx = new SystemException();
-				sysEx.initCause(ex);
-				throw sysEx;
-			} catch (IllegalStateException ex) {
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-				SystemException sysEx = new SystemException();
-				sysEx.initCause(ex);
-				throw sysEx;
-			} catch (SystemException ex) {
-				transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CANCEL_FAILURE);
-				transactionLogger.updateTransaction(transaction.getTransactionArchive());
-
-				transactionRepository.putErrorTransaction(globalXid, transaction);
-				SystemException sysEx = new SystemException();
-				sysEx.initCause(ex);
-				throw sysEx;
+				this.processNativeCancel(transaction);
 			} catch (RuntimeException ex) {
 				transactionRepository.putErrorTransaction(globalXid, transaction);
+
 				SystemException sysEx = new SystemException();
 				sysEx.initCause(ex);
 				throw sysEx;
 			}
+
 			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CANCELLED);
 			transactionLogger.updateTransaction(transaction.getTransactionArchive());
 
@@ -688,6 +535,15 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		transaction.setTransactionStatus(Status.STATUS_ROLLEDBACK);
 		transactionLogger.deleteTransaction(transaction.getTransactionArchive());
 
+	}
+
+	public void processNativeCancel(CompensableTccTransaction transaction) {
+		try {
+			this.transients.set(transaction);
+			transaction.nativeCancel();
+		} finally {
+			this.transients.remove();
+		}
 	}
 
 	public void setRollbackOnly() throws IllegalStateException, SystemException {
@@ -719,8 +575,8 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		CompensableTransaction transaction = this.associateds.remove(Thread.currentThread());
 		TransactionImpl jtaTransaction = this.jtaTransactionManager.suspend();
 		transaction.setJtaTransaction(jtaTransaction);
-		CompensableInvocation compensableObject = this.compensables.get();
-		this.compensables.remove();
+		CompensableInvocation compensableObject = this.invocations.get();
+		this.invocations.remove();
 		transaction.setCompensableObject(compensableObject);
 		return transaction;
 	}
