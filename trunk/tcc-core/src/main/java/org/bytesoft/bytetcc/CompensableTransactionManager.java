@@ -56,6 +56,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 	private void delistCompensableInvocationIfNecessary(CompensableTccTransaction transaction) {
 		CompensableInvocation compensable = this.invocations.get();
+		this.invocations.remove();
 		if (transaction != null) {
 			transaction.delistCompensableInvocation(compensable);
 		}
