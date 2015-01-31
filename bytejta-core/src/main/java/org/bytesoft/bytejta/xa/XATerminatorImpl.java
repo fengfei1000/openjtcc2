@@ -284,7 +284,7 @@ public class XATerminatorImpl implements XATerminator {
 		}
 
 		try {
-			this.throwCommitExceptionIfRequired(commitExists, rollbackExists);
+			this.throwCommitExceptionIfNecessary(commitExists, rollbackExists);
 		} catch (XAException xae) {
 			if (unFinishExists) {
 				throw new XAInternalException(xae.errorCode);
@@ -295,7 +295,7 @@ public class XATerminatorImpl implements XATerminator {
 
 	}
 
-	private void throwCommitExceptionIfRequired(boolean commitExists, boolean rollbackExists) throws XAException {
+	private void throwCommitExceptionIfNecessary(boolean commitExists, boolean rollbackExists) throws XAException {
 		if (commitExists && rollbackExists) {
 			throw new XAException(XAException.XA_HEURMIX);
 		} else if (rollbackExists) {
@@ -444,7 +444,7 @@ public class XATerminatorImpl implements XATerminator {
 		}// end-for
 
 		try {
-			this.throwCommitExceptionIfRequired(commitExists, rollbackExists);
+			this.throwCommitExceptionIfNecessary(commitExists, rollbackExists);
 		} catch (XAException xae) {
 			if (unFinishExists) {
 				throw new XAInternalException(xae.errorCode);
@@ -576,7 +576,7 @@ public class XATerminatorImpl implements XATerminator {
 		}
 
 		try {
-			this.throwRollbackExceptionIfRequired(commitExists, rollbackExists);
+			this.throwRollbackExceptionIfNecessary(commitExists, rollbackExists);
 		} catch (XAException xae) {
 			if (unFinishExists) {
 				throw new XAInternalException(xae.errorCode);
@@ -587,7 +587,7 @@ public class XATerminatorImpl implements XATerminator {
 
 	}
 
-	private void throwRollbackExceptionIfRequired(boolean commitExists, boolean rollbackExists) throws XAException {
+	private void throwRollbackExceptionIfNecessary(boolean commitExists, boolean rollbackExists) throws XAException {
 		if (commitExists && rollbackExists) {
 			throw new XAException(XAException.XA_HEURMIX);
 		} else if (commitExists) {

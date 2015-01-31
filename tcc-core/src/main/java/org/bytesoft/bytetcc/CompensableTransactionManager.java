@@ -46,7 +46,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		try {
 			CompensableTransaction transaction = (CompensableTransaction) this.getCurrentTransaction();
 			if (CompensableTccTransaction.class.isInstance(transaction)) {
-				this.delistCompensableInvocationIfRequired((CompensableTccTransaction) transaction);
+				this.delistCompensableInvocationIfNecessary((CompensableTccTransaction) transaction);
 			}
 		} finally {
 			this.invocations.set(original);
@@ -54,7 +54,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 	}
 
-	private void delistCompensableInvocationIfRequired(CompensableTccTransaction transaction) {
+	private void delistCompensableInvocationIfNecessary(CompensableTccTransaction transaction) {
 		CompensableInvocation compensable = this.invocations.get();
 		if (transaction != null) {
 			transaction.delistCompensableInvocation(compensable);
@@ -63,7 +63,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 	public void begin() throws NotSupportedException, SystemException {
 
-		this.initializeTransactionManagerIfRequired();
+		this.initializeTransactionManagerIfNecessary();
 
 		CompensableInvocation lastest = invocations.get();
 		boolean compensable = (lastest != null);
@@ -75,7 +75,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 	}
 
-	private void initializeTransactionManagerIfRequired() {
+	private void initializeTransactionManagerIfNecessary() {
 		if (this.transactionManagerInitialized == false) {
 			synchronized (CompensableTransactionManager.class) {
 				if (this.transactionManagerInitialized == false) {
@@ -182,7 +182,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 	public void propagationBegin(TransactionContext transactionContext) throws NotSupportedException, SystemException {
 
-		this.initializeTransactionManagerIfRequired();
+		this.initializeTransactionManagerIfNecessary();
 
 		if (this.getCurrentTransaction() != null) {
 			throw new NotSupportedException();
@@ -199,27 +199,33 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 		if (transaction == null) {
 			transaction = new CompensableTccTransaction(transactionContext);
-			try {
-				this.jtaTransactionManager.begin(jtaTransactionContext);
-				TransactionImpl jtaTransaction = this.jtaTransactionManager.getCurrentTransaction();
-				transaction.setJtaTransaction(jtaTransaction);
-				jtaTransaction.registerTransactionListener(transaction);
-			} catch (SystemException ex) {
-				try {
-					this.jtaTransactionManager.rollback();
-				} catch (Exception ignore) {
-					// ignore
-				}
-				throw ex;
-			}
+			this.processBeginJtaTransaction(transaction, jtaTransactionContext);
 			transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
 		} else {
+			this.processBeginJtaTransaction(transaction, jtaTransactionContext);
 			transaction.propagationBegin(transactionContext);
 		}
 
 		this.associateds.put(Thread.currentThread(), transaction);
 		// this.transactionStatistic.fireBeginTransaction(transaction);
 
+	}
+
+	private void processBeginJtaTransaction(CompensableTccTransaction transaction, TransactionContext jtaTransactionContext)
+			throws NotSupportedException, SystemException {
+		try {
+			this.jtaTransactionManager.begin(jtaTransactionContext);
+			TransactionImpl jtaTransaction = this.jtaTransactionManager.getCurrentTransaction();
+			transaction.setJtaTransaction(jtaTransaction);
+			jtaTransaction.registerTransactionListener(transaction);
+		} catch (SystemException ex) {
+			try {
+				this.jtaTransactionManager.rollback();
+			} catch (Exception ignore) {
+				// ignore
+			}
+			throw ex;
+		}
 	}
 
 	public void propagationFinish(TransactionContext transactionContext) throws SystemException {
@@ -297,7 +303,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 			throw new IllegalStateException();
 		}
 
-		this.delistCompensableInvocationIfRequired(transaction);
+		this.delistCompensableInvocationIfNecessary(transaction);
 
 		TransactionContext transactionContext = transaction.getTransactionContext();
 		TransactionXid globalXid = transactionContext.getGlobalXid();
@@ -451,7 +457,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 			throw new SystemException();
 		}
 
-		this.delistCompensableInvocationIfRequired(transaction);
+		this.delistCompensableInvocationIfNecessary(transaction);
 
 		TransactionContext transactionContext = transaction.getTransactionContext();
 		TransactionXid globalXid = transactionContext.getGlobalXid();

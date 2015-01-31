@@ -48,6 +48,9 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	private final Map<Xid, XAResourceArchive> resourceArchives = new ConcurrentHashMap<Xid, XAResourceArchive>();
 	private ThreadLocal<TransactionContext> transientContexts = new ThreadLocal<TransactionContext>();
 
+	/** archive on confirm/cancel phase. */
+	private transient CompensableArchive compensableArchive;
+
 	public CompensableTccTransaction(TransactionContext transactionContext) {
 		super(transactionContext);
 	}
@@ -100,7 +103,12 @@ public class CompensableTccTransaction extends CompensableTransaction {
 			Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
 			while (coordinatorItr.hasNext()) {
 				CompensableArchive archive = coordinatorItr.next();
-				executor.confirm(archive.getCompensable());
+				try {
+					this.compensableArchive = archive;
+					executor.confirm(this.compensableArchive.getCompensable());
+				} finally {
+					this.compensableArchive = null;
+				}
 			}
 		}
 
@@ -108,7 +116,12 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		while (participantItr.hasNext()) {
 			CompensableArchive archive = participantItr.next();
 			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMING;
-			executor.confirm(archive.getCompensable());
+			try {
+				this.compensableArchive = archive;
+				executor.confirm(this.compensableArchive.getCompensable());
+			} finally {
+				this.compensableArchive = null;
+			}
 		}
 	}
 
@@ -265,7 +278,6 @@ public class CompensableTccTransaction extends CompensableTransaction {
 
 	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException, IllegalStateException,
 			SystemException {
-		// TODO
 		this.jtaTransaction.registerSynchronization(sync);
 	}
 
@@ -320,15 +332,19 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public void prepareStart() {
+		// System.out.println("prepare-start");
 	}
 
 	public void prepareComplete(boolean success) {
+		// System.out.println("prepare-complete: " + success);
 	}
 
 	public void commitStart() {
+		// System.out.println("commit-start");
 	}
 
 	public void commitSuccess() {
+		// System.out.println("commit-complete: " + this.transactionStatus);
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
 			// TODO transaction-log
 			this.compensableStatus = CompensableTccTransaction.STATUS_TRIED;
@@ -342,6 +358,7 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public void commitFailure(int optcode) {
+		// System.out.println("commit-failure: " + optcode);
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
 			this.completeFailureInPreparing(optcode);
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
@@ -352,6 +369,7 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	private void completeFailureInPreparing(int optcode) {
+		// System.out.println("complete-failure-in-preparing: " + optcode);
 		if (optcode == TransactionListener.OPT_DEFAULT) {
 			this.compensableStatus = CompensableTccTransaction.STATUS_TRY_FAILURE;
 		} else if (optcode == TransactionListener.OPT_HEURCOM) {
@@ -364,6 +382,7 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	private void completeFailureInCommitting(int optcode) {
+		// System.out.println("commit-failure-in-commiting: " + optcode);
 		if (optcode == TransactionListener.OPT_DEFAULT) {
 			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRM_FAILURE;
 		} else if (optcode == TransactionListener.OPT_HEURCOM) {
@@ -376,6 +395,7 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	private void completeFailureInRollingback(int optcode) {
+		// System.out.println("commit-failure-in-rollingback: " + optcode);
 		if (optcode == TransactionListener.OPT_DEFAULT) {
 			this.compensableStatus = CompensableTccTransaction.STATUS_CANCEL_FAILURE;
 		} else if (optcode == TransactionListener.OPT_HEURCOM) {
@@ -388,9 +408,11 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public void rollbackStart() {
+		// System.out.println("rollback-start");
 	}
 
 	public void rollbackSuccess() {
+		// System.out.println("rollback-success: " + true);
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
 			// ignore
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
@@ -401,6 +423,7 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public void rollbackFailure(int optcode) {
+		// System.out.println("rollback-failure: " + optcode);
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
 			this.completeFailureInPreparing(optcode);
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
