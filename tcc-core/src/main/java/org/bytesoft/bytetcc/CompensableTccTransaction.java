@@ -19,6 +19,8 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.apache.log4j.Logger;
+import org.bytesoft.bytejta.xa.XATerminatorImpl;
 import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.bytetcc.archive.CompensableTransactionArchive;
 import org.bytesoft.bytetcc.common.TransactionConfigurator;
@@ -31,6 +33,8 @@ import org.bytesoft.transaction.xa.XAResourceDescriptor;
 import org.bytesoft.transaction.xa.XidFactory;
 
 public class CompensableTccTransaction extends CompensableTransaction {
+	static final Logger logger = Logger.getLogger(CompensableTccTransaction.class.getSimpleName());
+
 	public static int STATUS_UNKNOWN = 0;
 	public static int STATUS_TRY_FAILURE = 1;
 	public static int STATUS_TRIED = 2;
@@ -48,8 +52,8 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	private final Map<Xid, XAResourceArchive> resourceArchives = new ConcurrentHashMap<Xid, XAResourceArchive>();
 	private ThreadLocal<TransactionContext> transientContexts = new ThreadLocal<TransactionContext>();
 
-	/** archive on confirm/cancel phase. */
-	private transient CompensableArchive compensableArchive;
+	private transient CompensableArchive confirmArchive;
+	private transient CompensableArchive cancellArchive;
 
 	public CompensableTccTransaction(TransactionContext transactionContext) {
 		super(transactionContext);
@@ -104,10 +108,10 @@ public class CompensableTccTransaction extends CompensableTransaction {
 			while (coordinatorItr.hasNext()) {
 				CompensableArchive archive = coordinatorItr.next();
 				try {
-					this.compensableArchive = archive;
-					executor.confirm(this.compensableArchive.getCompensable());
+					this.confirmArchive = archive;
+					executor.confirm(this.confirmArchive.getCompensable());
 				} finally {
-					this.compensableArchive = null;
+					this.confirmArchive = null;
 				}
 			}
 		}
@@ -117,10 +121,10 @@ public class CompensableTccTransaction extends CompensableTransaction {
 			CompensableArchive archive = participantItr.next();
 			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMING;
 			try {
-				this.compensableArchive = archive;
-				executor.confirm(this.compensableArchive.getCompensable());
+				this.confirmArchive = archive;
+				executor.confirm(this.confirmArchive.getCompensable());
 			} finally {
-				this.compensableArchive = null;
+				this.confirmArchive = null;
 			}
 		}
 	}
@@ -292,7 +296,12 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
 		while (participantItr.hasNext()) {
 			CompensableArchive archive = participantItr.next();
-			executor.cancel(archive.getCompensable());
+			try {
+				this.cancellArchive = archive;
+				executor.cancel(this.cancellArchive.getCompensable());
+			} finally {
+				this.cancellArchive = null;
+			}
 		}
 	}
 
@@ -347,13 +356,18 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		// System.out.println("commit-complete: " + this.transactionStatus);
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
 			// TODO transaction-log
-			this.compensableStatus = CompensableTccTransaction.STATUS_TRIED;
+			// this.compensableStatus = CompensableTccTransaction.STATUS_TRIED;
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
+			if (this.confirmArchive != null) {
+				this.confirmArchive.setConfirmed(true);
+			} else if (this.cancellArchive != null) {
+				this.cancellArchive.setCancelled(true);
+			}
 			// TODO transaction-log
-			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMED;
+			// this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMED;
 		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
 			// TODO transaction-log
-			this.compensableStatus = CompensableTccTransaction.STATUS_CANCELLED;
+			// this.compensableStatus = CompensableTccTransaction.STATUS_CANCELLED;
 		}
 	}
 
