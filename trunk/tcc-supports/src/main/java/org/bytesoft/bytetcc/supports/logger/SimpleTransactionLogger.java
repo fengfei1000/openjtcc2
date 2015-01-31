@@ -395,7 +395,7 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		} catch (IOException ex) {
 			return new byte[0];
 		} finally {
-			this.closeIfRequired(baos);
+			this.closeIfNecessary(baos);
 		}
 
 	}
@@ -410,7 +410,7 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		} catch (IOException ex) {
 			return null;
 		} finally {
-			this.closeIfRequired(bais);
+			this.closeIfNecessary(bais);
 		}
 	}
 
@@ -518,7 +518,7 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 
 	}
 
-	private void closeIfRequired(Closeable closeable) {
+	private void closeIfNecessary(Closeable closeable) {
 		if (closeable != null) {
 			try {
 				closeable.close();

@@ -28,7 +28,7 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 	private XAResourceSerializer resourceSerializer;
 
 	public void createTransaction(TransactionArchive archive) {
-		this.registerResourceIfRequired(archive);
+		this.registerResourceIfNecessary(archive);
 
 		byte[] byteArray = this.serialize(archive);
 		SimpleTransactionStorageObject storageObject = new SimpleTransactionStorageObject(byteArray);
@@ -36,14 +36,14 @@ public class SimpleTransactionLogger implements TransactionLogger, TransactionAr
 	}
 
 	public void updateTransaction(TransactionArchive archive) {
-		this.registerResourceIfRequired(archive);
+		this.registerResourceIfNecessary(archive);
 
 		byte[] byteArray = this.serialize(archive);
 		SimpleTransactionStorageObject storageObject = new SimpleTransactionStorageObject(byteArray);
 		this.storageManager.modifyStorageObject(storageObject);
 	}
 
-	private void registerResourceIfRequired(TransactionArchive archive) {
+	private void registerResourceIfNecessary(TransactionArchive archive) {
 		List<XAResourceArchive> nativeResources = archive.getNativeResources();
 		for (int i = 0; i < nativeResources.size(); i++) {
 			XAResourceArchive resourceArchive = nativeResources.get(i);

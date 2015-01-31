@@ -57,7 +57,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 		if (this.storageFile.exists()) {
 			this.raf = new RandomAccessFile(this.storageFile, "rw");
 		} else {
-			this.mkdirDirectoryIfRequired();
+			this.mkdirDirectoryIfNecessary();
 			this.createStorageFile();
 		}
 
@@ -71,7 +71,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 		FileChannel channel = this.raf.getChannel();
 		this.resourceBuf = channel.map(MapMode.READ_WRITE, SIZE_SECTION_HEADER, SIZE_SECTION_RESOURCES);
 		this.initializeResourceSection();
-		this.scanMaxPositionIfRequired();
+		this.scanMaxPositionIfNecessary();
 		this.initializeStorageSection();
 	}
 
@@ -110,7 +110,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 		}
 	}
 
-	protected synchronized void scanMaxPositionIfRequired() throws IOException {
+	protected synchronized void scanMaxPositionIfNecessary() throws IOException {
 		if (this.maxPosition <= 0) {
 			FileChannel channel = this.raf.getChannel();
 			long eofpos = channel.size();
@@ -217,7 +217,7 @@ public class SimpleTransactionStorageManager implements TransactionStorageManage
 		}
 	}
 
-	protected synchronized void mkdirDirectoryIfRequired() {
+	protected synchronized void mkdirDirectoryIfNecessary() {
 		File directory = this.storageFile.getParentFile();
 		if (directory.exists() == false) {
 			directory.mkdirs();

@@ -90,6 +90,14 @@ public class CompensableTccTransactionInterceptor implements TransactionIntercep
 			TransactionContext srcTransactionContext = transaction.getTransactionContext();
 			TransactionContext transactionContext = srcTransactionContext.clone();
 			response.setTransactionContext(transactionContext);
+			try {
+				transactionManager.propagationFinish(transactionContext);
+			} catch (SystemException ex) {
+				logger.error("CompensableTccTransactionInterceptor.beforeSendResponse(TransactionResponse)", ex);
+				IllegalStateException exception = new IllegalStateException();
+				exception.initCause(ex);
+				throw exception;
+			}
 		}
 	}
 
