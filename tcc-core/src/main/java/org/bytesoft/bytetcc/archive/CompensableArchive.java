@@ -24,6 +24,7 @@ public class CompensableArchive {
 
 	private Xid xid;
 	private CompensableInvocation compensable;
+	private transient boolean txEnabled;
 	private boolean coordinator;
 	private boolean confirmed;
 	private boolean cancelled;
@@ -82,6 +83,14 @@ public class CompensableArchive {
 
 	public void setCoordinator(boolean coordinator) {
 		this.coordinator = coordinator;
+	}
+
+	public boolean isTxEnabled() {
+		return txEnabled;
+	}
+
+	public void setTxEnabled(boolean txEnabled) {
+		this.txEnabled = txEnabled;
 	}
 
 }

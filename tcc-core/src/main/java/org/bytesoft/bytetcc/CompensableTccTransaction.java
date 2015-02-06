@@ -20,7 +20,6 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import org.apache.log4j.Logger;
-import org.bytesoft.bytejta.xa.XATerminatorImpl;
 import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.bytetcc.archive.CompensableTransactionArchive;
 import org.bytesoft.bytetcc.common.TransactionConfigurator;
@@ -109,8 +108,13 @@ public class CompensableTccTransaction extends CompensableTransaction {
 				CompensableArchive archive = coordinatorItr.next();
 				try {
 					this.confirmArchive = archive;
+					this.confirmArchive.setTxEnabled(false);
 					executor.confirm(this.confirmArchive.getCompensable());
+					if (this.confirmArchive.isTxEnabled() == false) {
+						this.confirmArchive.setConfirmed(true);
+					}
 				} finally {
+					this.confirmArchive.setTxEnabled(false);
 					this.confirmArchive = null;
 				}
 			}
@@ -122,8 +126,13 @@ public class CompensableTccTransaction extends CompensableTransaction {
 			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMING;
 			try {
 				this.confirmArchive = archive;
+				this.confirmArchive.setTxEnabled(false);
 				executor.confirm(this.confirmArchive.getCompensable());
+				if (this.confirmArchive.isTxEnabled() == false) {
+					this.confirmArchive.setConfirmed(true);
+				}
 			} finally {
+				this.confirmArchive.setTxEnabled(false);
 				this.confirmArchive = null;
 			}
 		}
@@ -298,8 +307,13 @@ public class CompensableTccTransaction extends CompensableTransaction {
 			CompensableArchive archive = participantItr.next();
 			try {
 				this.cancellArchive = archive;
+				this.cancellArchive.setTxEnabled(false);
 				executor.cancel(this.cancellArchive.getCompensable());
+				if (this.cancellArchive.isTxEnabled() == false) {
+					this.cancellArchive.setCancelled(true);
+				}
 			} finally {
+				this.cancellArchive.setTxEnabled(false);
 				this.cancellArchive = null;
 			}
 		}
@@ -340,39 +354,54 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		return this.transactionStatus == Status.STATUS_MARKED_ROLLBACK;
 	}
 
+	private void markCompensableArchiveAsTxEnabledIfNeccessary() {
+		if (this.transactionStatus == Status.STATUS_COMMITTING) {
+			if (this.confirmArchive != null) {
+				this.confirmArchive.setTxEnabled(true);
+			}
+		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
+			if (this.cancellArchive != null) {
+				this.cancellArchive.setTxEnabled(true);
+			}
+		}
+	}
+
 	public void prepareStart() {
-		// System.out.println("prepare-start");
+		this.markCompensableArchiveAsTxEnabledIfNeccessary();
 	}
 
 	public void prepareComplete(boolean success) {
-		// System.out.println("prepare-complete: " + success);
+		this.markCompensableArchiveAsTxEnabledIfNeccessary();
 	}
 
 	public void commitStart() {
-		// System.out.println("commit-start");
+		this.markCompensableArchiveAsTxEnabledIfNeccessary();
 	}
 
 	public void commitSuccess() {
-		// System.out.println("commit-complete: " + this.transactionStatus);
+		this.markCompensableArchiveAsTxEnabledIfNeccessary();
+
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
 			// TODO transaction-log
 			// this.compensableStatus = CompensableTccTransaction.STATUS_TRIED;
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
 			if (this.confirmArchive != null) {
 				this.confirmArchive.setConfirmed(true);
-			} else if (this.cancellArchive != null) {
-				this.cancellArchive.setCancelled(true);
 			}
 			// TODO transaction-log
 			// this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMED;
 		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
+			if (this.cancellArchive != null) {
+				this.cancellArchive.setCancelled(true);
+			}
 			// TODO transaction-log
 			// this.compensableStatus = CompensableTccTransaction.STATUS_CANCELLED;
 		}
 	}
 
 	public void commitFailure(int optcode) {
-		// System.out.println("commit-failure: " + optcode);
+		this.markCompensableArchiveAsTxEnabledIfNeccessary();
+
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
 			this.completeFailureInPreparing(optcode);
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
@@ -383,7 +412,8 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	private void completeFailureInPreparing(int optcode) {
-		// System.out.println("complete-failure-in-preparing: " + optcode);
+		this.markCompensableArchiveAsTxEnabledIfNeccessary();
+
 		if (optcode == TransactionListener.OPT_DEFAULT) {
 			this.compensableStatus = CompensableTccTransaction.STATUS_TRY_FAILURE;
 		} else if (optcode == TransactionListener.OPT_HEURCOM) {
@@ -396,7 +426,8 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	private void completeFailureInCommitting(int optcode) {
-		// System.out.println("commit-failure-in-commiting: " + optcode);
+		this.markCompensableArchiveAsTxEnabledIfNeccessary();
+
 		if (optcode == TransactionListener.OPT_DEFAULT) {
 			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRM_FAILURE;
 		} else if (optcode == TransactionListener.OPT_HEURCOM) {
@@ -409,7 +440,8 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	private void completeFailureInRollingback(int optcode) {
-		// System.out.println("commit-failure-in-rollingback: " + optcode);
+		this.markCompensableArchiveAsTxEnabledIfNeccessary();
+
 		if (optcode == TransactionListener.OPT_DEFAULT) {
 			this.compensableStatus = CompensableTccTransaction.STATUS_CANCEL_FAILURE;
 		} else if (optcode == TransactionListener.OPT_HEURCOM) {
@@ -422,11 +454,12 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public void rollbackStart() {
-		// System.out.println("rollback-start");
+		this.markCompensableArchiveAsTxEnabledIfNeccessary();
 	}
 
 	public void rollbackSuccess() {
-		// System.out.println("rollback-success: " + true);
+		this.markCompensableArchiveAsTxEnabledIfNeccessary();
+
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
 			// ignore
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
@@ -437,7 +470,8 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public void rollbackFailure(int optcode) {
-		// System.out.println("rollback-failure: " + optcode);
+		this.markCompensableArchiveAsTxEnabledIfNeccessary();
+
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
 			this.completeFailureInPreparing(optcode);
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
