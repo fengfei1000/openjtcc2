@@ -35,14 +35,18 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	static final Logger logger = Logger.getLogger(CompensableTccTransaction.class.getSimpleName());
 
 	public static int STATUS_UNKNOWN = 0;
+
 	public static int STATUS_TRY_FAILURE = 1;
 	public static int STATUS_TRIED = 2;
-	public static int STATUS_CONFIRMING = 3;
-	public static int STATUS_CONFIRM_FAILURE = 4;
-	public static int STATUS_CONFIRMED = 5;
-	public static int STATUS_CANCELLING = 6;
-	public static int STATUS_CANCEL_FAILURE = 7;
-	public static int STATUS_CANCELLED = 8;
+	public static int STATUS_TRY_MIXED = 3;
+
+	public static int STATUS_CONFIRMING = 4;
+	public static int STATUS_CONFIRM_FAILURE = 5;
+	public static int STATUS_CONFIRMED = 6;
+
+	public static int STATUS_CANCELLING = 7;
+	public static int STATUS_CANCEL_FAILURE = 8;
+	public static int STATUS_CANCELLED = 9;
 
 	private int transactionStatus;
 	private int compensableStatus;
@@ -136,6 +140,10 @@ public class CompensableTccTransaction extends CompensableTransaction {
 				this.confirmArchive = null;
 			}
 		}
+		this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMED;
+		CompensableTransactionArchive archive = this.getTransactionArchive();
+		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+		transactionLogger.updateTransaction(archive);
 	}
 
 	public synchronized void remoteConfirm() throws SystemException, RemoteException {
@@ -144,6 +152,9 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		CompensableTransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
 
+		// boolean confirmExists = false;
+		boolean cancellExists = false;
+		boolean errorExists = false;
 		Set<Entry<Xid, XAResourceArchive>> entrySet = this.resourceArchives.entrySet();
 		Iterator<Map.Entry<Xid, XAResourceArchive>> resourceItr = entrySet.iterator();
 		while (resourceItr.hasNext()) {
@@ -152,26 +163,36 @@ public class CompensableTccTransaction extends CompensableTransaction {
 			XAResourceArchive archive = entry.getValue();
 			if (archive.isCompleted()) {
 				if (archive.isCommitted()) {
-					// TODO
+					// confirmExists = true;
 				} else if (archive.isRolledback()) {
-					// TODO
+					cancellExists = true;
 				} else {
-					// TODO
+					// ignore
 				}
 			} else {
 				try {
 					archive.commit(key, true);
 					archive.setCommitted(true);
 					archive.setCompleted(true);
+					// confirmExists = true;
 				} catch (XAException xaex) {
-					// TODO
 					switch (xaex.errorCode) {
 					case XAException.XA_HEURCOM:
+						archive.setCommitted(true);
+						archive.setCompleted(true);
+						// confirmExists = true;
+						break;
 					case XAException.XA_HEURRB:
+						archive.setRolledback(true);
+						archive.setCompleted(true);
+						cancellExists = true;
+						break;
 					case XAException.XA_HEURMIX:
 					case XAException.XAER_NOTA:
 					case XAException.XAER_RMFAIL:
 					case XAException.XAER_RMERR:
+					default:
+						errorExists = true;
 					}
 				}
 
@@ -179,6 +200,12 @@ public class CompensableTccTransaction extends CompensableTransaction {
 			}
 
 		} // end-while (resourceItr.hasNext())
+
+		if (errorExists) {
+			throw new SystemException();
+		} else if (cancellExists) {
+			throw new SystemException();
+		}
 
 	}
 
@@ -317,9 +344,73 @@ public class CompensableTccTransaction extends CompensableTransaction {
 				this.cancellArchive = null;
 			}
 		}
+		this.compensableStatus = CompensableTccTransaction.STATUS_CANCELLED;
+		CompensableTransactionArchive archive = this.getTransactionArchive();
+		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+		transactionLogger.updateTransaction(archive);
 	}
 
 	public synchronized void remoteCancel() throws SystemException, RemoteException {
+
+		TransactionXid globalXid = this.transactionContext.getGlobalXid();
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		CompensableTransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
+
+		boolean confirmExists = false;
+		// boolean cancellExists = false;
+		boolean errorExists = false;
+		Set<Entry<Xid, XAResourceArchive>> entrySet = this.resourceArchives.entrySet();
+		Iterator<Map.Entry<Xid, XAResourceArchive>> resourceItr = entrySet.iterator();
+		while (resourceItr.hasNext()) {
+			Map.Entry<Xid, XAResourceArchive> entry = resourceItr.next();
+			Xid key = entry.getKey();
+			XAResourceArchive archive = entry.getValue();
+			if (archive.isCompleted()) {
+				if (archive.isCommitted()) {
+					confirmExists = true;
+				} else if (archive.isRolledback()) {
+					// cancellExists = true;
+				} else {
+					// ignore
+				}
+			} else {
+				try {
+					archive.rollback(key);
+					archive.setRolledback(true);
+					archive.setCompleted(true);
+					// cancellExists = true;
+				} catch (XAException xaex) {
+					switch (xaex.errorCode) {
+					case XAException.XA_HEURCOM:
+						archive.setCommitted(true);
+						archive.setCompleted(true);
+						confirmExists = true;
+						break;
+					case XAException.XA_HEURRB:
+						archive.setRolledback(true);
+						archive.setCompleted(true);
+						// cancellExists = true;
+						break;
+					case XAException.XA_HEURMIX:
+					case XAException.XAER_NOTA:
+					case XAException.XAER_RMFAIL:
+					case XAException.XAER_RMERR:
+					default:
+						errorExists = true;
+					}
+				}
+
+				transactionLogger.updateResource(globalXid, archive);
+			}
+
+		} // end-while (resourceItr.hasNext())
+
+		if (errorExists) {
+			throw new SystemException();
+		} else if (confirmExists) {
+			throw new SystemException();
+		}
+
 	}
 
 	public CompensableTransactionArchive getTransactionArchive() {
@@ -366,6 +457,30 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		}
 	}
 
+	private void trySuccess() {
+		this.compensableStatus = CompensableTccTransaction.STATUS_TRIED;
+		CompensableTransactionArchive archive = this.getTransactionArchive();
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+		transactionLogger.updateTransaction(archive);
+	}
+
+	private void tryFailure() {
+		this.compensableStatus = CompensableTccTransaction.STATUS_TRY_FAILURE;
+		CompensableTransactionArchive archive = this.getTransactionArchive();
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+		transactionLogger.updateTransaction(archive);
+	}
+
+	private void tryMixed() {
+		this.compensableStatus = CompensableTccTransaction.STATUS_TRY_MIXED;
+		CompensableTransactionArchive archive = this.getTransactionArchive();
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+		transactionLogger.updateTransaction(archive);
+	}
+
 	public void prepareStart() {
 		this.markCompensableArchiveAsTxEnabledIfNeccessary();
 	}
@@ -382,20 +497,15 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		this.markCompensableArchiveAsTxEnabledIfNeccessary();
 
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
-			// TODO transaction-log
-			// this.compensableStatus = CompensableTccTransaction.STATUS_TRIED;
+			this.trySuccess();
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
 			if (this.confirmArchive != null) {
 				this.confirmArchive.setConfirmed(true);
 			}
-			// TODO transaction-log
-			// this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMED;
 		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {
 			if (this.cancellArchive != null) {
 				this.cancellArchive.setCancelled(true);
 			}
-			// TODO transaction-log
-			// this.compensableStatus = CompensableTccTransaction.STATUS_CANCELLED;
 		}
 	}
 
@@ -412,44 +522,42 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	private void completeFailureInPreparing(int optcode) {
-		this.markCompensableArchiveAsTxEnabledIfNeccessary();
-
-		if (optcode == TransactionListener.OPT_DEFAULT) {
-			this.compensableStatus = CompensableTccTransaction.STATUS_TRY_FAILURE;
-		} else if (optcode == TransactionListener.OPT_HEURCOM) {
-			this.compensableStatus = CompensableTccTransaction.STATUS_TRIED;
+		if (optcode == TransactionListener.OPT_HEURCOM) {
+			this.trySuccess();
 		} else if (optcode == TransactionListener.OPT_HEURRB) {
-			// ignore
+			this.tryFailure();
 		} else if (optcode == TransactionListener.OPT_HEURMIX) {
-			this.compensableStatus = CompensableTccTransaction.STATUS_TRY_FAILURE;
+			this.tryMixed();
+		} else {
+			this.tryFailure();
 		}
 	}
 
 	private void completeFailureInCommitting(int optcode) {
-		this.markCompensableArchiveAsTxEnabledIfNeccessary();
-
-		if (optcode == TransactionListener.OPT_DEFAULT) {
-			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRM_FAILURE;
-		} else if (optcode == TransactionListener.OPT_HEURCOM) {
-			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMED;
-		} else if (optcode == TransactionListener.OPT_HEURRB) {
-			// ignore
-		} else if (optcode == TransactionListener.OPT_HEURMIX) {
-			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRM_FAILURE;
+		if (this.confirmArchive != null) {
+			if (optcode == TransactionListener.OPT_DEFAULT) {
+				// ignore
+			} else if (optcode == TransactionListener.OPT_HEURCOM) {
+				this.confirmArchive.setConfirmed(true);
+			} else if (optcode == TransactionListener.OPT_HEURRB) {
+				// ignore
+			} else if (optcode == TransactionListener.OPT_HEURMIX) {
+				this.confirmArchive.setTxMixed(true);
+			}
 		}
 	}
 
 	private void completeFailureInRollingback(int optcode) {
-		this.markCompensableArchiveAsTxEnabledIfNeccessary();
-
-		if (optcode == TransactionListener.OPT_DEFAULT) {
-			this.compensableStatus = CompensableTccTransaction.STATUS_CANCEL_FAILURE;
-		} else if (optcode == TransactionListener.OPT_HEURCOM) {
-			this.compensableStatus = CompensableTccTransaction.STATUS_CANCELLED;
-		} else if (optcode == TransactionListener.OPT_HEURRB) {
-			// ignore
-		} else if (optcode == TransactionListener.OPT_HEURMIX) {
-			this.compensableStatus = CompensableTccTransaction.STATUS_CANCEL_FAILURE;
+		if (this.cancellArchive != null) {
+			if (optcode == TransactionListener.OPT_DEFAULT) {
+				// ignore
+			} else if (optcode == TransactionListener.OPT_HEURCOM) {
+				this.cancellArchive.setConfirmed(true);
+			} else if (optcode == TransactionListener.OPT_HEURRB) {
+				// ignore
+			} else if (optcode == TransactionListener.OPT_HEURMIX) {
+				this.cancellArchive.setTxMixed(true);
+			}
 		}
 	}
 
@@ -461,7 +569,7 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		this.markCompensableArchiveAsTxEnabledIfNeccessary();
 
 		if (this.transactionStatus == Status.STATUS_PREPARING) {
-			// ignore
+			this.tryFailure();
 		} else if (this.transactionStatus == Status.STATUS_COMMITTING) {
 			// ignore
 		} else if (this.transactionStatus == Status.STATUS_ROLLING_BACK) {

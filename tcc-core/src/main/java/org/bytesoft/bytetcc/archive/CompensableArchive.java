@@ -24,10 +24,11 @@ public class CompensableArchive {
 
 	private Xid xid;
 	private CompensableInvocation compensable;
-	private transient boolean txEnabled;
 	private boolean coordinator;
 	private boolean confirmed;
 	private boolean cancelled;
+	private transient boolean txMixed;
+	private transient boolean txEnabled;
 
 	public int hashCode() {
 		int hash = 23;
@@ -91,6 +92,14 @@ public class CompensableArchive {
 
 	public void setTxEnabled(boolean txEnabled) {
 		this.txEnabled = txEnabled;
+	}
+
+	public boolean isTxMixed() {
+		return txMixed;
+	}
+
+	public void setTxMixed(boolean txMixed) {
+		this.txMixed = txMixed;
 	}
 
 }
