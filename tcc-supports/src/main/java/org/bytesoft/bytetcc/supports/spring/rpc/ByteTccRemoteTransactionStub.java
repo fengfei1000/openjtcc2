@@ -15,7 +15,6 @@ import org.bytesoft.byterpc.common.RemoteMethodKey;
 import org.bytesoft.byterpc.remote.RemoteRequestor;
 import org.bytesoft.byterpc.supports.RemoteInvocationFactory;
 import org.bytesoft.byterpc.supports.RemoteMethodFactory;
-import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.bytetcc.supports.spring.beans.ByteTccSkeletonObject;
 import org.bytesoft.transaction.rpc.TransactionResource;
 
