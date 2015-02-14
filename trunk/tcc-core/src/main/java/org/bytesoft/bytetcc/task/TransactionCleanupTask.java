@@ -15,7 +15,6 @@
  */
 package org.bytesoft.bytetcc.task;
 
-import java.rmi.RemoteException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -25,7 +24,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.bytesoft.bytetcc.CompensableTransaction;
-import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.bytetcc.supports.schedule.CleanupProcesser;
 
 public class TransactionCleanupTask implements Runnable, CleanupProcesser {

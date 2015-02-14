@@ -17,17 +17,14 @@ package org.bytesoft.bytetcc.recovery;
 
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.SystemException;
-import javax.transaction.TransactionManager;
 
 import org.bytesoft.bytetcc.CompensableTransaction;
-import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.transaction.TransactionStatistic;
 import org.bytesoft.transaction.archive.TransactionArchive;
 import org.bytesoft.transaction.xa.TransactionXid;
 
 public class RecoveryManager {
 
-	private TransactionManager transactionManager;
 	private TransactionStatistic transactionStatistic;
 
 	public void reconstruct() {
@@ -54,18 +51,6 @@ public class RecoveryManager {
 	}
 
 	public void recoverTransaction(CompensableTransaction transaction) throws HeuristicMixedException, SystemException {
-	}
-
-	public CompensableTransactionManager getTransactionManagerImpl() {
-		return (CompensableTransactionManager) transactionManager;
-	}
-
-	public TransactionManager getTransactionManager() {
-		return transactionManager;
-	}
-
-	public void setTransactionManager(TransactionManager transactionManager) {
-		this.transactionManager = transactionManager;
 	}
 
 	public void setTransactionStatistic(TransactionStatistic transactionStatistic) {
