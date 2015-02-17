@@ -597,4 +597,20 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		this.compensableStatus = compensableStatus;
 	}
 
+	public int getTransactionStatus() {
+		return transactionStatus;
+	}
+
+	public List<CompensableArchive> getCoordinatorArchives() {
+		return coordinatorArchives;
+	}
+
+	public List<CompensableArchive> getParticipantArchives() {
+		return participantArchives;
+	}
+
+	public Map<Xid, XAResourceArchive> getResourceArchives() {
+		return resourceArchives;
+	}
+
 }
