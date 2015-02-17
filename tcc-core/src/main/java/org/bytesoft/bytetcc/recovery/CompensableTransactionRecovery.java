@@ -21,14 +21,12 @@ import javax.transaction.SystemException;
 import org.bytesoft.bytetcc.CompensableTransaction;
 import org.bytesoft.transaction.TransactionStatistic;
 import org.bytesoft.transaction.archive.TransactionArchive;
+import org.bytesoft.transaction.recovery.TransactionRecovery;
 import org.bytesoft.transaction.xa.TransactionXid;
 
-public class RecoveryManager {
+public class CompensableTransactionRecovery implements TransactionRecovery {
 
 	private TransactionStatistic transactionStatistic;
-
-	public void reconstruct() {
-	}
 
 	public RecoveredTransactionImpl reconstructTransaction(TransactionArchive archive) {
 		return null;
@@ -37,7 +35,10 @@ public class RecoveryManager {
 	/**
 	 * commit/rollback the uncompleted transactions.
 	 */
-	public void recover() {
+	public synchronized void startupRecover() {
+	}
+
+	public synchronized void timingRecover() {
 	}
 
 	/**

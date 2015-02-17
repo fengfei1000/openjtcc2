@@ -18,7 +18,7 @@ public class CompensableNativeHandler implements java.lang.reflect.InvocationHan
 
 	private transient CompensableTransactionManager transactionManager;
 
-	private void checkIsCurrentCompensable(Object proxy, Method method, Object[] args) throws IllegalAccessException {
+	private void checkCurrentCompensable(Object proxy, Method method, Object[] args) throws IllegalAccessException {
 
 		Class<?> declaringClass = method.getDeclaringClass();
 		if (declaringClass.equals(this.interfaceClass)) {
@@ -47,7 +47,7 @@ public class CompensableNativeHandler implements java.lang.reflect.InvocationHan
 		}
 
 		try {
-			this.checkIsCurrentCompensable(proxy, method, args);
+			this.checkCurrentCompensable(proxy, method, args);
 		} catch (IllegalAccessException ex) {
 			return this.handleInvocation(proxy, method, args);
 		}
