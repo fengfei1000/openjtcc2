@@ -1,14 +1,13 @@
-package org.bytesoft.transaction.work;
+package org.bytesoft.bytetcc.work;
 
 import javax.resource.spi.work.Work;
 
 import org.apache.log4j.Logger;
-import org.bytesoft.bytejta.common.TransactionConfigurator;
-import org.bytesoft.transaction.TransactionTimer;
+import org.bytesoft.bytetcc.common.TransactionConfigurator;
 import org.bytesoft.transaction.recovery.TransactionRecovery;
 
-public class TransactionWork implements Work {
-	static final Logger logger = Logger.getLogger(TransactionWork.class.getSimpleName());
+public class CompensableTransactionWork implements Work {
+	static final Logger logger = Logger.getLogger(CompensableTransactionWork.class.getSimpleName());
 
 	static final long SECOND_MILLIS = 1000L;
 	private long stopTimeMillis = -1;
@@ -18,7 +17,6 @@ public class TransactionWork implements Work {
 	public void run() {
 
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
-		TransactionTimer transactionTimer = configurator.getTransactionTimer();
 		TransactionRecovery transactionRecovery = configurator.getTransactionRecovery();
 		try {
 			transactionRecovery.startupRecover();
@@ -26,19 +24,10 @@ public class TransactionWork implements Work {
 			logger.error(rex.getMessage(), rex);
 		}
 
-		long nextExecutionTime = 0;
 		long nextRecoveryTime = System.currentTimeMillis() + this.recoveryInterval;
 		while (this.currentActive()) {
 
 			long current = System.currentTimeMillis();
-			if (current >= nextExecutionTime) {
-				nextExecutionTime = current + SECOND_MILLIS;
-				try {
-					transactionTimer.timingExecution();
-				} catch (RuntimeException rex) {
-					logger.error(rex.getMessage(), rex);
-				}
-			}
 
 			if (current >= nextRecoveryTime) {
 				nextRecoveryTime = current + this.recoveryInterval;
