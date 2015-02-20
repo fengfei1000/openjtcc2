@@ -17,9 +17,8 @@ package org.bytesoft.bytetcc.recovery;
 
 import java.util.List;
 
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.SystemException;
 import javax.transaction.xa.XAResource;
+import javax.transaction.xa.Xid;
 
 import org.bytesoft.bytetcc.CompensableJtaTransaction;
 import org.bytesoft.bytetcc.CompensableTccTransaction;
@@ -27,10 +26,12 @@ import org.bytesoft.bytetcc.CompensableTransaction;
 import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.bytetcc.archive.CompensableTransactionArchive;
 import org.bytesoft.bytetcc.common.TransactionConfigurator;
+import org.bytesoft.bytetcc.common.TransactionRepository;
 import org.bytesoft.bytetcc.supports.CompensableTransactionLogger;
 import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.TransactionStatistic;
 import org.bytesoft.transaction.archive.TransactionArchive;
+import org.bytesoft.transaction.archive.XAResourceArchive;
 import org.bytesoft.transaction.recovery.TransactionRecovery;
 import org.bytesoft.transaction.xa.TransactionXid;
 
@@ -58,7 +59,12 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 					tccTransaction.getParticipantArchives().add(compensable);
 				}
 			}
-			// archive.getRemoteResources();
+			List<XAResourceArchive> resources = archive.getRemoteResources();
+			for (int i = 0; i < resources.size(); i++) {
+				XAResourceArchive resource = resources.get(i);
+				Xid xid = resource.getXid();
+				tccTransaction.getResourceArchives().put(xid, resource);
+			}
 			transaction = tccTransaction;
 		} else {
 			transaction = new CompensableJtaTransaction(transactionContext);
@@ -76,9 +82,9 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 	/**
 	 * commit/rollback the uncompleted transactions.
 	 */
-	public synchronized void startupRecover() {
+	public synchronized void startupRecover(boolean recoverImmediately) {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
-		// TransactionRepository transactionRepository = configurator.getTransactionRepository();
+		TransactionRepository transactionRepository = configurator.getTransactionRepository();
 		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
 		List<TransactionArchive> archives = transactionLogger.getTransactionArchiveList();
 		for (int i = 0; i < archives.size(); i++) {
@@ -89,27 +95,30 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 			} catch (RuntimeException rex) {
 				continue;
 			}
-			// TransactionContext transactionContext = transaction.getTransactionContext();
-			// TransactionXid globalXid = transactionContext.getGlobalXid();
-			// transactionRepository.putTransaction(globalXid, transaction);
-			// transactionRepository.putErrorTransaction(globalXid, transaction);
+			TransactionContext transactionContext = transaction.getTransactionContext();
+			TransactionXid globalXid = transactionContext.getGlobalXid();
+			transactionRepository.putTransaction(globalXid, transaction);
+			transactionRepository.putErrorTransaction(globalXid, transaction);
 		}
+
+		if (recoverImmediately) {
+			this.timingRecover();
+		}
+
 	}
 
 	public synchronized void timingRecover() {
+		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
+		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
+		List<CompensableTransaction> transactions = transactionRepository.getErrorTransactionList();
+		for (int i = 0; i < transactions.size(); i++) {
+			CompensableTransaction transaction = transactions.get(i);
+			this.recoverTransaction(transaction);
+		}
 	}
 
-	/**
-	 * commit/rollback the specific transaction.
-	 * 
-	 * @param globalXid
-	 * @throws HeuristicMixedException
-	 * @throws SystemException
-	 */
-	public void recoverTransaction(TransactionXid globalXid) throws HeuristicMixedException, SystemException {
-	}
-
-	public void recoverTransaction(CompensableTransaction transaction) throws HeuristicMixedException, SystemException {
+	public void recoverTransaction(CompensableTransaction transaction) {
+		// TODO
 	}
 
 	public void setTransactionStatistic(TransactionStatistic transactionStatistic) {
