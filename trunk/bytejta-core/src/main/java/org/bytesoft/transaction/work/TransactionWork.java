@@ -21,7 +21,7 @@ public class TransactionWork implements Work {
 		TransactionTimer transactionTimer = configurator.getTransactionTimer();
 		TransactionRecovery transactionRecovery = configurator.getTransactionRecovery();
 		try {
-			transactionRecovery.startupRecover();
+			transactionRecovery.startupRecover(true);
 		} catch (RuntimeException rex) {
 			logger.error(rex.getMessage(), rex);
 		}

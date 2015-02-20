@@ -4,6 +4,6 @@ public interface TransactionRecovery {
 
 	public void timingRecover();
 
-	public void startupRecover();
+	public void startupRecover(boolean recoverImmediately);
 
 }

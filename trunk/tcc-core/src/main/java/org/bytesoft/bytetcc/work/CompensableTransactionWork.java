@@ -3,7 +3,6 @@ package org.bytesoft.bytetcc.work;
 import javax.resource.spi.work.Work;
 
 import org.apache.log4j.Logger;
-import org.bytesoft.bytetcc.common.TransactionConfigurator;
 import org.bytesoft.transaction.recovery.TransactionRecovery;
 
 public class CompensableTransactionWork implements Work {
@@ -16,15 +15,27 @@ public class CompensableTransactionWork implements Work {
 
 	public void run() {
 
-		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
-		TransactionRecovery transactionRecovery = configurator.getTransactionRecovery();
+		org.bytesoft.bytejta.common.TransactionConfigurator jtaConfigurator = org.bytesoft.bytejta.common.TransactionConfigurator
+				.getInstance();
+		TransactionRecovery jtaRecovery = jtaConfigurator.getTransactionRecovery();
 		try {
-			transactionRecovery.startupRecover();
+			jtaRecovery.startupRecover(false);
 		} catch (RuntimeException rex) {
 			logger.error(rex.getMessage(), rex);
 		}
 
-		long nextRecoveryTime = System.currentTimeMillis() + this.recoveryInterval;
+		org.bytesoft.bytetcc.common.TransactionConfigurator tccConfigurator = org.bytesoft.bytetcc.common.TransactionConfigurator
+				.getInstance();
+		TransactionRecovery tccRecovery = tccConfigurator.getTransactionRecovery();
+		try {
+			tccRecovery.startupRecover(false);
+		} catch (RuntimeException rex) {
+			logger.error(rex.getMessage(), rex);
+		}
+
+		// TODO
+
+		long nextRecoveryTime = 0;
 		while (this.currentActive()) {
 
 			long current = System.currentTimeMillis();
@@ -32,10 +43,17 @@ public class CompensableTransactionWork implements Work {
 			if (current >= nextRecoveryTime) {
 				nextRecoveryTime = current + this.recoveryInterval;
 				try {
-					transactionRecovery.timingRecover();
+					jtaRecovery.timingRecover();
 				} catch (RuntimeException rex) {
 					logger.error(rex.getMessage(), rex);
 				}
+
+				try {
+					tccRecovery.timingRecover();
+				} catch (RuntimeException rex) {
+					logger.error(rex.getMessage(), rex);
+				}
+
 			}
 
 			this.waitForMillis(100L);

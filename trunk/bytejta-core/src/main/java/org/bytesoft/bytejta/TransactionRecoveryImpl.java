@@ -21,6 +21,8 @@ import org.bytesoft.transaction.xa.TransactionXid;
 
 public class TransactionRecoveryImpl implements TransactionRecovery {
 
+	private boolean initialized;
+
 	public synchronized void timingRecover() {
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
@@ -89,7 +91,21 @@ public class TransactionRecoveryImpl implements TransactionRecovery {
 
 	}
 
-	public synchronized void startupRecover() {
+	public synchronized void startupRecover(boolean recoverImmediately) {
+		this.fireInitializationIfNecessary();
+		if (recoverImmediately) {
+			this.timingRecover();
+		}
+	}
+
+	private void fireInitializationIfNecessary() {
+		if (this.initialized == false) {
+			this.processStartupRecover();
+			this.initialized = true;
+		}
+	}
+
+	private synchronized void processStartupRecover() {
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
 		TransactionLogger transactionLogger = transactionConfigurator.getTransactionLogger();
