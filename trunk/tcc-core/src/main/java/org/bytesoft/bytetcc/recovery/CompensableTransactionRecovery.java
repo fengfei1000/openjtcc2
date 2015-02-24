@@ -20,6 +20,7 @@ import java.util.List;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.bytesoft.bytejta.TransactionImpl;
 import org.bytesoft.bytetcc.CompensableJtaTransaction;
 import org.bytesoft.bytetcc.CompensableTccTransaction;
 import org.bytesoft.bytetcc.CompensableTransaction;
@@ -97,6 +98,11 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 			}
 			TransactionContext transactionContext = transaction.getTransactionContext();
 			TransactionXid globalXid = transactionContext.getGlobalXid();
+			if (CompensableTccTransaction.class.isInstance(transaction)) {
+				this.reconstructTccTransaction((CompensableTccTransaction) transaction);
+			} else {
+				this.reconstructJtaTransaction((CompensableJtaTransaction) transaction);
+			}
 			transactionRepository.putTransaction(globalXid, transaction);
 			transactionRepository.putErrorTransaction(globalXid, transaction);
 		}
@@ -107,17 +113,69 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 
 	}
 
+	/**
+	 * TODO
+	 */
+	private void reconstructJtaTransaction(CompensableJtaTransaction transaction) {
+		org.bytesoft.bytejta.common.TransactionConfigurator jtaConfigurator = org.bytesoft.bytejta.common.TransactionConfigurator
+				.getInstance();
+		org.bytesoft.bytejta.common.TransactionRepository jtaRepository = jtaConfigurator.getTransactionRepository();
+		Xid xid = transaction.getTransactionContext().getCurrentXid();
+		TransactionXid jtaGlobalXid = jtaConfigurator.getXidFactory().createGlobalXid(xid.getGlobalTransactionId());
+		TransactionImpl jtaTransaction = jtaRepository.getErrorTransaction(jtaGlobalXid);
+		if (jtaTransaction != null) {
+			jtaTransaction.registerTransactionListener(transaction);
+		}
+	}
+
+	/**
+	 * TODO
+	 */
+	private void reconstructTccTransaction(CompensableTccTransaction transaction) {
+		org.bytesoft.bytejta.common.TransactionConfigurator jtaConfigurator = org.bytesoft.bytejta.common.TransactionConfigurator
+				.getInstance();
+		org.bytesoft.bytejta.common.TransactionRepository jtaRepository = jtaConfigurator.getTransactionRepository();
+		List<CompensableArchive> coordinators = transaction.getCoordinatorArchives();
+		for (int i = 0; i < coordinators.size(); i++) {
+			CompensableArchive archive = coordinators.get(i);
+			Xid xid = archive.getXid();
+			TransactionXid jtaGlobalXid = jtaConfigurator.getXidFactory().createGlobalXid(xid.getGlobalTransactionId());
+			TransactionImpl jtaTransaction = jtaRepository.getErrorTransaction(jtaGlobalXid);
+			if (jtaTransaction != null) {
+				jtaTransaction.registerTransactionListener(transaction);
+			}
+		}
+		List<CompensableArchive> participants = transaction.getParticipantArchives();
+		for (int i = 0; i < participants.size(); i++) {
+			CompensableArchive archive = participants.get(i);
+			Xid xid = archive.getXid();
+			TransactionXid jtaGlobalXid = jtaConfigurator.getXidFactory().createGlobalXid(xid.getGlobalTransactionId());
+			TransactionImpl jtaTransaction = jtaRepository.getErrorTransaction(jtaGlobalXid);
+			if (jtaTransaction != null) {
+				jtaTransaction.registerTransactionListener(transaction);
+			}
+		}
+	}
+
 	public synchronized void timingRecover() {
 		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
 		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
 		List<CompensableTransaction> transactions = transactionRepository.getErrorTransactionList();
 		for (int i = 0; i < transactions.size(); i++) {
 			CompensableTransaction transaction = transactions.get(i);
-			this.recoverTransaction(transaction);
+			if (CompensableTccTransaction.class.isInstance(transaction)) {
+				this.recoverTransaction((CompensableTccTransaction) transaction);
+			} else {
+				this.recoverTransaction((CompensableJtaTransaction) transaction);
+			}
 		}
 	}
 
-	public void recoverTransaction(CompensableTransaction transaction) {
+	public void recoverTransaction(CompensableJtaTransaction transaction) {
+		// TODO
+	}
+
+	public void recoverTransaction(CompensableTccTransaction transaction) {
 		// TODO
 	}
 
