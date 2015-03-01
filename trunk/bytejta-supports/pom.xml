@@ -4,7 +4,7 @@
 
 	<groupId>org.bytesoft</groupId>
 	<artifactId>bytejta-supports</artifactId>
-	<version>0.1.2</version>
+	<version>0.2.0-alpha</version>
 	<packaging>jar</packaging>
 
 	<name>bytejta-supports</name>
@@ -18,7 +18,7 @@
 		<dependency>
 			<groupId>org.bytesoft</groupId>
 			<artifactId>bytejta-core</artifactId>
-			<version>0.1.2</version>
+			<version>0.2.0-alpha</version>
 		</dependency>
 		<dependency>
 			<groupId>org.bytesoft</groupId>
