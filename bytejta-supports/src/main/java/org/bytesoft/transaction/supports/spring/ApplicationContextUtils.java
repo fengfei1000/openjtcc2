@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationContextAware;
 
 public class ApplicationContextUtils implements ApplicationContextAware {
 	private static final ApplicationContextUtils instance = new ApplicationContextUtils();
-	private ApplicationContext content;
+	private ApplicationContext context;
 
 	private ApplicationContextUtils() {
 	}
@@ -28,11 +28,11 @@ public class ApplicationContextUtils implements ApplicationContextAware {
 	}
 
 	public ApplicationContext getContext() {
-		return content;
+		return context;
 	}
 
 	public void setContext(ApplicationContext context) {
-		this.content = context;
+		this.context = context;
 	}
 
 }
