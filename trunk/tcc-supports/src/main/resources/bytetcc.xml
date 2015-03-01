@@ -16,10 +16,6 @@
 	<import resource="classpath:bytejta.xml" />
 
 	<bean id="compensableInvocationExecutor" class="org.bytesoft.bytetcc.supports.spring.CompensableInvocationExecutorImpl" />
-	<bean class="org.bytesoft.bytetcc.supports.spring.CompensablePostProcessor">
-		<property name="transactionManager" ref="bytetccTransactionManager" />
-	</bean>
-
 	<bean id="bytetccTransactionManager" class="org.bytesoft.bytetcc.CompensableTransactionManager">
 		<property name="jtaTransactionManager" ref="bytejtaTransactionManager" />
 	</bean>
@@ -37,11 +33,21 @@
 	<bean id="bytetccXidFactory" class="org.bytesoft.bytetcc.xa.XidFactoryImpl" />
 	<bean id="bytetccTransactionLogger" class="org.bytesoft.bytetcc.supports.logger.SimpleTransactionLogger"
 		init-method="initialize" />
+	<bean id="transactionInterceptorDispatcher" class="org.bytesoft.bytetcc.supports.internal.TransactionInterceptorDispatcher">
+		<property name="jtaTransactionInterceptor" ref="bytejtaTransactionInterceptor" />
+		<property name="tccTransactionInterceptor" ref="bytetccTransactionInterceptor" />
+	</bean>
+	<bean id="bytejtaTransactionInterceptor" class="org.bytesoft.bytetcc.supports.rpc.CompensableJtaTransactionInterceptor" />
+	<bean id="bytetccTransactionInterceptor" class="org.bytesoft.bytetcc.supports.rpc.CompensableTccTransactionInterceptor" />
 
 	<bean id="bytejtaTransactionSkeleton" class="org.bytesoft.bytetcc.xa.CompensableJtaTransactionSkeleton" />
 	<bean id="bytetccTransactionSkeleton" class="org.bytesoft.bytetcc.xa.CompensableTccTransactionSkeleton" />
-	<bean id="bytetccTransactionSkeletonDispatcher" class="org.bytesoft.bytetcc.xa.CompensableTransactionSkeletonDispatcher" />
+	<bean id="bytetccTransactionSkeletonDispatcher" class="org.bytesoft.bytetcc.xa.CompensableTransactionSkeletonDispatcher">
+		<property name="jtaTransactionSkeleton" ref="bytejtaTransactionSkeleton" />
+		<property name="tccTransactionSkeleton" ref="bytetccTransactionSkeleton" />
+	</bean>
 	<bean id="bytetccTransactionRepository" class="org.bytesoft.bytetcc.common.TransactionRepository" />
+	<bean id="bytetccTransactionRecovery" class="org.bytesoft.bytetcc.recovery.CompensableTransactionRecovery" />
 	<bean id="bytetccTransactionConfigurator" class="org.bytesoft.bytetcc.common.TransactionConfigurator"
 		factory-method="getInstance">
 		<property name="xidFactory" ref="bytetccXidFactory" />
@@ -49,8 +55,8 @@
 		<property name="transactionRepository" ref="bytetccTransactionRepository" />
 		<property name="compensableInvocationExecutor" ref="compensableInvocationExecutor" />
 		<property name="transactionLogger" ref="bytetccTransactionLogger" />
-		<!-- <property name="transactionInterceptor" ref="bytetccTransactionInterceptor" /> <property name="transactionRecovery" 
-			ref="bytetccTransactionRecovery" /> -->
+		<property name="transactionInterceptor" ref="transactionInterceptorDispatcher" />
+		<property name="transactionRecovery" ref="bytetccTransactionRecovery" />
 		<property name="transactionSkeleton" ref="bytetccTransactionSkeletonDispatcher" />
 	</bean>
 
