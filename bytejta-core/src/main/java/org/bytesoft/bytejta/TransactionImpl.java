@@ -79,8 +79,8 @@ public class TransactionImpl implements Transaction {
 		}// end-for
 	}
 
-	private synchronized void checkBeforeCommit() throws RollbackException, IllegalStateException, RollbackRequiredException,
-			CommitRequiredException {
+	private synchronized void checkBeforeCommit() throws RollbackException, IllegalStateException,
+			RollbackRequiredException, CommitRequiredException {
 
 		if (this.transactionStatus == Status.STATUS_ROLLEDBACK) {
 			throw new RollbackException();
@@ -107,19 +107,39 @@ public class TransactionImpl implements Transaction {
 
 		if (this.transactionContext.isOptimized() == false) {
 
+			// int nativeResNum = this.nativeTerminator.getResourceArchives().size();
+			int remoteResNum = this.remoteTerminator.getResourceArchives().size();
+
 			boolean nativeSupportsXA = false;
+			boolean remoteSupportsXA = false;
 			try {
 				nativeSupportsXA = this.nativeTerminator.xaSupports();
 			} catch (RemoteSystemException rsex) {
-				// ignore
+				nativeSupportsXA = false;
 			}
-			if (nativeSupportsXA) {
+
+			try {
+				remoteSupportsXA = this.remoteTerminator.xaSupports();
+			} catch (RemoteSystemException rsex) {
+				remoteSupportsXA = false;
+			}
+
+			if (nativeSupportsXA && remoteSupportsXA) {
+				if (remoteResNum > 0) {
+					this.firstTerminator = this.nativeTerminator;
+					this.lastTerminator = this.remoteTerminator;
+				} else {
+					this.firstTerminator = this.remoteTerminator;
+					this.lastTerminator = this.nativeTerminator;
+				}
+			} else if (nativeSupportsXA) {
 				this.firstTerminator = this.nativeTerminator;
 				this.lastTerminator = this.remoteTerminator;
 			} else {
 				this.firstTerminator = this.remoteTerminator;
 				this.lastTerminator = this.nativeTerminator;
 			}
+
 			this.transactionContext.setOptimized(true);
 
 		}
@@ -221,8 +241,9 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	public synchronized void participantCommit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
-			SecurityException, IllegalStateException, CommitRequiredException, SystemException {
+	public synchronized void participantCommit() throws RollbackException, HeuristicMixedException,
+			HeuristicRollbackException, SecurityException, IllegalStateException, CommitRequiredException,
+			SystemException {
 
 		if (this.transactionStatus == Status.STATUS_ACTIVE) {
 			throw new IllegalStateException();
@@ -374,8 +395,8 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	public synchronized void opcCommit() throws HeuristicRollbackException, HeuristicMixedException, CommitRequiredException,
-			SystemException {
+	public synchronized void opcCommit() throws HeuristicRollbackException, HeuristicMixedException,
+			CommitRequiredException, SystemException {
 		TransactionXid xid = this.transactionContext.getGlobalXid();
 		try {
 			this.fireCommitStart();
@@ -658,7 +679,8 @@ public class TransactionImpl implements Transaction {
 
 	}
 
-	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException, SystemException {
+	public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException,
+			SystemException {
 		if (this.getStatus() != Status.STATUS_ACTIVE && this.getStatus() != Status.STATUS_MARKED_ROLLBACK) {
 			throw new IllegalStateException();
 		}
@@ -770,16 +792,18 @@ public class TransactionImpl implements Transaction {
 		return this.transactionStatus;
 	}
 
-	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException, IllegalStateException,
-			SystemException {
+	public synchronized void registerSynchronization(Synchronization sync) throws RollbackException,
+			IllegalStateException, SystemException {
 
 		if (this.getStatus() == Status.STATUS_MARKED_ROLLBACK) {
 			throw new RollbackException();
 		} else if (this.getStatus() == Status.STATUS_ACTIVE) {
 			SynchronizationImpl synchronization = new SynchronizationImpl(sync);
 			this.synchronizations.add(synchronization);
-			logger.info(String.format("[%s] register-sync: sync= %s"//
-					, ByteUtils.byteArrayToString(this.transactionContext.getCurrentXid().getGlobalTransactionId()), sync));
+			logger.info(String.format(
+					"[%s] register-sync: sync= %s"//
+					, ByteUtils.byteArrayToString(this.transactionContext.getCurrentXid().getGlobalTransactionId()),
+					sync));
 		} else {
 			throw new IllegalStateException();
 		}
