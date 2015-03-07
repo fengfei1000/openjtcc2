@@ -5,6 +5,7 @@ import org.bytesoft.transaction.rpc.TransactionInterceptor;
 import org.bytesoft.transaction.rpc.TransactionRequest;
 import org.bytesoft.transaction.rpc.TransactionResponse;
 
+@Deprecated
 public class CompensableJtaTransactionInterceptor implements TransactionInterceptor {
 	static final Logger logger = Logger.getLogger(CompensableJtaTransactionInterceptor.class.getSimpleName());
 
