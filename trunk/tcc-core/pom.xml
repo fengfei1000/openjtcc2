@@ -16,12 +16,6 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>javax.transaction</groupId>
-			<artifactId>transaction-api</artifactId>
-			<version>1.1</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.bytesoft</groupId>
 			<artifactId>bytetcc-common</artifactId>
 			<version>0.2.0-alpha</version>
