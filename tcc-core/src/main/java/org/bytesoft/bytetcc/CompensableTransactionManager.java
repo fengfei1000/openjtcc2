@@ -125,7 +125,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		}
 
 		this.associateds.put(Thread.currentThread(), transaction);
-		transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
+		transactionRepository.putTransaction(global, transaction);
 
 		CompensableTccTransaction compensableTx = this.transients.get();
 		if (compensableTx != null) {
@@ -175,7 +175,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 			throw ex;
 		}
 		this.associateds.put(Thread.currentThread(), transaction);
-		transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
+		transactionRepository.putTransaction(globalXid, transaction);
 
 		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
 		transactionLogger.createTransaction(transaction.getTransactionArchive());
@@ -201,7 +201,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		if (transaction == null) {
 			transaction = new CompensableTccTransaction(transactionContext);
 			this.processBeginJtaTransaction(transaction, jtaTransactionContext);
-			transactionRepository.putTransaction(transactionContext.getGlobalXid(), transaction);
+			transactionRepository.putTransaction(globalXid, transaction);
 		} else {
 			this.processBeginJtaTransaction(transaction, jtaTransactionContext);
 			transaction.propagationBegin(transactionContext);

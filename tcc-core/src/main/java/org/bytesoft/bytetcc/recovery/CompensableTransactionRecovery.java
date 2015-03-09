@@ -176,7 +176,10 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 	}
 
 	public void recoverTransaction(CompensableTccTransaction transaction) {
-		// TODO
+		// int compensableStatus = transaction.getCompensableStatus();
+		int transactionStatus = transaction.getStatus();
+		switch (transactionStatus) {
+		}
 	}
 
 	public void setTransactionStatistic(TransactionStatistic transactionStatistic) {

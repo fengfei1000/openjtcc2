@@ -414,9 +414,17 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public CompensableTransactionArchive getTransactionArchive() {
+
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		XidFactory xidFactory = configurator.getXidFactory();
+
 		TransactionContext transactionContext = this.getTransactionContext();
+
 		CompensableTransactionArchive transactionArchive = new CompensableTransactionArchive();
-		transactionArchive.setXid(transactionContext.getGlobalXid());
+		TransactionXid jtaGlobalXid = transactionContext.getGlobalXid();
+		TransactionXid globalXid = xidFactory.createGlobalXid(jtaGlobalXid.getGlobalTransactionId());
+		transactionArchive.setXid(globalXid);
+
 		transactionArchive.setStatus(this.transactionStatus);
 		transactionArchive.setCompensableStatus(this.compensableStatus);
 		transactionArchive.setCompensable(transactionContext.isCompensable());
