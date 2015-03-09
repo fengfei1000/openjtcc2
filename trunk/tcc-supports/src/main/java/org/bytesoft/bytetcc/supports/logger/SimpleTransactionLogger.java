@@ -218,7 +218,9 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		buf.flip();
 		FileChannel channel = entry.getFileChannel();
 		try {
+			channel.position(0);
 			channel.write(buf);
+			// channel.force(false);
 		} catch (IOException ex) {
 			logger.error(ex.getMessage(), ex);
 		}
@@ -276,7 +278,7 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		byte coordinator = buffer.get();
 
 		archive.setStatus(transactionStatus);
-		// archive.setCompensable(true);
+		archive.setCompensable(true);
 		archive.setCoordinator(coordinator != 0);
 		archive.setCompensableStatus(compensableStatus);
 
@@ -315,38 +317,6 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		XidFactory xidFactory = TransactionConfigurator.getInstance().getXidFactory();
 		TransactionXid branchXid = xidFactory.createBranchXid(globalXid, branchQualifier);
 		archive.setXid(branchXid);
-
-		// CompensableInvocation compensable = new CompensableInvocation();
-		// int lengthOfConfirmable = buffer.getInt();
-		// byte[] confirmables = new byte[lengthOfConfirmable];
-		// buffer.get(confirmables);
-		//
-		// int lengthOfCancellable = buffer.getInt();
-		// byte[] cancellables = new byte[lengthOfCancellable];
-		// buffer.get(cancellables);
-		//
-		// String confirmable = new String(confirmables);
-		// String cancellable = new String(cancellables);
-		//
-		// int lengthOfClass = buffer.getInt();
-		// byte[] classes = new byte[lengthOfClass];
-		// buffer.get(classes);
-		// String declaring = new String(classes);
-		//
-		// int lengthOfMethod = buffer.getInt();
-		// byte[] methods = new byte[lengthOfMethod];
-		// buffer.get(methods);
-		// String methodName = new String(methods);
-		//
-		// int lengthOfParamTypes = buffer.getInt();
-		// byte[] paramTypes = new byte[lengthOfParamTypes];
-		// buffer.get(paramTypes);
-		// Class<?>[] parameterTypes = (Class<?>[]) this.deserializeObject(paramTypes);
-		//
-		// int lengthOfargs = buffer.getInt();
-		// byte[] argsByteArray = new byte[lengthOfargs];
-		// buffer.get(argsByteArray);
-		// Object[] args = (Object[]) this.deserializeObject(argsByteArray);
 
 		int length = buffer.getInt();
 		byte[] bytes = new byte[length];
@@ -487,38 +457,6 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		buffer.put(cancelled ? (byte) 1 : (byte) 0);
 
 		CompensableInvocation compensable = archive.getCompensable();
-		// String confirmable = compensable.getConfirmableKey();
-		// String cancellable = compensable.getCancellableKey();
-		//
-		// int lengthOfConfirmable = confirmable.getBytes().length;
-		// int lengthOfCancellable = cancellable.getBytes().length;
-		//
-		// buffer.putInt(lengthOfConfirmable);
-		// buffer.put(confirmable.getBytes());
-		//
-		// buffer.putInt(lengthOfCancellable);
-		// buffer.put(cancellable.getBytes());
-		//
-		// Method method = compensable.getMethod();
-		// String declaring = method.getDeclaringClass().getName();
-		// int lengthOfClass = declaring.getBytes().length;
-		// buffer.putInt(lengthOfClass);
-		// buffer.put(declaring.getBytes());
-		//
-		// String methodName = method.getName();
-		// int lengthOfMethod = methodName.getBytes().length;
-		// buffer.putInt(lengthOfMethod);
-		// buffer.put(methodName.getBytes());
-		//
-		// Class<?>[] parameterTypes = method.getParameterTypes();
-		// byte[] paramTypes = this.serializeObject(parameterTypes);
-		// buffer.putInt(paramTypes.length);
-		// buffer.put(paramTypes);
-		//
-		// Object[] args = compensable.getArgs();
-		// byte[] argsByteArray = this.serializeObject(args);
-		// buffer.putInt(argsByteArray.length);
-		// buffer.put(argsByteArray);
 
 		byte[] bytes = this.serializeObject(compensable);
 		buffer.putInt(bytes.length);
