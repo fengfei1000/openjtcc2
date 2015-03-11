@@ -25,6 +25,7 @@ public class CompensableArchive {
 	private Xid xid;
 	private CompensableInvocation compensable;
 	private boolean coordinator;
+	// private boolean coordinatorTried;
 	private boolean confirmed;
 	private boolean cancelled;
 	private transient boolean txMixed;
@@ -101,5 +102,13 @@ public class CompensableArchive {
 	public void setTxMixed(boolean txMixed) {
 		this.txMixed = txMixed;
 	}
+
+	// public boolean isCoordinatorTried() {
+	// return coordinatorTried;
+	// }
+	//
+	// public void setCoordinatorTried(boolean coordinatorTried) {
+	// this.coordinatorTried = coordinatorTried;
+	// }
 
 }

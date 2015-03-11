@@ -1,5 +1,7 @@
 package org.bytesoft.bytetcc.internal;
 
+import java.io.InvalidClassException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
@@ -11,16 +13,20 @@ import org.bytesoft.bytetcc.CompensableTccTransaction;
 import org.bytesoft.bytetcc.supports.CompensableSynchronization;
 import org.bytesoft.transaction.xa.TransactionXid;
 
-public class CompensableInvocationImpl extends CompensableSynchronization implements CompensableContext,
-		CompensableInvocation {
+public class CompensableInvocationImpl extends CompensableSynchronization implements CompensableContext, CompensableInvocation {
 	private static final long serialVersionUID = 1L;
 
 	private transient Object identifier;
 	private transient Method method;
+	private String declaring;
+	private String methodName;
+	private String[] parameters;
+
 	private Object[] args;
 	private String confirmableKey;
 	private String cancellableKey;
 	private Serializable variable;
+
 	private transient CompensableTccTransaction transaction;
 
 	public void suspend() {
@@ -68,6 +74,36 @@ public class CompensableInvocationImpl extends CompensableSynchronization implem
 		} catch (SystemException ex) {
 			throw new IllegalStateException(ex);
 		}
+	}
+
+	protected Object writeReplace() throws ObjectStreamException {
+		this.declaring = this.method.getDeclaringClass().getName();
+		this.methodName = this.method.getName();
+		Class<?>[] classes = this.method.getParameterTypes();
+		this.parameters = new String[classes.length];
+		for (int i = 0; i < classes.length; i++) {
+			this.parameters[i] = classes[i].getName();
+		}
+		return this;
+	}
+
+	protected Object readResolve() throws ObjectStreamException {
+		try {
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+			Class<?>[] parameterTypes = new Class<?>[this.parameters == null ? 0 : this.parameters.length];
+			Class<?> clazz = cl.loadClass(this.declaring);
+			for (int i = 0; i < parameterTypes.length; i++) {
+				parameterTypes[i] = cl.loadClass(this.parameters[i]);
+			}
+			this.method = clazz.getMethod(this.methodName, parameterTypes);
+		} catch (ClassNotFoundException cnfex) {
+			throw new InvalidClassException(cnfex.getMessage());
+		} catch (NoSuchMethodException ex) {
+			throw new InvalidClassException(ex.getMessage());
+		} catch (SecurityException ex) {
+			throw new InvalidClassException(ex.getMessage());
+		}
+		return this;
 	}
 
 	public Method getMethod() {
