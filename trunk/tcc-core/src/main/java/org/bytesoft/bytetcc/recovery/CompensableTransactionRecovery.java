@@ -15,11 +15,9 @@
  */
 package org.bytesoft.bytetcc.recovery;
 
-import java.rmi.RemoteException;
 import java.util.List;
 
 import javax.transaction.Status;
-import javax.transaction.SystemException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
@@ -169,17 +167,16 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 		List<CompensableTransaction> transactions = transactionRepository.getErrorTransactionList();
 		for (int i = 0; i < transactions.size(); i++) {
 			CompensableTransaction transaction = transactions.get(i);
-			if (CompensableTccTransaction.class.isInstance(transaction)) {
-				this.recoverTransaction((CompensableTccTransaction) transaction);
-			} else {
-				this.recoverTransaction((CompensableJtaTransaction) transaction);
-			}
+			// if (CompensableTccTransaction.class.isInstance(transaction)) {
+			this.recoverTransaction((CompensableTccTransaction) transaction);
+			// } else {
+			// this.recoverTransaction((CompensableJtaTransaction) transaction);
+			// }
 		}
 	}
 
-	public void recoverTransaction(CompensableJtaTransaction transaction) {
-		// TODO
-	}
+	// public void recoverTransaction(CompensableJtaTransaction transaction) {
+	// }
 
 	public void recoverTransaction(CompensableTccTransaction transaction) {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
@@ -189,18 +186,12 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 		int compensableStatus = transaction.getCompensableStatus();
 		int transactionStatus = transaction.getStatus();
 		switch (transactionStatus) {
-		case Status.STATUS_PREPARING:
-			// TODO
-			break;
 		case Status.STATUS_PREPARED:
-			// TODO
-			break;
+			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_TRIED);
+			transaction.setTransactionStatus(Status.STATUS_COMMITTING);
+			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CONFIRMING);
 		case Status.STATUS_COMMITTING:
-			// if (compensableStatus == CompensableTccTransaction.STATUS_CONFIRM_FAILURE) {
-			// } else
-			if (compensableStatus == CompensableTccTransaction.STATUS_CONFIRMED) {
-				// TODO
-			} else {
+			if (compensableStatus != CompensableTccTransaction.STATUS_CONFIRMED) {
 				try {
 					transactionManager.processNativeConfirm(transaction);
 				} catch (RuntimeException ex) {
@@ -213,14 +204,8 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 
 			try {
 				transaction.remoteConfirm();
-			} catch (SystemException ex) {
-				// TODO
-				break;
-			} catch (RemoteException rex) {
-				// TODO
-				break;
-			} catch (RuntimeException rex) {
-				// TODO
+			} catch (Exception ex) {
+				logger.debug(ex.getMessage(), ex);
 				break;
 			}
 
@@ -228,12 +213,32 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 			transactionLogger.deleteTransaction(transaction.getTransactionArchive());
 
 			break;
+		case Status.STATUS_PREPARING:
+			// transaction.setCompensableStatus(CompensableTccTransaction.STATUS_TRIED);
+			transaction.setTransactionStatus(Status.STATUS_ROLLING_BACK);
+			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CANCELLING);
 		case Status.STATUS_ROLLING_BACK:
-			// if (compensableStatus == CompensableTccTransaction.STATUS_CANCEL_FAILURE) {
-			// } else
-			if (compensableStatus == CompensableTccTransaction.STATUS_CANCELLED) {
-			} else {
+			if (compensableStatus != CompensableTccTransaction.STATUS_CANCELLED) {
+				try {
+					transactionManager.processNativeCancel(transaction);
+				} catch (RuntimeException ex) {
+					logger.warn(ex.getMessage(), ex);
+					break;
+				}
+				transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CANCELLED);
+				transactionLogger.updateTransaction(transaction.getTransactionArchive());
 			}
+
+			try {
+				transaction.remoteCancel();
+			} catch (Exception ex) {
+				logger.debug(ex.getMessage(), ex);
+				break;
+			}
+
+			transaction.setTransactionStatus(Status.STATUS_ROLLEDBACK);
+			transactionLogger.deleteTransaction(transaction.getTransactionArchive());
+
 			break;
 		case Status.STATUS_COMMITTED:
 			transactionLogger.deleteTransaction(transaction.getTransactionArchive());

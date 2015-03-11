@@ -54,7 +54,6 @@ public class CompensableTccTransactionSkeleton implements XAResource {
 
 		transactionLogger.updateTransaction(transaction.getTransactionArchive());
 
-		// step2: confirm
 		try {
 			transactionManager.processNativeConfirm(transaction);
 		} catch (RuntimeException ex) {

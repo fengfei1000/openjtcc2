@@ -92,7 +92,16 @@ public class CompensableTccTransactionInterceptor implements TransactionIntercep
 			response.setTransactionContext(transactionContext);
 			try {
 				transactionManager.propagationFinish(transactionContext);
-			} catch (SystemException ex) {
+				// } catch (SystemException ex) {
+				// logger.error("CompensableTccTransactionInterceptor.beforeSendResponse(TransactionResponse)", ex);
+				// IllegalStateException exception = new IllegalStateException();
+				// exception.initCause(ex);
+				// throw exception;
+				// } catch (HeuristicMixedException ex) {
+				// } catch (HeuristicRollbackException ex) {
+				// } catch (RollbackException ex) {
+				// } catch (RuntimeException ex) {
+			} catch (Exception ex) {
 				logger.error("CompensableTccTransactionInterceptor.beforeSendResponse(TransactionResponse)", ex);
 				IllegalStateException exception = new IllegalStateException();
 				exception.initCause(ex);
