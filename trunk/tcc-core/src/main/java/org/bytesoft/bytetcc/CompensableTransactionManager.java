@@ -342,6 +342,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 			throw sysEx;
 		}
 
+		// transaction.markCoordinatorTriedSuccessfully();
 		transaction.setTransactionStatus(Status.STATUS_PREPARED);
 		transaction.setCompensableStatus(CompensableTccTransaction.STATUS_TRIED);
 

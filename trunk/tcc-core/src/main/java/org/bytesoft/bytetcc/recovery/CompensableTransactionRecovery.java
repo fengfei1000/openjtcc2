@@ -15,15 +15,20 @@
  */
 package org.bytesoft.bytetcc.recovery;
 
+import java.rmi.RemoteException;
 import java.util.List;
 
+import javax.transaction.Status;
+import javax.transaction.SystemException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.apache.log4j.Logger;
 import org.bytesoft.bytejta.TransactionImpl;
 import org.bytesoft.bytetcc.CompensableJtaTransaction;
 import org.bytesoft.bytetcc.CompensableTccTransaction;
 import org.bytesoft.bytetcc.CompensableTransaction;
+import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.bytetcc.archive.CompensableArchive;
 import org.bytesoft.bytetcc.archive.CompensableTransactionArchive;
 import org.bytesoft.bytetcc.common.TransactionConfigurator;
@@ -37,6 +42,7 @@ import org.bytesoft.transaction.recovery.TransactionRecovery;
 import org.bytesoft.transaction.xa.TransactionXid;
 
 public class CompensableTransactionRecovery implements TransactionRecovery {
+	static final Logger logger = Logger.getLogger(CompensableTransactionRecovery.class.getSimpleName());
 
 	private TransactionStatistic transactionStatistic;
 
@@ -66,12 +72,12 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 				Xid xid = resource.getXid();
 				tccTransaction.getResourceArchives().put(xid, resource);
 			}
+			tccTransaction.setTransactionStatus(archive.getStatus());
+			tccTransaction.setCompensableStatus(archive.getCompensableStatus());
 			transaction = tccTransaction;
 		} else {
 			transaction = new CompensableJtaTransaction(transactionContext);
 		}
-
-		// transaction.setTransactionStatus(archive.getStatus());
 
 		if (archive.getVote() == XAResource.XA_RDONLY) {
 			throw new IllegalStateException();
@@ -176,9 +182,65 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 	}
 
 	public void recoverTransaction(CompensableTccTransaction transaction) {
-		// int compensableStatus = transaction.getCompensableStatus();
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+		CompensableTransactionManager transactionManager = configurator.getTransactionManager();
+
+		int compensableStatus = transaction.getCompensableStatus();
 		int transactionStatus = transaction.getStatus();
 		switch (transactionStatus) {
+		case Status.STATUS_PREPARING:
+			// TODO
+			break;
+		case Status.STATUS_PREPARED:
+			// TODO
+			break;
+		case Status.STATUS_COMMITTING:
+			// if (compensableStatus == CompensableTccTransaction.STATUS_CONFIRM_FAILURE) {
+			// } else
+			if (compensableStatus == CompensableTccTransaction.STATUS_CONFIRMED) {
+				// TODO
+			} else {
+				try {
+					transactionManager.processNativeConfirm(transaction);
+				} catch (RuntimeException ex) {
+					logger.warn(ex.getMessage(), ex);
+					break;
+				}
+				transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CONFIRMED);
+				transactionLogger.updateTransaction(transaction.getTransactionArchive());
+			}
+
+			try {
+				transaction.remoteConfirm();
+			} catch (SystemException ex) {
+				// TODO
+				break;
+			} catch (RemoteException rex) {
+				// TODO
+				break;
+			} catch (RuntimeException rex) {
+				// TODO
+				break;
+			}
+
+			transaction.setTransactionStatus(Status.STATUS_COMMITTED);
+			transactionLogger.deleteTransaction(transaction.getTransactionArchive());
+
+			break;
+		case Status.STATUS_ROLLING_BACK:
+			// if (compensableStatus == CompensableTccTransaction.STATUS_CANCEL_FAILURE) {
+			// } else
+			if (compensableStatus == CompensableTccTransaction.STATUS_CANCELLED) {
+			} else {
+			}
+			break;
+		case Status.STATUS_COMMITTED:
+			transactionLogger.deleteTransaction(transaction.getTransactionArchive());
+			break;
+		case Status.STATUS_ROLLEDBACK:
+			transactionLogger.deleteTransaction(transaction.getTransactionArchive());
+			break;
 		}
 	}
 

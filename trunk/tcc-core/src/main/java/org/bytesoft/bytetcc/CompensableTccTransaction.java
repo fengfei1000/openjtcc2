@@ -62,6 +62,15 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		super(transactionContext);
 	}
 
+	// public synchronized void markCoordinatorTriedSuccessfully() {
+	// if (this.transactionContext.isCoordinator()) {
+	// for (int i = 0; i < this.coordinatorArchives.size(); i++) {
+	// CompensableArchive archive = this.coordinatorArchives.get(i);
+	// archive.setCoordinatorTried(true);
+	// }
+	// }
+	// }
+
 	public synchronized void propagationBegin(TransactionContext lastestTransactionContext) {
 		this.transientContexts.set(this.transactionContext);
 		this.transactionContext = lastestTransactionContext;
@@ -110,6 +119,10 @@ public class CompensableTccTransaction extends CompensableTransaction {
 			Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
 			while (coordinatorItr.hasNext()) {
 				CompensableArchive archive = coordinatorItr.next();
+				if (archive.isConfirmed()) {
+					continue;
+				}
+
 				try {
 					this.confirmArchive = archive;
 					this.confirmArchive.setTxEnabled(false);
@@ -127,7 +140,10 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
 		while (participantItr.hasNext()) {
 			CompensableArchive archive = participantItr.next();
-			this.compensableStatus = CompensableTccTransaction.STATUS_CONFIRMING;
+			if (archive.isConfirmed()) {
+				continue;
+			}
+
 			try {
 				this.confirmArchive = archive;
 				this.confirmArchive.setTxEnabled(false);
@@ -329,9 +345,36 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		CompensableInvocationExecutor executor = configurator.getCompensableInvocationExecutor();
 		this.compensableStatus = CompensableTccTransaction.STATUS_CANCELLING;
+
+		// if (this.transactionContext.isCoordinator()) {
+		// Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
+		// while (coordinatorItr.hasNext()) {
+		// CompensableArchive archive = coordinatorItr.next();
+		// if (archive.isCancelled() || archive.isCoordinatorTried() == false) {
+		// continue;
+		// }
+		//
+		// try {
+		// this.cancellArchive = archive;
+		// this.cancellArchive.setTxEnabled(false);
+		// executor.cancel(this.cancellArchive.getCompensable());
+		// if (this.cancellArchive.isTxEnabled() == false) {
+		// this.cancellArchive.setCancelled(true);
+		// }
+		// } finally {
+		// this.cancellArchive.setTxEnabled(false);
+		// this.cancellArchive = null;
+		// }
+		// }
+		// }
+
 		Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
 		while (participantItr.hasNext()) {
 			CompensableArchive archive = participantItr.next();
+			if (archive.isCancelled()) {
+				continue;
+			}
+
 			try {
 				this.cancellArchive = archive;
 				this.cancellArchive.setTxEnabled(false);
