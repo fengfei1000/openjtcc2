@@ -229,30 +229,22 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		}
 	}
 
-	public void propagationFinish(TransactionContext transactionContext) throws SystemException {
+	public void propagationFinish(TransactionContext transactionContext) throws SystemException, HeuristicMixedException,
+			HeuristicRollbackException, RollbackException {
 
 		CompensableTccTransaction transaction = (CompensableTccTransaction) this.getCurrentTransaction();
 		transaction.propagationFinish(transactionContext);
 		this.associateds.remove(Thread.currentThread());
 
-		try {
-			this.jtaTransactionManager.commit();
-		} catch (SecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalStateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (RollbackException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (HeuristicMixedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (HeuristicRollbackException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		// try {
+		this.jtaTransactionManager.commit();
+		// } catch (SecurityException ex) {
+		// } catch (IllegalStateException ex) {
+		// } catch (RollbackException ex) {
+		// } catch (HeuristicMixedException ex) {
+		// } catch (HeuristicRollbackException ex) {
+		// } catch (RuntimeException rex) {
+		// }
 
 	}
 
