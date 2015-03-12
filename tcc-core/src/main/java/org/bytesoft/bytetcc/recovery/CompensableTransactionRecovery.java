@@ -182,7 +182,9 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
 		CompensableTransactionManager transactionManager = configurator.getTransactionManager();
+		TransactionRepository transactionRepository = configurator.getTransactionRepository();
 
+		TransactionXid globalXid = transaction.getTransactionContext().getGlobalXid();
 		int compensableStatus = transaction.getCompensableStatus();
 		int transactionStatus = transaction.getStatus();
 		switch (transactionStatus) {
@@ -211,10 +213,12 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 
 			transaction.setTransactionStatus(Status.STATUS_COMMITTED);
 			transactionLogger.deleteTransaction(transaction.getTransactionArchive());
+			transactionRepository.removeTransaction(globalXid);
+			transactionRepository.removeErrorTransaction(globalXid);
 
 			break;
 		case Status.STATUS_PREPARING:
-			// transaction.setCompensableStatus(CompensableTccTransaction.STATUS_TRIED);
+			// TODO
 			transaction.setTransactionStatus(Status.STATUS_ROLLING_BACK);
 			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CANCELLING);
 		case Status.STATUS_ROLLING_BACK:
@@ -238,6 +242,8 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 
 			transaction.setTransactionStatus(Status.STATUS_ROLLEDBACK);
 			transactionLogger.deleteTransaction(transaction.getTransactionArchive());
+			transactionRepository.removeTransaction(globalXid);
+			transactionRepository.removeErrorTransaction(globalXid);
 
 			break;
 		case Status.STATUS_COMMITTED:
