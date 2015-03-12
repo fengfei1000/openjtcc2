@@ -463,6 +463,9 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		if (transactionStatus == Status.STATUS_ACTIVE //
 				|| transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
 			transaction.setTransactionStatus(Status.STATUS_PREPARING);
+			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_TRY_FAILURE);
+			transactionLogger.updateTransaction(transaction.getTransactionArchive());
+
 			// rollback try-phase-transaction
 			try {
 				this.jtaTransactionManager.rollback();
@@ -471,7 +474,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 			} catch (SystemException ex) {
 				transactionRepository.putErrorTransaction(globalXid, transaction);
 				throw ex;
-			}/* IllegalStateException | SecurityException | SystemException */
+			} /* IllegalStateException | SecurityException | SystemException */
 			catch (Exception ex) {
 				transactionRepository.putErrorTransaction(globalXid, transaction);
 				SystemException sysEx = new SystemException();
@@ -479,8 +482,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 				throw sysEx;
 			}
 		} else if (transactionStatus == Status.STATUS_PREPARING) {
-			transaction.setTransactionStatus(Status.STATUS_PREPARING);
-			// rollback try-phase-transaction
+			// transaction.setTransactionStatus(Status.STATUS_PREPARING);
 			TransactionImpl jtaTransaction = this.jtaTransactionManager.getCurrentTransaction();
 			if (jtaTransaction != null) {
 				/* should has been committed/rolledback in this.commitTccTransaction() */
@@ -501,7 +503,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 			// step2: cancel
 			try {
-				this.processNativeCancel(transaction);
+				this.processNativeCancel(transaction, true);
 			} catch (RuntimeException ex) {
 				transactionRepository.putErrorTransaction(globalXid, transaction);
 
@@ -538,9 +540,13 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 	}
 
 	public void processNativeCancel(CompensableTccTransaction transaction) {
+		this.processNativeCancel(transaction, false);
+	}
+
+	public void processNativeCancel(CompensableTccTransaction transaction, boolean coordinatorCancelRequired) {
 		try {
 			this.transients.set(transaction);
-			transaction.nativeCancel();
+			transaction.nativeCancel(coordinatorCancelRequired);
 		} finally {
 			this.transients.remove();
 		}

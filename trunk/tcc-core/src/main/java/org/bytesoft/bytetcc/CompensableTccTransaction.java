@@ -341,32 +341,32 @@ public class CompensableTccTransaction extends CompensableTransaction {
 		throw new IllegalStateException();
 	}
 
-	public synchronized void nativeCancel() {
+	public synchronized void nativeCancel(boolean coordinatorCancelRequired) {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		CompensableInvocationExecutor executor = configurator.getCompensableInvocationExecutor();
 		this.compensableStatus = CompensableTccTransaction.STATUS_CANCELLING;
 
-		// if (this.transactionContext.isCoordinator()) {
-		// Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
-		// while (coordinatorItr.hasNext()) {
-		// CompensableArchive archive = coordinatorItr.next();
-		// if (archive.isCancelled() || archive.isCoordinatorTried() == false) {
-		// continue;
-		// }
-		//
-		// try {
-		// this.cancellArchive = archive;
-		// this.cancellArchive.setTxEnabled(false);
-		// executor.cancel(this.cancellArchive.getCompensable());
-		// if (this.cancellArchive.isTxEnabled() == false) {
-		// this.cancellArchive.setCancelled(true);
-		// }
-		// } finally {
-		// this.cancellArchive.setTxEnabled(false);
-		// this.cancellArchive = null;
-		// }
-		// }
-		// }
+		if (this.transactionContext.isCoordinator() && coordinatorCancelRequired) {
+			Iterator<CompensableArchive> coordinatorItr = this.coordinatorArchives.iterator();
+			while (coordinatorItr.hasNext()) {
+				CompensableArchive archive = coordinatorItr.next();
+				if (archive.isCancelled()) {
+					continue;
+				}
+
+				try {
+					this.cancellArchive = archive;
+					this.cancellArchive.setTxEnabled(false);
+					executor.cancel(this.cancellArchive.getCompensable());
+					if (this.cancellArchive.isTxEnabled() == false) {
+						this.cancellArchive.setCancelled(true);
+					}
+				} finally {
+					this.cancellArchive.setTxEnabled(false);
+					this.cancellArchive = null;
+				}
+			}
+		}
 
 		Iterator<CompensableArchive> participantItr = this.participantArchives.iterator();
 		while (participantItr.hasNext()) {
