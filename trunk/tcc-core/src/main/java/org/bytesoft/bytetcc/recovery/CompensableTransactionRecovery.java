@@ -184,7 +184,11 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 		CompensableTransactionManager transactionManager = configurator.getTransactionManager();
 		TransactionRepository transactionRepository = configurator.getTransactionRepository();
 
-		TransactionXid globalXid = transaction.getTransactionContext().getGlobalXid();
+		TransactionContext transactionContext = transaction.getTransactionContext();
+		boolean coordinator = transactionContext.isCoordinator();
+		boolean coordinatorCancelFlags = false;
+
+		TransactionXid globalXid = transactionContext.getGlobalXid();
 		int compensableStatus = transaction.getCompensableStatus();
 		int transactionStatus = transaction.getStatus();
 		switch (transactionStatus) {
@@ -217,14 +221,40 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 			transactionRepository.removeErrorTransaction(globalXid);
 
 			break;
-		case Status.STATUS_PREPARING:
-			// TODO
+		case Status.STATUS_ACTIVE:
+		case Status.STATUS_MARKED_ROLLBACK:
 			transaction.setTransactionStatus(Status.STATUS_ROLLING_BACK);
-			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_CANCELLING);
+			transaction.setCompensableStatus(CompensableTccTransaction.STATUS_TRY_FAILURE);
+			transactionLogger.updateTransaction(transaction.getTransactionArchive());
+			try {
+				transaction.remoteCancel();
+			} catch (Exception ex) {
+				logger.debug(ex.getMessage(), ex);
+				break;
+			}
+
+			transaction.setTransactionStatus(Status.STATUS_ROLLEDBACK);
+			transactionLogger.deleteTransaction(transaction.getTransactionArchive());
+			transactionRepository.removeTransaction(globalXid);
+			transactionRepository.removeErrorTransaction(globalXid);
+			break;
+		case Status.STATUS_PREPARING:
+			transaction.setTransactionStatus(Status.STATUS_ROLLING_BACK);
+			if (coordinator
+					&& (compensableStatus == CompensableTccTransaction.STATUS_TRIED || compensableStatus == CompensableTccTransaction.STATUS_TRY_MIXED)) {
+				coordinatorCancelFlags = true;
+			}
+			transaction.setTransactionStatus(Status.STATUS_ROLLING_BACK);
+			transactionLogger.updateTransaction(transaction.getTransactionArchive());
 		case Status.STATUS_ROLLING_BACK:
-			if (compensableStatus != CompensableTccTransaction.STATUS_CANCELLED) {
+			if (compensableStatus != CompensableTccTransaction.STATUS_CANCELLED
+					&& compensableStatus != CompensableTccTransaction.STATUS_CANCEL_FAILURE) {
 				try {
-					transactionManager.processNativeCancel(transaction);
+					if (coordinatorCancelFlags) {
+						transactionManager.processNativeCancel(transaction, true);
+					} else {
+						transactionManager.processNativeCancel(transaction);
+					}
 				} catch (RuntimeException ex) {
 					logger.warn(ex.getMessage(), ex);
 					break;
