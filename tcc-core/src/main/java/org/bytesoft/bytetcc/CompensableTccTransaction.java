@@ -85,6 +85,8 @@ public class CompensableTccTransaction extends CompensableTransaction {
 	}
 
 	public synchronized void delistCompensableInvocation(CompensableInvocation compensable) {
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+
 		Object identifier = compensable.getIdentifier();
 		if (identifier == null) {
 			TransactionXid currentXid = this.transactionContext.getCurrentXid();
@@ -94,11 +96,17 @@ public class CompensableTccTransaction extends CompensableTransaction {
 				archive.setCompensable(compensable);
 				archive.setCoordinator(true);
 				this.coordinatorArchives.add(archive);
+
+				CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+				transactionLogger.updateTransaction(this.getTransactionArchive());
 			} else {
 				CompensableArchive archive = new CompensableArchive();
 				archive.setXid(currentXid);
 				archive.setCompensable(compensable);
 				this.participantArchives.add(archive);
+
+				CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+				transactionLogger.updateTransaction(this.getTransactionArchive());
 			}
 			compensable.setIdentifier(currentXid);
 		}
@@ -265,6 +273,9 @@ public class CompensableTccTransaction extends CompensableTransaction {
 				archive.setXid(branchXid);
 				this.resourceArchives.put(branchXid, archive);
 
+				CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+				transactionLogger.updateTransaction(this.getTransactionArchive());
+
 				return true;
 			} else {
 				return this.jtaTransaction.delistResource(xaRes, flag);
@@ -314,6 +325,9 @@ public class CompensableTccTransaction extends CompensableTransaction {
 				archive.setDescriptor(descriptor);
 				archive.setXid(branchXid);
 				this.resourceArchives.put(branchXid, archive);
+
+				CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+				transactionLogger.updateTransaction(this.getTransactionArchive());
 
 				return true;
 			} else {
