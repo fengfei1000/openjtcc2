@@ -189,8 +189,8 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 			throw new NotSupportedException();
 		}
 
-		TransactionConfigurator transactionConfigurator = TransactionConfigurator.getInstance();
-		TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		TransactionRepository transactionRepository = configurator.getTransactionRepository();
 
 		TransactionXid propagationXid = transactionContext.getCurrentXid();
 		TransactionXid globalXid = propagationXid.getGlobalXid();
@@ -202,6 +202,9 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 			transaction = new CompensableTccTransaction(transactionContext);
 			this.processBeginJtaTransaction(transaction, jtaTransactionContext);
 			transactionRepository.putTransaction(globalXid, transaction);
+
+			CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+			transactionLogger.createTransaction(transaction.getTransactionArchive());
 		} else {
 			this.processBeginJtaTransaction(transaction, jtaTransactionContext);
 			transaction.propagationBegin(transactionContext);
@@ -235,6 +238,10 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		CompensableTccTransaction transaction = (CompensableTccTransaction) this.getCurrentTransaction();
 		transaction.propagationFinish(transactionContext);
 		this.associateds.remove(Thread.currentThread());
+
+		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
+		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
+		transactionLogger.createTransaction(transaction.getTransactionArchive());
 
 		// try {
 		this.jtaTransactionManager.commit();

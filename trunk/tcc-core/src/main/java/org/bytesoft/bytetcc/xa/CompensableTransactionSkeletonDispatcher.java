@@ -21,6 +21,9 @@ public class CompensableTransactionSkeletonDispatcher implements XAResource {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		TransactionRepository repository = configurator.getTransactionRepository();
 		CompensableTransaction transaction = repository.getTransaction(globalXid);
+		if (transaction == null) {
+			throw new XAException(XAException.XAER_NOTA);
+		}
 		TransactionContext transactionContext = transaction.getTransactionContext();
 		if (transactionContext.isCompensable()) {
 			this.tccTransactionSkeleton.commit(globalXid, opc);
@@ -35,6 +38,9 @@ public class CompensableTransactionSkeletonDispatcher implements XAResource {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		TransactionRepository repository = configurator.getTransactionRepository();
 		CompensableTransaction transaction = repository.getTransaction(globalXid);
+		if (transaction == null) {
+			throw new XAException(XAException.XAER_NOTA);
+		}
 		TransactionContext transactionContext = transaction.getTransactionContext();
 		if (transactionContext.isCompensable()) {
 			this.tccTransactionSkeleton.rollback(globalXid);
@@ -58,6 +64,9 @@ public class CompensableTransactionSkeletonDispatcher implements XAResource {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		TransactionRepository repository = configurator.getTransactionRepository();
 		CompensableTransaction transaction = repository.getTransaction(globalXid);
+		// if (transaction == null) {
+		// throw new XAException(XAException.XAER_NOTA);
+		// }
 		TransactionContext transactionContext = transaction.getTransactionContext();
 		if (transactionContext.isCompensable()) {
 			this.tccTransactionSkeleton.forget(globalXid);

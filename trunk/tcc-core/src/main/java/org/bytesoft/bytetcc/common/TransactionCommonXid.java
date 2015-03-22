@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 import javax.transaction.xa.Xid;
 
-import org.bytesoft.bytejta.common.TransactionConfigurator;
 import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XidFactory;
 

@@ -64,17 +64,23 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		File[] files = this.directory.listFiles();
 		for (int i = 0; i < files.length; i++) {
 			File file = files[i];
+			boolean closeRequired = false;
+			RandomAccessFile raf = null;
+			FileChannel channel = null;
 			try {
-				RandomAccessFile raf = new RandomAccessFile(file, "rw");
-				FileChannel channel = raf.getChannel();
-				int capacity = (int) channel.size();
-				ByteBuffer buffer = ByteBuffer.allocate(capacity);
-				channel.read(buffer);
-				buffer.flip();
+				raf = new RandomAccessFile(file, "rw");
+				channel = raf.getChannel();
+				ByteBuffer headerBuf = ByteBuffer.allocate(5);
+				channel.read(headerBuf);
 
-				int flag = buffer.get();
-				if (flag == 1) {
-					int length = buffer.getInt();
+				headerBuf.flip();
+				byte enabledByte = headerBuf.get();
+				int length = headerBuf.getInt();
+				if (enabledByte == 1) {
+					ByteBuffer buffer = ByteBuffer.allocate(length);
+					channel.read(buffer);
+					buffer.flip();
+
 					byte[] bytes = new byte[length];
 					buffer.get(bytes);
 
@@ -85,9 +91,24 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 					entry.setFileChannel(channel);
 					entry.setArchive(archive);
 					this.transactions.put(xid, entry);
+				} else {
+					closeRequired = true;
 				}
 			} catch (IOException ioex) {
 				throw new RuntimeException(ioex.getMessage(), ioex);
+			} finally {
+				if (closeRequired) {
+					this.closeIfNecessary(raf);
+					if (file.delete() == false) {
+						file.deleteOnExit();
+					}
+				} else {
+					try {
+						channel.position(0);
+					} catch (Exception ex) {
+						logger.debug(ex.getMessage());
+					}
+				}
 			}
 		}
 	}
@@ -119,11 +140,7 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 			} catch (IOException ex) {
 				logger.error(ex.getMessage(), ex);
 			} finally {
-				try {
-					raf.close();
-				} catch (IOException ignore) {
-					logger.debug(ignore.getMessage());
-				}
+				this.closeIfNecessary(raf);
 			}
 		}
 
@@ -220,7 +237,7 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		try {
 			channel.position(0);
 			channel.write(buf);
-			// channel.force(false);
+			channel.force(false);
 		} catch (IOException ex) {
 			logger.error(ex.getMessage(), ex);
 		}
@@ -234,13 +251,22 @@ public class SimpleTransactionLogger implements CompensableTransactionLogger, Tr
 		FileChannel channel = entry.getFileChannel();
 		long pos = -1;
 		try {
+			ByteBuffer headerBuf = ByteBuffer.allocate(5);
 			pos = channel.position();
 			channel.position(0);
-			ByteBuffer buf = ByteBuffer.allocate((int) channel.size());
-			channel.read(buf);
-			buf.flip();
-			byte[] bytes = new byte[buf.capacity()];
-			buf.get(bytes);
+			channel.read(headerBuf);
+
+			headerBuf.flip();
+			// byte enabledByte=
+			headerBuf.get();
+			int length = headerBuf.getInt();
+
+			ByteBuffer entityBuf = ByteBuffer.allocate(length);
+			channel.read(entityBuf);
+			entityBuf.flip();
+
+			byte[] bytes = new byte[length];
+			entityBuf.get(bytes);
 			return this.deserialize(bytes);
 		} catch (IOException ex) {
 			logger.error(ex.getMessage(), ex);
