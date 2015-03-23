@@ -80,6 +80,8 @@ public class CompensableTccTransactionSkeleton implements XAResource {
 		transaction.setTransactionStatus(Status.STATUS_COMMITTED);
 		transactionLogger.deleteTransaction(transaction.getTransactionArchive());
 
+		transactionRepository.removeTransaction(globalXid);
+		transactionRepository.removeErrorTransaction(globalXid);
 	}
 
 	public void rollback(Xid xid) throws XAException {
@@ -134,6 +136,8 @@ public class CompensableTccTransactionSkeleton implements XAResource {
 		transaction.setTransactionStatus(Status.STATUS_ROLLEDBACK);
 		transactionLogger.deleteTransaction(transaction.getTransactionArchive());
 
+		transactionRepository.removeTransaction(globalXid);
+		transactionRepository.removeErrorTransaction(globalXid);
 	}
 
 	public Xid[] recover(int arg0) throws XAException {

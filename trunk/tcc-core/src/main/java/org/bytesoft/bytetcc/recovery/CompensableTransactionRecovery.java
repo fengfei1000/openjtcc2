@@ -107,8 +107,10 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 			} else {
 				this.reconstructJtaTransaction((CompensableJtaTransaction) transaction);
 			}
-			transactionRepository.putTransaction(globalXid, transaction);
-			transactionRepository.putErrorTransaction(globalXid, transaction);
+			if (transactionRepository.getTransaction(globalXid) == null) {
+				transactionRepository.putTransaction(globalXid, transaction);
+				transactionRepository.putErrorTransaction(globalXid, transaction);
+			}
 		}
 
 		if (recoverImmediately) {
@@ -167,18 +169,19 @@ public class CompensableTransactionRecovery implements TransactionRecovery {
 		List<CompensableTransaction> transactions = transactionRepository.getErrorTransactionList();
 		for (int i = 0; i < transactions.size(); i++) {
 			CompensableTransaction transaction = transactions.get(i);
-			// if (CompensableTccTransaction.class.isInstance(transaction)) {
-			this.recoverTransaction((CompensableTccTransaction) transaction);
-			// } else {
-			// this.recoverTransaction((CompensableJtaTransaction) transaction);
-			// }
+			if (transaction.getTransactionContext().isCoordinator()) {
+				// if (CompensableTccTransaction.class.isInstance(transaction)) {
+				this.recoverCoordinatorTransaction((CompensableTccTransaction) transaction);
+				// } else {
+				// this.recoverTransaction((CompensableJtaTransaction) transaction);
+				// }
+			} else {
+				// this.recoverParticipantTransaction((CompensableTccTransaction) transaction);
+			}
 		}
 	}
 
-	// public void recoverTransaction(CompensableJtaTransaction transaction) {
-	// }
-
-	public void recoverTransaction(CompensableTccTransaction transaction) {
+	public void recoverCoordinatorTransaction(CompensableTccTransaction transaction) {
 		TransactionConfigurator configurator = TransactionConfigurator.getInstance();
 		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
 		CompensableTransactionManager transactionManager = configurator.getTransactionManager();
