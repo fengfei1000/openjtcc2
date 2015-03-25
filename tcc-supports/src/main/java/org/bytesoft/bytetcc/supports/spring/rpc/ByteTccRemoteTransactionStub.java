@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.rmi.RemoteException;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
@@ -81,7 +82,12 @@ public class ByteTccRemoteTransactionStub implements InvocationHandler, Transact
 					invocation.setArgs(args);
 					RemoteInvocationResult result = this.requestor.fireRequest(invocation);
 					if (result.isFailure()) {
-						throw (Throwable) result.getValue();
+						Throwable throwable = (Throwable) result.getValue();
+						if (RemoteException.class.isInstance(throwable)) {
+							throw new XAException(XAException.XAER_RMFAIL);
+						} else {
+							throw throwable;
+						}
 					} else {
 						return result.getValue();
 					}
