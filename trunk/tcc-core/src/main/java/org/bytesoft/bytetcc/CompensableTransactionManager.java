@@ -29,8 +29,10 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 
+import org.apache.log4j.Logger;
 import org.bytesoft.bytejta.TransactionImpl;
 import org.bytesoft.bytejta.TransactionManagerImpl;
+import org.bytesoft.bytejta.utils.ByteUtils;
 import org.bytesoft.bytetcc.common.TransactionConfigurator;
 import org.bytesoft.bytetcc.common.TransactionRepository;
 import org.bytesoft.bytetcc.supports.CompensableTransactionLogger;
@@ -40,6 +42,7 @@ import org.bytesoft.transaction.xa.TransactionXid;
 import org.bytesoft.transaction.xa.XidFactory;
 
 public class CompensableTransactionManager implements TransactionManager/* , TransactionTimer */{
+	static final Logger logger = Logger.getLogger(CompensableTransactionManager.class.getSimpleName());
 
 	private boolean transactionManagerInitialized = false;
 	private TransactionManagerImpl jtaTransactionManager;
@@ -103,7 +106,7 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		}
 	}
 
-	public void beginJtaTransaction() throws NotSupportedException, SystemException {
+	private void beginJtaTransaction() throws NotSupportedException, SystemException {
 		if (this.getTransaction() != null) {
 			throw new NotSupportedException();
 		}
@@ -194,6 +197,9 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 		CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
 		transactionLogger.createTransaction(transaction.getTransactionArchive());
+
+		logger.info(String.format("<%s> begin transaction successfully.",
+				ByteUtils.byteArrayToString(globalXid.getGlobalTransactionId())));
 	}
 
 	public void propagationBegin(TransactionContext transactionContext) throws NotSupportedException, SystemException {
@@ -220,6 +226,9 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 
 			CompensableTransactionLogger transactionLogger = configurator.getTransactionLogger();
 			transactionLogger.createTransaction(transaction.getTransactionArchive());
+
+			logger.info(String.format("<%s> propagate transaction branch successfully.",
+					ByteUtils.byteArrayToString(globalXid.getGlobalTransactionId())));
 		} else {
 			this.processBeginJtaTransaction(transaction, jtaTransactionContext);
 			transaction.propagationBegin(transactionContext);
@@ -392,6 +401,9 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		transaction.setTransactionStatus(Status.STATUS_COMMITTED);
 		transactionLogger.deleteTransaction(transaction.getTransactionArchive());
 
+		logger.info(String.format("<%s> commit transaction successfully.",
+				ByteUtils.byteArrayToString(globalXid.getGlobalTransactionId())));
+
 	}
 
 	public void processNativeConfirm(CompensableTccTransaction transaction) {
@@ -559,6 +571,8 @@ public class CompensableTransactionManager implements TransactionManager/* , Tra
 		transaction.setTransactionStatus(Status.STATUS_ROLLEDBACK);
 		transactionLogger.deleteTransaction(transaction.getTransactionArchive());
 
+		logger.info(String.format("<%s> rollback transaction successfully.",
+				ByteUtils.byteArrayToString(globalXid.getGlobalTransactionId())));
 	}
 
 	public void processNativeCancel(CompensableTccTransaction transaction) {

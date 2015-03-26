@@ -23,6 +23,8 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.apache.log4j.Logger;
+import org.bytesoft.bytejta.utils.ByteUtils;
 import org.bytesoft.bytetcc.CompensableTccTransaction;
 import org.bytesoft.bytetcc.CompensableTransactionManager;
 import org.bytesoft.bytetcc.common.TransactionConfigurator;
@@ -32,6 +34,7 @@ import org.bytesoft.transaction.TransactionContext;
 import org.bytesoft.transaction.xa.TransactionXid;
 
 public class CompensableTccTransactionSkeleton implements XAResource {
+	static final Logger logger = Logger.getLogger(CompensableTccTransactionSkeleton.class.getSimpleName());
 
 	public void commit(Xid xid, boolean opc) throws XAException {
 		TransactionXid transactionXid = (TransactionXid) xid;
@@ -95,6 +98,9 @@ public class CompensableTccTransactionSkeleton implements XAResource {
 		transaction.setTransactionStatus(Status.STATUS_COMMITTED);
 		transactionLogger.deleteTransaction(transaction.getTransactionArchive());
 
+		logger.info(String.format("<%s> commit transaction branch successfully.",
+				ByteUtils.byteArrayToString(globalXid.getGlobalTransactionId())));
+
 		transactionRepository.removeTransaction(globalXid);
 		transactionRepository.removeErrorTransaction(globalXid);
 	}
@@ -150,6 +156,9 @@ public class CompensableTccTransactionSkeleton implements XAResource {
 
 		transaction.setTransactionStatus(Status.STATUS_ROLLEDBACK);
 		transactionLogger.deleteTransaction(transaction.getTransactionArchive());
+
+		logger.info(String.format("<%s> rollback transaction branch successfully.",
+				ByteUtils.byteArrayToString(globalXid.getGlobalTransactionId())));
 
 		transactionRepository.removeTransaction(globalXid);
 		transactionRepository.removeErrorTransaction(globalXid);
