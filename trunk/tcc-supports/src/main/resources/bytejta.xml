@@ -18,6 +18,9 @@
 
 	<bean id="bytejtaXidFactory" class="org.bytesoft.bytejta.xa.XidFactoryImpl" />
 
+	<bean id="bytejtaUserTransaction" class="org.bytesoft.bytejta.UserTransactionImpl">
+		<property name="transactionManager" ref="bytejtaTransactionManager" />
+	</bean>
 	<bean id="bytejtaTransactionManager" class="org.bytesoft.bytejta.TransactionManagerImpl" />
 
 	<bean id="bytejtaResourceSerializer" class="org.bytesoft.transaction.supports.spring.XAResourceSerializerImpl" />
