@@ -116,8 +116,9 @@
 		<property name="invocationFactory" ref="invocationFactory" />
 	</bean>
 	<bean id="wireClientEndpoint" class="org.bytesoft.wire.client.WireClientEndpoint">
-		<property name="detectInterval" value="${wire.client.interval}" />
 		<property name="wireResponder" ref="remoteClientEndpoint" />
+		<property name="timeoutMillis" value="${wire.client.timeout}" />
+		<property name="detectInterval" value="${wire.client.interval}" />
 	</bean>
 	<!-- rpc end -->
 
